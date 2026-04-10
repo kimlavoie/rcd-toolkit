@@ -36,10 +36,11 @@ const liberations: Array<Liberation> = [
 ]
 
 export default function(){
-    const resultat = calculateur(groupes, liberations)
+    const resultat = calculateur(groupes, liberations, 2)
+    console.log(resultat)
     return <>
-        <table>
-            <thead>
+        <table className="table table-striped table-hover">
+            <thead className="thead-light">
                 <tr>
                     <th>Cours</th>
                     <th>Étudiants</th>
@@ -59,7 +60,7 @@ export default function(){
                         <td>{groupe.preparation.toFixed(2)}</td>
                         <td>{groupe.prestation.toFixed(2)}</td>
                         <td>{groupe.PES.toFixed(2)}</td>
-                        <td>{groupe.CI.toFixed(2)}</td>
+                        <th>{groupe.CI.toFixed(2)}</th>
                     </tr>
                 )}
                 
@@ -67,16 +68,16 @@ export default function(){
             <tfoot>
                 <tr>
                     <th>Total</th>
-                    <td>{resultat.sommes.etudiants.toFixed(2)}</td>
-                    <td>{resultat.sommes.heures.toFixed(2)}</td>
-                    <td>{resultat.sommes.preparations.toFixed(2)}</td>
-                    <td>{resultat.sommes.prestations.toFixed(2)}</td>
-                    <td>{resultat.sommes.PES.toFixed(2)}</td>
-                    <td>{resultat.sommes.total.toFixed(2)}</td>
+                    <th>{resultat.sommes.etudiants.toFixed(2)}</th>
+                    <th>{resultat.sommes.heures.toFixed(2)}</th>
+                    <th>{resultat.sommes.preparations.toFixed(2)}</th>
+                    <th>{resultat.sommes.prestations.toFixed(2)}</th>
+                    <th>{resultat.sommes.PES.toFixed(2)}</th>
+                    <th>{resultat.sommes.total.toFixed(2)}</th>
                 </tr>         
             </tfoot>
         </table>
-        <table>
+        <table className="table" style={{width: "auto"}}>
             <tbody>
                 <tr>
                     <th>PES &gt; 415</th>
@@ -96,5 +97,7 @@ export default function(){
                 </tr>
             </tbody>
         </table>
+
+        <h1>CI totale: {resultat.total}</h1>
     </>
 }

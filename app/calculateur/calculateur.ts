@@ -24,14 +24,13 @@ function somme(tableau: Array<number>){
     return tableau.reduce((acc, n) => acc + n, 0)
 }
 
-export default function(groupes: Array<Groupe>, liberations: Array<Liberation>){
+export default function(groupes: Array<Groupe>, liberations: Array<Liberation>, stagiaires: number){
     
 
     const facteurPreparation = calculerNbPrep(groupes)
     const facteurPrestation = 1.2
     const facteurPES = 0.04
-    
-
+    const CIparStagiaire = 2.5
 
     let vueCI:any = {} //define later
     vueCI.groupes = groupes.map((groupe, index, self) => {
@@ -61,14 +60,17 @@ export default function(groupes: Array<Groupe>, liberations: Array<Liberation>){
     vueCI.exceptions.NES160 = vueCI.sommes.etudiants > 160 ? ((vueCI.sommes.etudiants - 160) ** 2 ) * 0.1 : 0
     vueCI.exceptions.NES75 = vueCI.sommes.etudiants >= 75 ? vueCI.sommes.etudiants * 0.01 : 0
     vueCI.exceptions.liberations = somme(liberations.map((lib) => lib.qte)) * 40
+    vueCI.exceptions.stages = stagiaires * CIparStagiaire
 
-    vueCI.total = vueCI.sommes.liberations + 
+    vueCI.total = 
         vueCI.sommes.preparations + 
         vueCI.sommes.prestations + 
         vueCI.sommes.PES + 
         vueCI.exceptions.PES415 + 
         vueCI.exceptions.NES160 + 
-        vueCI.exceptions.NES75
+        vueCI.exceptions.NES75 +
+        vueCI.exceptions.liberations +
+        vueCI.exceptions.stages
 
     return vueCI
 }
