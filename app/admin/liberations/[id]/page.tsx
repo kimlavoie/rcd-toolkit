@@ -6,43 +6,63 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function(){
-    const [id, setId] = useState(-1)
-    const [numeroEmploye, setNumeroEmploye] = useState("")
-    const [prenom, setPrenom] = useState("")
-    const [nom, setNom] = useState("")
-    const [courriel, setCourriel] = useState("")
+    const [id, setId] = useState(0)
+    const [code, setCode] = useState("")
+    const [description, setDescription] = useState("")
+    const [quantite, setQuantite] = useState(0)
+    const [session, setSession] = useState(0)
+    const [enseignant, setEnseignant] = useState(0)
+    
+    const sessions = useLiveQuery(() => db.sessions.toArray())
+    const enseignants = useLiveQuery(() => db.enseignants.toArray())
+
+    useEffect(() => {
+        setSession(sessions?.[0]?.id ?? 0)
+    }, [sessions])
+
+    useEffect(() => {
+        setEnseignant(enseignants?.[0]?.id ?? 0)
+    }, [enseignants])
 
     const params = useParams()
     const router = useRouter()
-    const enseignant = useLiveQuery(() => db.enseignants.get(Number(params.id)))
 
     useEffect(() => {
-        db.enseignants.get(Number(params.id))
-        .then((enseignant) => {
-            setId(enseignant?.id ?? -1)
-            setNumeroEmploye(enseignant?.numeroEmploye ?? "")
-            setPrenom(enseignant?.prenom ?? "")
-            setNom(enseignant?.nom ?? "")
-            setCourriel(enseignant?.courriel ?? "")
+        db.liberations.get(Number(params.id))
+        .then((liberation) => {
+            setId(liberation?.id ?? -1)
+            setCode(liberation?.code ?? "")
+            setDescription(liberation?.description ?? "")
+            setQuantite(liberation?.quantite ?? 0)
+            setSession(liberation?.session ?? 0)
+            setEnseignant(liberation?.enseignant ?? 0)
         })  
     }, [])
 
     function submit(event: React.SubmitEvent){
         event.preventDefault()
-        db.enseignants.update(id, {numeroEmploye, prenom, nom , courriel})
-        router.push("../enseignants")
+        db.liberations.update(id, {code, description, quantite, session, enseignant})
+        router.push("../liberations")
     }
 
     return <>
         <form onSubmit={submit}>
-            <p><label>No d'employé: <input type="text" name="numeroEmploye" value={numeroEmploye} onChange={(ev) => setNumeroEmploye(ev.target.value)} /> </label></p>
-            <p><label>Prenom: <input type="text" name="prenom" value={prenom} onChange={(ev) => setPrenom(ev.target.value)} /></label></p>
-            <p><label>Nom: <input type="text" name="nom" value={nom} onChange={(ev) => setNom(ev.target.value)} /></label></p>
-            <p><label>Courriel: <input type="email" name="courriel" value={courriel} onChange={(ev) => setCourriel(ev.target.value)} /></label></p>
-            
+            <p><label>Code: <input type="text" name="numeroEmploye" value={code} onChange={(ev) => setCode(ev.target.value)} /></label></p>
+            <p><label>Description: <input type="text" name="prenom" value={description} onChange={(ev) => setDescription(ev.target.value)} /></label></p>
+            <p><label>Quantité: <input type="number" min="0" max="1" step="0.05"name="nom" value={quantite} onChange={(ev) => setQuantite(Number(ev.target.value))} /></label></p>
+            <p><label>Session: <select name="session" value={session} onChange={(ev) => setSession(Number(ev.target.value))}>
+                {sessions?.map((session) => (
+                    <option key={session.id} value={session.id}>{session.saison} {session.annee}</option>
+                ))}
+            </select></label></p>
+            <p><label>Enseignant: <select name="enseignant" value={enseignant} onChange={(ev) => setEnseignant(Number(ev.target.value))}>
+                {enseignants?.map((enseignant) => (
+                    <option key={enseignant.id} value={enseignant.id}>{enseignant.prenom} {enseignant.nom}</option>
+                ))}
+            </select></label></p>            
             <input type="submit" value="Modifier" />
         </form>
-        <button onClick={() => router.push("../enseignants")}>Retour</button>
+        <button onClick={() => router.push("../liberations")}>Retour</button>
     </>
     
 }
