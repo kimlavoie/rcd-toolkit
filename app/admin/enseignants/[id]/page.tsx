@@ -30,7 +30,7 @@ export default function(){
     function submit(event: React.SubmitEvent){
         event.preventDefault()
         db.enseignants.update(id, {numeroEmploye, prenom, nom , courriel})
-        router.push("/enseignants")
+        router.push("../enseignants")
     }
 
     return <>
@@ -42,7 +42,7 @@ export default function(){
             
             <input type="submit" value="Modifier" />
         </form>
-        <button onClick={() => router.push("/enseignants")}>Retour</button>
+        <button onClick={() => router.push("../enseignants")}>Retour</button>
     </>
     
 }

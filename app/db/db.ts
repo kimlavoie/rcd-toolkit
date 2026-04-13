@@ -25,16 +25,16 @@ interface Session {
 
 interface Groupe {
     id: number
-    session: Session
-    cours: Cours
+    session: number
+    cours: number
     nbEtudiants: number
 }
 
 interface Priorite{
     id: number
-    enseignant: Enseignant
-    cours: Cours
-    sessionDebut: Session
+    enseignant: number
+    cours: number
+    sessionDebut: number
 }
 
 interface Liberation{
@@ -42,21 +42,21 @@ interface Liberation{
     code: string
     description: string
     quantite: number
-    session: Session
-    enseignant: Enseignant
+    session: number
+    enseignant: number
 }
 
 interface Stage{
     id: number
-    session: Session
+    session: number
     ETCparStagiaire: number
     nbStagiaires: number
 }
 
 interface Supervision{
     id: number
-    enseignant: Enseignant
-    stage: Stage
+    enseignant: number
+    stage: number
     nbStagiaires: number
 }
 

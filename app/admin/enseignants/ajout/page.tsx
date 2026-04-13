@@ -32,7 +32,7 @@ export default function(){
             
             <input type="submit" value="Ajouter" />
         </form>
-        <button onClick={() => router.push("/enseignants")}>Retour</button>
+        <button onClick={() => router.push("../enseignants")}>Retour</button>
     </>
     
 }
