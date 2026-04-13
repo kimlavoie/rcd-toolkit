@@ -14,6 +14,7 @@ export default function(){
                 <li key={cour.id}>
                     <p>Sigle: {cour.sigle}</p> 
                     <p>Nom: {cour.nom}</p> 
+                    <p>Saison: {cour.saison}</p> 
                     <p>Pondération: {cour.heuresTheorie}-{cour.heuresPratique}-{cour.heuresMaison}</p>
                     <p>
                         <Link href={`cours/${cour.id}`}>Modifier</Link>

@@ -12,6 +12,7 @@ interface Cours {
     id: number
     sigle: string
     nom: string
+    saison: string
     heuresTheorie: number
     heuresPratique: number
     heuresMaison: number
@@ -20,7 +21,7 @@ interface Cours {
 interface Session {
     id: number
     saison: string
-    annee: string
+    annee: number
 }
 
 interface Groupe {
@@ -74,7 +75,7 @@ const db = new Dexie("RCDToolkitDatabase") as Dexie & {
 // Schema declaration:
 db.version(1).stores({
     enseignants: "++id, numeroEmploye, prenom, nom, courriel",
-    cours: "++id, nom, heuresTheorie, heuresPratique, heuresMaison",
+    cours: "++id, nom, saison, heuresTheorie, heuresPratique, heuresMaison",
     sessions: "++id, saison, annee",
     groupes: "++id, session, cours, nbEtudiants",
     priorites: "++id, enseignant, cours, sessionDebut",
