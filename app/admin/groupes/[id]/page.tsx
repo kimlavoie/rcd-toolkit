@@ -19,13 +19,12 @@ export default function(){
     useEffect(() => {
         db.cours.where('saison').equals(saison).toArray().then((cours:any) => {
             setCoursListe(cours)
-            setCours(cours[0]?.id ?? 0)
         })
     }, [saison])
 
     useEffect(() => {
-        setSession(sessions?.[0]?.id ?? 0)
-    }, [sessions])
+        setSaison(sessions?.find((el) => el.id == session)?.saison ?? "automne")
+    }, [session])
 
     const params = useParams()
     const router = useRouter()
@@ -59,7 +58,7 @@ export default function(){
                 ))}
             </select></label></p>
 
-            <p><label>Cours: <select name="cours" value="" onChange={(ev) => setCours(Number(ev.target.value))}>
+            <p><label>Cours: <select name="cours" value={cours} onChange={(ev) => setCours(Number(ev.target.value))}>
                 {coursListe?.map((cour: any) => (
                     <option key={cour.id} value={cour.id}>{cour.sigle} - {cour.nom}</option>
                 ))}

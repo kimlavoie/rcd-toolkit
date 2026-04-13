@@ -16,13 +16,7 @@ export default function(){
     const sessions = useLiveQuery(() => db.sessions.toArray())
     const enseignants = useLiveQuery(() => db.enseignants.toArray())
 
-    useEffect(() => {
-        setSession(sessions?.[0]?.id ?? 0)
-    }, [sessions])
 
-    useEffect(() => {
-        setEnseignant(enseignants?.[0]?.id ?? 0)
-    }, [enseignants])
 
     const params = useParams()
     const router = useRouter()
