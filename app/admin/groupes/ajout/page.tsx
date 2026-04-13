@@ -8,29 +8,43 @@ import { useEffect, useState } from "react"
 export default function(){
     const [session, setSession] = useState(0)
     const [saison, setSaison] = useState("automne")
-    const [cours, setCours] = useState(-1)
+    const [cours, setCours] = useState(0)
     const [nbEtudiants, setNbEtudiants] = useState(0)
     const [coursListe, setCoursListe] = useState([])
 
     const sessions = useLiveQuery(() => db.sessions.toArray())
+    
 
     useEffect(() => {
-        db.cours.where('saison').equals(saison).toArray().then((cours:any) => setCoursListe(cours))
+        db.cours.where('saison').equals(saison).toArray().then((cours:any) => {
+            setCoursListe(cours)
+            setCours(cours[0]?.id ?? 0)
+        })
     }, [saison])
+
+    useEffect(() => {
+        setSession(sessions?.[0]?.id ?? 0)
+    }, [sessions])
 
     const router = useRouter()
 
     function submit(event: React.SubmitEvent){
         event.preventDefault()
+        if(session === 0 || cours === 0 || nbEtudiants === 0){
+            console.log("Erreur:","session", session, "cours", cours, "nbEtudiants", nbEtudiants)
+            return
+        }
         db.groupes.add({
             session: session, cours, nbEtudiants
         })
+        console.log(session, cours, nbEtudiants)
         setSession(0)
         setCours(0)
         setNbEtudiants(0)
     }
 
     async function sessionChanged(ev: any){
+        console.log(ev.target.value)
         setSession(ev.target.value)
         setSaison(ev.target.options[ev.target.selectedIndex].dataset.saison)
     }
@@ -43,7 +57,7 @@ export default function(){
                 ))}
             </select></label></p>
 
-            <p><label>Cours: <select name="cours" value="" onChange={(ev) => setCours(Number(ev.target.value))}>
+            <p><label>Cours: <select name="cours" value={cours} onChange={(ev) => setCours(Number(ev.target.value))}>
                 {coursListe?.map((cour: any) => (
                     <option key={cour.id} value={cour.id}>{cour.sigle} - {cour.nom}</option>
                 ))}
