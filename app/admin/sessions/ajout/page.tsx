@@ -16,7 +16,7 @@ export default function(){
         db.sessions.add({
             saison, annee
         })
-        setSaison("")
+        setSaison("automne")
         setAnnee(2026)
     }
 

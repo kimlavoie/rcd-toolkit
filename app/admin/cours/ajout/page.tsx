@@ -23,7 +23,7 @@ export default function(){
         })
         setSigle("")
         setNom("")
-        setSaison("")
+        setSaison("automne")
         setHeuresTheorie(0)
         setHeuresPratique(0)
         setHeuresMaison(0)

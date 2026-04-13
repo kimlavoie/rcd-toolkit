@@ -16,7 +16,6 @@ export default function(){
             {groupes?.map((groupe) => {
                 const session = sessions?.find((el) => el.id == groupe.session)
                 const cour = cours?.find((el) => el.id == groupe.cours)
-                console.log(sessions, cours)
                 
                 return <li key={groupe.id}>
                     <p>Session: {session?.saison} {session?.annee}</p> 

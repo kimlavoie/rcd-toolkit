@@ -36,8 +36,9 @@ export default function(){
         db.groupes.add({
             session: session, cours, nbEtudiants
         })
-        setSession(0)
-        setCours(0)
+        setSession(sessions?.[0]?.id ?? 0)
+        //@ts-ignore
+        setCours(coursListe[0]?.id ?? 0)
         setNbEtudiants(0)
     }
 
