@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Groupe from "./Groupe"
 import calculateur from "../calculateur/calculateur"
 import {groupesData, enseignantsData} from "./data"
@@ -86,12 +86,13 @@ export default function(){
     }
 
     return <>
-        <table className="table table-bordered">
+    <div style={{width: "100%"}}>
+        <table className="table table-bordered" data-toggle="table" data-resizable="true" >
             <thead>
                 <tr>
                     <th>Enseignants</th>
                     {enseignants.map(enseignant => (
-                        <th  key={enseignant.id}>{enseignant.nom}</th>
+                        <th key={enseignant.id}>{enseignant.nom}</th>
                     ))}
                 </tr>
             </thead>
@@ -104,7 +105,7 @@ export default function(){
                                 <option></option>
                                 {groupes.sort((a,b) => a.sigle.localeCompare(b.sigle)).map((groupe, index) => (
                                     <option key={index} data-id={groupe.id}>
-                                        {groupe.sigle} - {groupe.titre} ({groupe.etudiants})
+                                        {groupe.sigle} - {groupe.titre.substring(0,10)} ({groupe.etudiants})
                                     </option>
                                 ))}
                             </select>
@@ -125,7 +126,7 @@ export default function(){
                     <th>Libérations</th>
                     {enseignants.map(enseignant => (
                         <td key={enseignant.id}>
-                            <input type="number" min="0" max="1" step="0.05"  data-enseignant-id={enseignant.id} onChange={liberationHandler} />
+                            <input className="w-100" type="number" min="0" max="1" step="0.05"  data-enseignant-id={enseignant.id} onChange={liberationHandler} />
                         </td>
                     ))}
                 </tr>
@@ -133,7 +134,7 @@ export default function(){
                     <th>Stagiaires</th>
                     {enseignants.map(enseignant => (
                         <td key={enseignant.id}>
-                            <input type="number" min="0" step="1" data-enseignant-id={enseignant.id} onChange={stagiairesHandler}/>
+                            <input className="w-100" type="number" min="0" step="1" data-enseignant-id={enseignant.id} onChange={stagiairesHandler}/>
                         </td>
                     ))}
                 </tr>
@@ -149,5 +150,6 @@ export default function(){
                 </tr>
             </tfoot>
         </table>
+        </div>
     </>
 }

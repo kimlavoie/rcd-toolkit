@@ -7,7 +7,7 @@ export const enseignantsData = [{
 },
 {
     id: 21,
-    nom: "Xavier Chamberland-Thibeault",
+    nom: "Xavier Chamberland",
     groupes: [],
     liberations: 0,
     stagiaires: 0,
@@ -177,7 +177,7 @@ export const groupesData = [
         id: 112,
         sigle: "420-KWA-JQ",
         titre: "Serveurs et sécurité",
-        etudiants: 1,
+        etudiants: 11,
         heures: 4
     },
     {
