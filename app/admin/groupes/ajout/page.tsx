@@ -31,20 +31,17 @@ export default function(){
     function submit(event: React.SubmitEvent){
         event.preventDefault()
         if(session === 0 || cours === 0 || nbEtudiants === 0){
-            console.log("Erreur:","session", session, "cours", cours, "nbEtudiants", nbEtudiants)
             return
         }
         db.groupes.add({
             session: session, cours, nbEtudiants
         })
-        console.log(session, cours, nbEtudiants)
         setSession(0)
         setCours(0)
         setNbEtudiants(0)
     }
 
     async function sessionChanged(ev: any){
-        console.log(ev.target.value)
         setSession(ev.target.value)
         setSaison(ev.target.options[ev.target.selectedIndex].dataset.saison)
     }

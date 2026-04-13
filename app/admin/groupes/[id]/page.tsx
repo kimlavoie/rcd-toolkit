@@ -6,43 +6,69 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function(){
-    const [id, setId] = useState(-1)
-    const [numeroEmploye, setNumeroEmploye] = useState("")
-    const [prenom, setPrenom] = useState("")
-    const [nom, setNom] = useState("")
-    const [courriel, setCourriel] = useState("")
+    const [id, setId] = useState(0)
+    const [session, setSession] = useState(0)
+    const [saison, setSaison] = useState("automne")
+    const [cours, setCours] = useState(0)
+    const [nbEtudiants, setNbEtudiants] = useState(0)
+    const [coursListe, setCoursListe] = useState([])
+
+    const sessions = useLiveQuery(() => db.sessions.toArray())
+    
+
+    useEffect(() => {
+        db.cours.where('saison').equals(saison).toArray().then((cours:any) => {
+            setCoursListe(cours)
+            setCours(cours[0]?.id ?? 0)
+        })
+    }, [saison])
+
+    useEffect(() => {
+        setSession(sessions?.[0]?.id ?? 0)
+    }, [sessions])
 
     const params = useParams()
     const router = useRouter()
-    const enseignant = useLiveQuery(() => db.enseignants.get(Number(params.id)))
 
     useEffect(() => {
-        db.enseignants.get(Number(params.id))
-        .then((enseignant) => {
-            setId(enseignant?.id ?? -1)
-            setNumeroEmploye(enseignant?.numeroEmploye ?? "")
-            setPrenom(enseignant?.prenom ?? "")
-            setNom(enseignant?.nom ?? "")
-            setCourriel(enseignant?.courriel ?? "")
+        db.groupes.get(Number(params.id))
+        .then((groupe) => {
+            setId(groupe?.id ?? 0)
+            setSession(groupe?.session ?? 0)
+            setCours(groupe?.cours ?? 0)
+            setNbEtudiants(groupe?.nbEtudiants ?? 0)
         })  
     }, [])
 
     function submit(event: React.SubmitEvent){
         event.preventDefault()
-        db.enseignants.update(id, {numeroEmploye, prenom, nom , courriel})
-        router.push("../enseignants")
+        db.groupes.update(id, {session, cours, nbEtudiants})
+        router.push("../groupes")
+    }
+
+    async function sessionChanged(ev: any){
+        setSession(ev.target.value)
+        setSaison(ev.target.options[ev.target.selectedIndex].dataset.saison)
     }
 
     return <>
         <form onSubmit={submit}>
-            <p><label>No d'employé: <input type="text" name="numeroEmploye" value={numeroEmploye} onChange={(ev) => setNumeroEmploye(ev.target.value)} /> </label></p>
-            <p><label>Prenom: <input type="text" name="prenom" value={prenom} onChange={(ev) => setPrenom(ev.target.value)} /></label></p>
-            <p><label>Nom: <input type="text" name="nom" value={nom} onChange={(ev) => setNom(ev.target.value)} /></label></p>
-            <p><label>Courriel: <input type="email" name="courriel" value={courriel} onChange={(ev) => setCourriel(ev.target.value)} /></label></p>
-            
+            <p><label>Session: <select name="session" value={session} onChange={sessionChanged}>
+                {sessions?.map((session) => (
+                    <option key={session.id} value={session.id} data-saison={session.saison}>{session.saison} {session.annee}</option>
+                ))}
+            </select></label></p>
+
+            <p><label>Cours: <select name="cours" value="" onChange={(ev) => setCours(Number(ev.target.value))}>
+                {coursListe?.map((cour: any) => (
+                    <option key={cour.id} value={cour.id}>{cour.sigle} - {cour.nom}</option>
+                ))}
+            </select></label></p>
+
+            <p><label>Nombre d'étudiants: <input type="number" name="nbEtudiants" value={nbEtudiants} onChange={(ev) => setNbEtudiants(Number(ev.target.value))} /></label></p>
             <input type="submit" value="Modifier" />
         </form>
-        <button onClick={() => router.push("../enseignants")}>Retour</button>
+        <button onClick={() => router.push("../groupes")}>Retour</button>
     </>
     
 }
