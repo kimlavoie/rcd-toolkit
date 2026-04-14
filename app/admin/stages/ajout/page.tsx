@@ -15,6 +15,7 @@ export default function(){
 
     const router = useRouter()
     const sessions = useLiveQuery(() => db.sessions.toArray())
+    
     useEffect(() => {
         setSession(sessions?.[0]?.id ?? 0)
     }, [sessions])
