@@ -4,6 +4,7 @@ import { db } from "@/app/db/db"
 import { useLiveQuery } from "dexie-react-hooks"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import SelectEnseignant from "../../components/SelectEnseignant"
 
 
 
@@ -48,11 +49,7 @@ export default function(){
                     return <option key={stage.id} value={stage.id}>{session?.saison} {session?.annee}</option>
                 })}
             </select></label></p>
-            <p><label>Enseignant: <select name="enseignant" value={enseignant} onChange={(ev) => setEnseignant(Number(ev.target.value))}>
-                {enseignants?.map((enseignant: any) => (
-                    <option key={enseignant.id} value={enseignant.id}>{enseignant.prenom} {enseignant.nom}</option>
-                ))}
-            </select></label></p>
+            <p><SelectEnseignant enseignant={enseignant} onChange={(ev) => setEnseignant(Number(ev.target.value))} /></p>
             <p><label>Nombre de stagiaires: <input type="number" name="nbStagiaires" value={nbStagiaires} onChange={(ev) => setNbStagiaires(Number(ev.target.value))} /></label></p>
             
             <input type="submit" value="Ajouter" />
