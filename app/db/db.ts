@@ -69,7 +69,7 @@ const db = new Dexie("RCDToolkitDatabase") as Dexie & {
   priorites: EntityTable<Priorite, "id">,
   liberations: EntityTable<Liberation, "id">,
   stages: EntityTable<Stage, "id">,
-  supervision: EntityTable<Supervision, "id">,
+  supervisions: EntityTable<Supervision, "id">,
 }
 
 // Schema declaration:
