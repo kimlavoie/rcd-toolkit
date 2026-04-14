@@ -4,23 +4,15 @@ import { Cours, db } from "@/app/db/db"
 import { useLiveQuery } from "dexie-react-hooks"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import SelectCours from "../../components/SelectCours"
 
 export default function(){
     const [session, setSession] = useState(0)
     const [saison, setSaison] = useState("automne")
     const [cours, setCours] = useState(0)
     const [nbEtudiants, setNbEtudiants] = useState(0)
-    const [coursListe, setCoursListe] = useState([])
 
     const sessions = useLiveQuery(() => db.sessions.toArray())
-    
-
-    useEffect(() => {
-        db.cours.where('saison').equals(saison).toArray().then((cours:any) => {
-            setCoursListe(cours)
-            setCours(cours[0]?.id ?? 0)
-        })
-    }, [saison])
 
     useEffect(() => {
         setSession(sessions?.[0]?.id ?? 0)
@@ -38,7 +30,7 @@ export default function(){
         })
         setSession(sessions?.[0]?.id ?? 0)
         //@ts-ignore
-        setCours(coursListe[0]?.id ?? 0)
+        setCours(0)
         setNbEtudiants(0)
     }
 
@@ -55,11 +47,7 @@ export default function(){
                 ))}
             </select></label></p>
 
-            <p><label>Cours: <select name="cours" value={cours} onChange={(ev) => setCours(Number(ev.target.value))}>
-                {coursListe?.map((cour: any) => (
-                    <option key={cour.id} value={cour.id}>{cour.sigle} - {cour.nom}</option>
-                ))}
-            </select></label></p>
+            <p><SelectCours value={cours} onChange={(id: any) => setCours(id)} saison={saison} /></p>
 
             <p><label>Nombre d'étudiants: <input type="number" name="nbEtudiants" value={nbEtudiants} onChange={(ev) => setNbEtudiants(Number(ev.target.value))} /></label></p>
             <input type="submit" value="Ajouter" />
