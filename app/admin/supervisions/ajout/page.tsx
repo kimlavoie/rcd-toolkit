@@ -15,7 +15,6 @@ export default function(){
     const [nbStagiaires, setNbStagiaires] = useState(0)
 
     const stages = useLiveQuery(() => db.stages.toArray())
-    const enseignants = useLiveQuery(() => db.enseignants.toArray())
     const sessions = useLiveQuery(() => db.sessions.toArray())
 
     useEffect(() => {
@@ -25,10 +24,6 @@ export default function(){
         setStage(stage?.id ?? 0)
     }, [stages])
 
-    useEffect(() => {
-        setEnseignant(enseignants?.[0]?.id ?? 0)
-    }, [enseignants])
-
     const router = useRouter()
 
     function submit(event: React.SubmitEvent){
@@ -36,7 +31,7 @@ export default function(){
         db.supervisions.add({
             enseignant, stage, nbStagiaires
         })
-        setEnseignant(enseignants?.[0]?.id ?? 0)
+        setEnseignant(0)
         setStage(stages?.[0]?.id ?? 0)
         setNbStagiaires(0)
     }
@@ -49,7 +44,7 @@ export default function(){
                     return <option key={stage.id} value={stage.id}>{session?.saison} {session?.annee}</option>
                 })}
             </select></label></p>
-            <p><SelectEnseignant enseignant={enseignant} onChange={(ev) => setEnseignant(Number(ev.target.value))} /></p>
+            <p><SelectEnseignant value={enseignant} onChange={(id: any) => setEnseignant(id)} /></p>
             <p><label>Nombre de stagiaires: <input type="number" name="nbStagiaires" value={nbStagiaires} onChange={(ev) => setNbStagiaires(Number(ev.target.value))} /></label></p>
             
             <input type="submit" value="Ajouter" />
