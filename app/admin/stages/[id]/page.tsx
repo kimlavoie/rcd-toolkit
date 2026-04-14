@@ -5,44 +5,57 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+interface Stage{
+    id: number
+    session: number
+    ETCparStagiaire: number
+    nbStagiaires: number
+}
+
 export default function(){
     const [id, setId] = useState(-1)
-    const [numeroEmploye, setNumeroEmploye] = useState("")
-    const [prenom, setPrenom] = useState("")
-    const [nom, setNom] = useState("")
-    const [courriel, setCourriel] = useState("")
+    const [session, setSession] = useState(0)
+    const [ETCparStagiaire, setETCparStagiaire] = useState(0)
+    const [nbStagiaires, setNbStagiaires] = useState(0)
 
     const params = useParams()
     const router = useRouter()
-    const enseignant = useLiveQuery(() => db.enseignants.get(Number(params.id)))
+    const sessions = useLiveQuery(() => db.sessions.toArray())
 
     useEffect(() => {
-        db.enseignants.get(Number(params.id))
-        .then((enseignant) => {
-            setId(enseignant?.id ?? -1)
-            setNumeroEmploye(enseignant?.numeroEmploye ?? "")
-            setPrenom(enseignant?.prenom ?? "")
-            setNom(enseignant?.nom ?? "")
-            setCourriel(enseignant?.courriel ?? "")
+        db.stages.get(Number(params.id))
+        .then((stage) => {
+            setId(stage?.id ?? -1)
+            setSession(stage?.session ?? 0)
+            setETCparStagiaire(stage?.ETCparStagiaire ?? 0)
+            setNbStagiaires(stage?.nbStagiaires ?? 0)
         })  
     }, [])
 
     function submit(event: React.SubmitEvent){
         event.preventDefault()
-        db.enseignants.update(id, {numeroEmploye, prenom, nom , courriel})
-        router.push("../enseignants")
+        db.stages.update(id, {session, ETCparStagiaire, nbStagiaires})
+        router.push("../stages")
+    }
+
+    async function sessionChanged(ev: any){
+        setSession(ev.target.value)
     }
 
     return <>
         <form onSubmit={submit}>
-            <p><label>No d'employé: <input type="text" name="numeroEmploye" value={numeroEmploye} onChange={(ev) => setNumeroEmploye(ev.target.value)} /> </label></p>
-            <p><label>Prenom: <input type="text" name="prenom" value={prenom} onChange={(ev) => setPrenom(ev.target.value)} /></label></p>
-            <p><label>Nom: <input type="text" name="nom" value={nom} onChange={(ev) => setNom(ev.target.value)} /></label></p>
-            <p><label>Courriel: <input type="email" name="courriel" value={courriel} onChange={(ev) => setCourriel(ev.target.value)} /></label></p>
+            <p><label>Session: <select name="session" value={session} onChange={sessionChanged}>
+                {sessions?.map((session) => (
+                    <option key={session.id} value={session.id}>{session.saison} {session.annee}</option>
+                ))}
+            </select></label></p>
+            <p><label>ETC par stagiaire: <input type="number" min="0" max="1" step="0.01" name="ETCparStagiaire" value={ETCparStagiaire} onChange={(ev) => setETCparStagiaire(Number(ev.target.value))} /></label></p>
+            <p><label>Nombre de stagiaires: <input type="number" min="0" name="nbStagiaires" value={nbStagiaires} onChange={(ev) => setNbStagiaires(Number(ev.target.value))} /></label></p>
+
             
             <input type="submit" value="Modifier" />
         </form>
-        <button onClick={() => router.push("../enseignants")}>Retour</button>
+        <button onClick={() => router.push("../stages")}>Retour</button>
     </>
     
 }

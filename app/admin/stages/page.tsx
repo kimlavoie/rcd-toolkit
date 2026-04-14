@@ -4,23 +4,29 @@ import { useLiveQuery } from "dexie-react-hooks"
 import Link from "next/link"
 import { db } from "@/app/db/db"
 
+
 export default function(){
-    const enseignants = useLiveQuery(() => db.enseignants.toArray())
+    const stages = useLiveQuery(() => db.stages.toArray())
+    const sessions = useLiveQuery(() => db.sessions.toArray())
 
     return <>
-        <Link href="enseignants/ajout">Ajouter un enseignant</Link>
+        <Link href="stages/ajout">Ajouter un stage</Link>
         <ul>
-            {enseignants?.map((enseignant) => (
-                <li key={enseignant.id}>
-                    <p>No d'employé: {enseignant.numeroEmploye}</p> 
-                    <p>Nom: {enseignant.prenom} {enseignant.nom}</p> 
-                    <p>Courriel: {enseignant.courriel}</p>
+            {stages?.map((stage) => {
+                const session = sessions?.find((el) => el.id == stage.session)
+
+                return <li key={stage.id}>
+                    <p>Session: {session?.saison} {session?.annee}</p> 
+                    <p>ETC par stagiaire: {stage.ETCparStagiaire} ETC</p> 
+                    <p>Nombre de stagiaires: {stage.nbStagiaires}</p>
                     <p>
-                        <Link href={`enseignants/${enseignant.id}`}>Modifier</Link>
-                        <button onClick={() => db.enseignants.delete(enseignant.id)}>Supprimer</button>
+                        <Link href={`stages/${stage.id}`}>Modifier</Link>
+                        <button onClick={() => db.stages.delete(stage.id)}>Supprimer</button>
                     </p>
                 </li>
-            ))}
+            }
+                
+            )}
         </ul>
     </>
 }
