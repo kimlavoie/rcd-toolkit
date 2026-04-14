@@ -4,6 +4,7 @@ import { db } from "@/app/db/db"
 import { useLiveQuery } from "dexie-react-hooks"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import SelectEnseignant from "../../components/SelectEnseignant"
 
 interface Priorite{
     id: number
@@ -19,16 +20,13 @@ export default function(){
     const [saison, setSaison] = useState("automne")
     const [coursListe, setCoursListe] = useState([])
 
-    const enseignants = useLiveQuery(() => db.enseignants.toArray())
     const sessions = useLiveQuery(() => db.sessions.toArray())
 
     useEffect(() => {
         setSessionDebut(sessions?.[0]?.id ?? 0)
     }, [sessions])
 
-    useEffect(() => {
-        setEnseignant(enseignants?.[0]?.id ?? 0)
-    }, [enseignants])
+
 
     useEffect(() => {
         db.cours.where('saison').equals(saison).toArray().then((cours:any) => {
@@ -44,7 +42,7 @@ export default function(){
         db.priorites.add({
             enseignant, cours, sessionDebut
         })
-        setEnseignant(enseignants?.[0]?.id ?? 0)
+        setEnseignant(0)
         //@ts-ignore
         setCours(coursListe?.[0]?.id ?? 0)
         setSessionDebut(sessions?.[0]?.id ?? 0)
@@ -58,11 +56,7 @@ export default function(){
 
     return <>
         <form onSubmit={submit}>
-            <p><label>Enseignant: <select name="enseignant" value={enseignant} onChange={(ev) => setEnseignant(Number(ev.target.value))}>
-                {enseignants?.map((enseignant: any) => (
-                    <option key={enseignant.id} value={enseignant.id}>{enseignant.prenom} {enseignant.nom}</option>
-                ))}
-            </select></label></p>
+            <p><SelectEnseignant value={enseignant} onChange={(id: any) => setEnseignant(id)} /></p>
             <p><label>Session: <select name="session" value={sessionDebut} onChange={sessionChanged}>
                 {sessions?.map((session) => (
                     <option key={session.id} value={session.id} data-saison={session.saison}>{session.saison} {session.annee}</option>

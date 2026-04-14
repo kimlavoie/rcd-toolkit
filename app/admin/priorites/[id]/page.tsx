@@ -4,6 +4,7 @@ import { db } from "@/app/db/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import SelectEnseignant from "../../components/SelectEnseignant";
 
 export default function(){
     const [id, setId] = useState(-1)
@@ -13,9 +14,7 @@ export default function(){
     const [enseignant, setEnseignant] = useState(0)
     const [coursListe, setCoursListe] = useState([])
 
-    const sessions = useLiveQuery(() => db.sessions.toArray())
-    const enseignants = useLiveQuery(() => db.enseignants.toArray())
-    
+    const sessions = useLiveQuery(() => db.sessions.toArray())    
 
     useEffect(() => {
         db.cours.where('saison').equals(saison).toArray().then((cours:any) => {
@@ -27,10 +26,6 @@ export default function(){
     useEffect(() => {
         setSaison(sessions?.find((el) => el.id == sessionDebut)?.saison ?? "automne")
     }, [sessionDebut])
-
-    useEffect(() => {
-        setEnseignant(enseignants?.[0]?.id ?? 0)
-    }, [enseignants])
 
     const params = useParams()
     const router = useRouter()
@@ -58,11 +53,8 @@ export default function(){
 
     return <>
         <form onSubmit={submit}>
-            <p><label>Enseignant: <select name="enseignant" value={enseignant} onChange={(ev) => setEnseignant(Number(ev.target.value))}>
-                {enseignants?.map((enseignant: any) => (
-                    <option key={enseignant.id} value={enseignant.id}>{enseignant.prenom} {enseignant.nom}</option>
-                ))}
-            </select></label></p>
+            <p><SelectEnseignant value={enseignant} onChange={(id: any) => setEnseignant(id)} /></p>
+            
             <p><label>Session: <select name="session" value={sessionDebut} onChange={sessionChanged}>
                 {sessions?.map((session) => (
                     <option key={session.id} value={session.id} data-saison={session.saison}>{session.saison} {session.annee}</option>
