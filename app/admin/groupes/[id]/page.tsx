@@ -1,10 +1,10 @@
 'use client'
 
 import { db } from "@/app/db/db";
-import { useLiveQuery } from "dexie-react-hooks";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import SelectCours from "../../components/SelectCours";
+import SelectSession from "../../components/SelectSession";
 
 export default function(){
     const [id, setId] = useState(0)
@@ -12,12 +12,6 @@ export default function(){
     const [saison, setSaison] = useState("automne")
     const [cours, setCours] = useState(0)
     const [nbEtudiants, setNbEtudiants] = useState(0)
-
-    const sessions = useLiveQuery(() => db.sessions.toArray())
-
-    useEffect(() => {
-        setSaison(sessions?.find((el) => el.id == session)?.saison ?? "automne")
-    }, [session])
 
     const params = useParams()
     const router = useRouter()
@@ -38,18 +32,14 @@ export default function(){
         router.push("../groupes")
     }
 
-    async function sessionChanged(ev: any){
-        setSession(ev.target.value)
-        setSaison(ev.target.options[ev.target.selectedIndex].dataset.saison)
+    async function sessionChanged(sessionId:any, saison:any){
+        setSession(sessionId)
+        setSaison(saison)
     }
 
     return <>
         <form onSubmit={submit}>
-            <p><label>Session: <select name="session" value={session} onChange={sessionChanged}>
-                {sessions?.map((session) => (
-                    <option key={session.id} value={session.id} data-saison={session.saison}>{session.saison} {session.annee}</option>
-                ))}
-            </select></label></p>
+            <p><SelectSession value={session} onChange={sessionChanged} /></p>
 
             <p><SelectCours value={cours} onChange={(id: any) => setCours(id)} saison={saison} /></p>
 

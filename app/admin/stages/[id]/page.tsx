@@ -1,16 +1,9 @@
 'use client'
 
 import { db } from "@/app/db/db";
-import { useLiveQuery } from "dexie-react-hooks";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
-interface Stage{
-    id: number
-    session: number
-    ETCparStagiaire: number
-    nbStagiaires: number
-}
+import SelectSession from "../../components/SelectSession";
 
 export default function(){
     const [id, setId] = useState(-1)
@@ -20,7 +13,6 @@ export default function(){
 
     const params = useParams()
     const router = useRouter()
-    const sessions = useLiveQuery(() => db.sessions.toArray())
 
     useEffect(() => {
         db.stages.get(Number(params.id))
@@ -38,17 +30,9 @@ export default function(){
         router.push("../stages")
     }
 
-    async function sessionChanged(ev: any){
-        setSession(ev.target.value)
-    }
-
     return <>
         <form onSubmit={submit}>
-            <p><label>Session: <select name="session" value={session} onChange={sessionChanged}>
-                {sessions?.map((session) => (
-                    <option key={session.id} value={session.id}>{session.saison} {session.annee}</option>
-                ))}
-            </select></label></p>
+            <p><SelectSession value={session} onChange={(id: any) => setSession(id)} /></p>
             <p><label>ETC par stagiaire: <input type="number" min="0" max="1" step="0.01" name="ETCparStagiaire" value={ETCparStagiaire} onChange={(ev) => setETCparStagiaire(Number(ev.target.value))} /></label></p>
             <p><label>Nombre de stagiaires: <input type="number" min="0" name="nbStagiaires" value={nbStagiaires} onChange={(ev) => setNbStagiaires(Number(ev.target.value))} /></label></p>
 
