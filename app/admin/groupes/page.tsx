@@ -3,6 +3,7 @@
 import { useLiveQuery } from "dexie-react-hooks"
 import Link from "next/link"
 import { db } from "@/app/db/db"
+import { useRouter } from "next/navigation"
 
 export default function(){
     const groupes = useLiveQuery(() => db.groupes.toArray())
@@ -10,8 +11,9 @@ export default function(){
     const cours = useLiveQuery(() => db.cours.toArray())
 
     function render(){
+        const router = useRouter()
+
         return <>
-        <Link href="groupes/ajout">Ajouter un groupe</Link>
         <table className="table table-striped">
             <thead>
                 <tr>
@@ -31,8 +33,8 @@ export default function(){
                         <td>{cour?.sigle} {cour?.nom}</td> 
                         <td>{groupe.nbEtudiants}</td>
                         <td>
-                            <Link href={`groupes/${groupe.id}`}>Modifier</Link>
-                            <button onClick={() => db.groupes.delete(groupe.id)}>Supprimer</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`groupes/${groupe.id}`)}>✏️</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => db.groupes.delete(groupe.id)}>🗑️</button>
                         </td>
                     </tr>
                 }  
@@ -40,6 +42,7 @@ export default function(){
             </tbody>
             
         </table>
+        <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push("groupes/ajout")}>+</button>
     </>
     }
 

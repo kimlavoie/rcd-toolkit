@@ -1,14 +1,14 @@
 'use client'
 
 import { useLiveQuery } from "dexie-react-hooks"
-import Link from "next/link"
 import { db } from "@/app/db/db"
+import { useRouter } from "next/navigation"
 
 export default function(){
     const cours = useLiveQuery(() => db.cours.toArray())
+    const router = useRouter()
 
     return <>
-        <Link href="cours/ajout">Ajouter un cours</Link>
         <table className="table table-striped">
             <thead>
                 <tr>
@@ -27,12 +27,13 @@ export default function(){
                         <td>{cour.saison}</td>
                         <td>{cour.heuresTheorie}-{cour.heuresPratique}-{cour.heuresMaison}</td>
                         <td>
-                            <Link href={`cours/${cour.id}`}>Modifier</Link>
-                            <button onClick={() => db.cours.delete(cour.id)}>Supprimer</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`cours/${cour.id}`)}>✏️</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => db.cours.delete(cour.id)}>🗑️</button>
                         </td>
                     </tr>
                 ))}
             </tbody>
         </table>
+        <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`cours/ajout`)}>+</button>
     </>
 }

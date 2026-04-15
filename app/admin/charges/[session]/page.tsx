@@ -3,10 +3,11 @@
 import { useLiveQuery } from "dexie-react-hooks"
 import Link from "next/link"
 import { db } from "@/app/db/db"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 
 export default function(){
     const params = useParams()
+    const router = useRouter()
 
     const charges = useLiveQuery(() => db.charges.toArray())
     const enseignants = useLiveQuery(() => db.enseignants.toArray())
@@ -15,7 +16,7 @@ export default function(){
     const sessions = useLiveQuery(() => db.sessions.toArray())
 
     return <>
-        <Link href={`${params.session}/ajout`}>Ajouter une charge</Link>
+        
         <table className="table table-striped">
             <thead>
                 <tr>
@@ -39,12 +40,13 @@ export default function(){
                         <td>{cours?.sigle} - {cours?.nom}</td>
                         <td>{charge.nbSemaines}</td>
                         <td>
-                            <Link href={`${params.session}/${charge.id}`}>Modifier</Link>
-                            <button onClick={() => db.charges.delete(charge.id)}>Supprimer</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`${params.session}/${charge.id}`)}>✏️</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => db.charges.delete(charge.id)}>🗑️</button>
                         </td>
                     </tr>
                 })}
             </tbody>
         </table>
+        <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`${params.session}/ajout`)}>+</button>
     </>
 }

@@ -3,6 +3,7 @@
 import { useLiveQuery } from "dexie-react-hooks"
 import Link from "next/link"
 import { db } from "@/app/db/db"
+import { useRouter } from "next/navigation"
 
 
 
@@ -12,9 +13,10 @@ export default function(){
     const stages = useLiveQuery(() => db.stages.toArray())
     const sessions = useLiveQuery(() => db.sessions.toArray())
 
+    const router = useRouter()
+
     return <>
-        <Link href="supervisions/ajout">Ajouter une supervision</Link>
-        <table className="table table-striped">
+        <Link href="supervisions/ajout">Ajouter une supervision</Link>        <table className="table table-striped">
             <thead>
                 <tr>
                     <th>Session du stage</th>
@@ -34,13 +36,14 @@ export default function(){
                             <td>{enseignant?.prenom} {enseignant?.nom}</td>
                             <td>{supervision.nbStagiaires}</td>
                             <td>
-                                <Link href={`supervisions/${supervision.id}`}>Modifier</Link>
-                                <button onClick={() => db.supervisions.delete(supervision.id)}>Supprimer</button>
+                                <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`supervisions/${supervision.id}`)}>✏️</button>
+                                <button type="button" className="btn btn-primary rounded-pill" onClick={() => db.supervisions.delete(supervision.id)}>🗑️</button>
                             </td>
                         </tr>
                     })
                 }
             </tbody>
         </table>
+        <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push("supervisions/ajout")}>+</button>
     </>
 }

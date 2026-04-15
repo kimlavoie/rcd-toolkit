@@ -3,6 +3,7 @@
 import { useLiveQuery } from "dexie-react-hooks"
 import Link from "next/link"
 import { db } from "@/app/db/db"
+import { useRouter } from "next/navigation"
 
 
 
@@ -12,8 +13,9 @@ export default function(){
     const cours = useLiveQuery(() => db.cours.toArray())
     const sessions = useLiveQuery(() => db.sessions.toArray())
 
+    const router = useRouter()
+
     return <>
-        <Link href="priorites/ajout">Ajouter une priorité</Link>
         <table className="table table-striped">
             <thead>
                 <tr>
@@ -33,12 +35,13 @@ export default function(){
                         <td>{cour?.sigle} {cour?.nom}</td>
                         <td>{session?.saison} {session?.annee}</td>
                         <td>
-                            <Link href={`priorites/${priorite.id}`}>Modifier</Link>
-                            <button onClick={() => db.priorites.delete(priorite.id)}>Supprimer</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`priorites/${priorite.id}`)}>✏️</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => db.priorites.delete(priorite.id)}>🗑️</button>
                         </td>
                     </tr>
                 })}
             </tbody>
         </table>
+        <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push("priorites/ajout")}>+</button>
     </>
 }

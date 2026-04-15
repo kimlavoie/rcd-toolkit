@@ -3,14 +3,16 @@
 import { useLiveQuery } from "dexie-react-hooks"
 import Link from "next/link"
 import { db } from "@/app/db/db"
+import { useRouter } from "next/navigation"
 
 
 export default function(){
     const stages = useLiveQuery(() => db.stages.toArray())
     const sessions = useLiveQuery(() => db.sessions.toArray())
 
+    const router = useRouter()
+
     return <>
-        <Link href="stages/ajout">Ajouter un stage</Link>
         <table className="table table-striped">
             <thead>
                 <tr>
@@ -28,12 +30,13 @@ export default function(){
                         <td>{stage.ETCparStagiaire}</td>
                         <td>{stage.nbStagiaires}</td>
                         <td>
-                            <Link href={`stages/${stage.id}`}>Modifier</Link>
-                            <button onClick={() => db.stages.delete(stage.id)}>Supprimer</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`stages/${stage.id}`)}>✏️</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => db.stages.delete(stage.id)}>🗑️</button>
                         </td>
                     </tr>
                 })}
             </tbody>
         </table>
+        <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push("stages/ajout")}>+</button>
     </>
 }
