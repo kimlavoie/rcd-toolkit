@@ -12,6 +12,7 @@ export default function(){
         <p><Link href="admin/sessions">Gestion des sessions</Link></p>
         <p><Link href="admin/stages">Gestion des stages</Link></p>
         <p><Link href="admin/supervisions">Gestion des supervisions</Link></p>
+        <p><Link href="admin/charges">Gestion des charges</Link></p>
         
     </>
 }

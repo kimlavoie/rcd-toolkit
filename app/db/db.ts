@@ -61,6 +61,13 @@ interface Supervision{
     nbStagiaires: number
 }
 
+interface Charge{
+    id: number
+    enseignant: number
+    groupe: number
+    nbSemaines: number
+}
+
 const db = new Dexie("RCDToolkitDatabase") as Dexie & {
   enseignants: EntityTable<Enseignant, "id">,
   cours: EntityTable<Cours, "id">,
@@ -70,6 +77,7 @@ const db = new Dexie("RCDToolkitDatabase") as Dexie & {
   liberations: EntityTable<Liberation, "id">,
   stages: EntityTable<Stage, "id">,
   supervisions: EntityTable<Supervision, "id">,
+  charges: EntityTable<Charge, "id">,
 }
 
 // Schema declaration:
@@ -82,7 +90,8 @@ db.version(1).stores({
     liberations: "++id, code, description, quantite, session, enseignant",
     stages: "++id, session, ETCparStagiaire, nbStagiaires",
     supervisions: "++id, enseignant, stage, nbStagiaires",
+    charges: "++id, enseignant, groupe, nbSemaines",
 })
 
-export type { Enseignant, Cours, Session, Groupe, Priorite, Liberation, Stage, Supervision }
+export type { Enseignant, Cours, Session, Groupe, Priorite, Liberation, Stage, Supervision, Charge }
 export { db }
