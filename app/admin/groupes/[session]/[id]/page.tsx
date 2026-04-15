@@ -1,10 +1,9 @@
 'use client'
 
+import SelectCours from "@/app/admin/components/SelectCours";
 import { db } from "@/app/db/db";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import SelectCours from "../../components/SelectCours";
-import SelectSession from "../../components/SelectSession";
 
 export default function(){
     const [id, setId] = useState(0)
@@ -15,6 +14,12 @@ export default function(){
 
     const params = useParams()
     const router = useRouter()
+
+    useEffect(() => {
+        db.sessions.get(Number(params.session)).then((session) => {
+            setSaison(session?.saison ?? "")
+        })
+    })
 
     useEffect(() => {
         db.groupes.get(Number(params.id))
@@ -29,24 +34,17 @@ export default function(){
     function submit(event: React.SubmitEvent){
         event.preventDefault()
         db.groupes.update(id, {session, cours, nbEtudiants})
-        router.push("../groupes")
-    }
-
-    async function sessionChanged(sessionId:any, saison:any){
-        setSession(sessionId)
-        setSaison(saison)
+        router.push(`../${params.session}`)
     }
 
     return <>
         <form onSubmit={submit}>
-            <p><SelectSession value={session} onChange={sessionChanged} /></p>
-
             <p><SelectCours value={cours} onChange={(id: any) => setCours(id)} saison={saison} /></p>
 
             <p><label>Nombre d'étudiants: <input type="number" name="nbEtudiants" value={nbEtudiants} onChange={(ev) => setNbEtudiants(Number(ev.target.value))} /></label></p>
             <input type="submit" value="Modifier" />
         </form>
-        <button onClick={() => router.push("../groupes")}>Retour</button>
+        <button onClick={() => router.push(`../${params.session}`)}>Retour</button>
     </>
     
 }
