@@ -1,8 +1,11 @@
-import Link from "next/link";
+'use client'
+import { useRouter } from "next/navigation";
+import SelectSession from "../components/SelectSession";
 
 export default function(){
+
+    const router = useRouter()
     return <>
-        <Link href="charges/1">Test session 1</Link>
-        <Link href="charges/2">Test session 2</Link>
+        <SelectSession value="0" onChange={(id: any) => router.push(`charges/${id}`)} />
     </>
 }
