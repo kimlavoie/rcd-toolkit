@@ -9,18 +9,28 @@ export default function(){
 
     return <>
         <Link href="enseignants/ajout">Ajouter un enseignant</Link>
-        <ul>
-            {enseignants?.map((enseignant) => (
-                <li key={enseignant.id}>
-                    <p>No d'employé: {enseignant.numeroEmploye}</p> 
-                    <p>Nom: {enseignant.prenom} {enseignant.nom}</p> 
-                    <p>Courriel: {enseignant.courriel}</p>
-                    <p>
-                        <Link href={`enseignants/${enseignant.id}`}>Modifier</Link>
-                        <button onClick={() => db.enseignants.delete(enseignant.id)}>Supprimer</button>
-                    </p>
-                </li>
-            ))}
-        </ul>
+        <table className="table table-striped">
+            <thead>
+                <tr>
+                    <th>No d'employé</th>
+                    <th>Nom</th>
+                    <th>Courriel</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {enseignants?.map((enseignant) => (
+                    <tr key={enseignant.id}>
+                        <td>{enseignant.numeroEmploye}</td>
+                        <td>{enseignant.prenom} {enseignant.nom}</td>
+                        <td>{enseignant.courriel}</td>
+                        <td>
+                            <Link href={`enseignants/${enseignant.id}`}>Modifier</Link>
+                            <button onClick={() => db.enseignants.delete(enseignant.id)}>Supprimer</button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
     </>
 }

@@ -9,19 +9,30 @@ export default function(){
 
     return <>
         <Link href="cours/ajout">Ajouter un cours</Link>
-        <ul>
-            {cours?.map((cour) => (
-                <li key={cour.id}>
-                    <p>Sigle: {cour.sigle}</p> 
-                    <p>Nom: {cour.nom}</p> 
-                    <p>Saison: {cour.saison}</p> 
-                    <p>Pondération: {cour.heuresTheorie}-{cour.heuresPratique}-{cour.heuresMaison}</p>
-                    <p>
-                        <Link href={`cours/${cour.id}`}>Modifier</Link>
-                        <button onClick={() => db.cours.delete(cour.id)}>Supprimer</button>
-                    </p>
-                </li>
-            ))}
-        </ul>
+        <table className="table table-striped">
+            <thead>
+                <tr>
+                    <th>Sigle</th>
+                    <th>Nom</th>
+                    <th>Saison</th>
+                    <th>Pondération</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {cours?.map((cour) => (
+                    <tr key={cour.id}>
+                        <td>{cour.sigle}</td>
+                        <td>{cour.nom}</td>
+                        <td>{cour.saison}</td>
+                        <td>{cour.heuresTheorie}-{cour.heuresPratique}-{cour.heuresMaison}</td>
+                        <td>
+                            <Link href={`cours/${cour.id}`}>Modifier</Link>
+                            <button onClick={() => db.cours.delete(cour.id)}>Supprimer</button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
     </>
 }

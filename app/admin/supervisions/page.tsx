@@ -14,21 +14,33 @@ export default function(){
 
     return <>
         <Link href="supervisions/ajout">Ajouter une supervision</Link>
-        <ul>
-            {supervisions?.map((supervision) => {
-                const stage = stages?.find((el) => el.id == supervision.stage)
-                const session = sessions?.find((el) => el.id == stage?.session)
-                const enseignant = enseignants?.find((el) => el.id == supervision.enseignant)
-                return <li key={supervision.id}>
-                    <p>Session du stage: {session?.saison} {session?.annee}</p>
-                    <p>Enseignant: {enseignant?.prenom} {enseignant?.nom}</p> 
-                    <p>Nombre de stagiaires: {supervision.nbStagiaires}</p>
-                    <p>
-                        <Link href={`supervisions/${supervision.id}`}>Modifier</Link>
-                        <button onClick={() => db.supervisions.delete(supervision.id)}>Supprimer</button>
-                    </p>
-                </li>
-            })}
-        </ul>
+        <table className="table table-striped">
+            <thead>
+                <tr>
+                    <th>Session du stage</th>
+                    <th>Enseignant</th>
+                    <th>Nombre de stagiaires</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {
+                    supervisions?.map((supervision) => {
+                        const stage = stages?.find((el) => el.id == supervision.stage)
+                        const session = sessions?.find((el) => el.id == stage?.session)
+                        const enseignant = enseignants?.find((el) => el.id == supervision.enseignant)
+                        return <tr key={supervision.id}>
+                            <td>{session?.saison} {session?.annee}</td>
+                            <td>{enseignant?.prenom} {enseignant?.nom}</td>
+                            <td>{supervision.nbStagiaires}</td>
+                            <td>
+                                <Link href={`supervisions/${supervision.id}`}>Modifier</Link>
+                                <button onClick={() => db.supervisions.delete(supervision.id)}>Supprimer</button>
+                            </td>
+                        </tr>
+                    })
+                }
+            </tbody>
+        </table>
     </>
 }

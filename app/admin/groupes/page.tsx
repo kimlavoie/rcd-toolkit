@@ -12,23 +12,34 @@ export default function(){
     function render(){
         return <>
         <Link href="groupes/ajout">Ajouter un groupe</Link>
-        <ul>
-            {groupes?.map((groupe) => {
-                const session = sessions?.find((el) => el.id == groupe.session)
-                const cour = cours?.find((el) => el.id == groupe.cours)
-                
-                return <li key={groupe.id}>
-                    <p>Session: {session?.saison} {session?.annee}</p> 
-                    <p>Cours: {cour?.sigle} {cour?.nom}</p> 
-                    <p>Nombre d'étudiants: {groupe.nbEtudiants}</p>
-                    <p>
-                        <Link href={`groupes/${groupe.id}`}>Modifier</Link>
-                        <button onClick={() => db.groupes.delete(groupe.id)}>Supprimer</button>
-                    </p>
-                </li>
-            }  
-            )}
-        </ul>
+        <table className="table table-striped">
+            <thead>
+                <tr>
+                    <th>Session</th>
+                    <th>Cours</th>
+                    <th>Nombre d'étudiants</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {groupes?.map((groupe) => {
+                    const session = sessions?.find((el) => el.id == groupe.session)
+                    const cour = cours?.find((el) => el.id == groupe.cours)
+                    
+                    return <tr key={groupe.id}>
+                        <td>{session?.saison} {session?.annee}</td> 
+                        <td>{cour?.sigle} {cour?.nom}</td> 
+                        <td>{groupe.nbEtudiants}</td>
+                        <td>
+                            <Link href={`groupes/${groupe.id}`}>Modifier</Link>
+                            <button onClick={() => db.groupes.delete(groupe.id)}>Supprimer</button>
+                        </td>
+                    </tr>
+                }  
+                )}
+            </tbody>
+            
+        </table>
     </>
     }
 

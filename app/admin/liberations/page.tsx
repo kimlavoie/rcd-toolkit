@@ -11,22 +11,34 @@ export default function(){
 
     return <>
         <Link href="liberations/ajout">Ajouter une libération</Link>
-        <ul>
-            {liberations?.map((liberation) => {
-                const session = sessions?.find((el) => el.id == liberation.session)
-                const enseignant = enseignants?.find((el) => el.id == liberation.enseignant)
-                return <li key={liberation.id}>
-                    <p>Code: {liberation.code}</p> 
-                    <p>Description: {liberation.description}</p> 
-                    <p>Quantité: {liberation.quantite}</p>
-                    <p>Session: {session?.saison} {session?.annee}</p> 
-                    <p>Enseignant: {enseignant?.prenom} {enseignant?.nom}</p>
-                    <p>
-                        <Link href={`liberations/${liberation.id}`}>Modifier</Link>
-                        <button onClick={() => db.liberations.delete(liberation.id)}>Supprimer</button>
-                    </p>
-                </li>
-        })}
-        </ul>
+        <table className="table table-striped">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Description</th>
+                    <th>Quantité</th>
+                    <th>Session</th>
+                    <th>Enseignant</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {liberations?.map((liberation) => {
+                    const session = sessions?.find((el) => el.id == liberation.session)
+                    const enseignant = enseignants?.find((el) => el.id == liberation.enseignant)
+                    return <tr key={liberation.id}>
+                        <td>{liberation.code}</td>
+                        <td>{liberation.description}</td>
+                        <td>{liberation.quantite}</td>
+                        <td>{session?.saison} {session?.annee}</td>
+                        <td>{enseignant?.prenom} {enseignant?.nom}</td>
+                        <td>
+                            <Link href={`liberations/${liberation.id}`}>Modifier</Link>
+                            <button onClick={() => db.liberations.delete(liberation.id)}>Supprimer</button>
+                        </td>
+                    </tr>
+                })}
+            </tbody>
+        </table>
     </>
 }

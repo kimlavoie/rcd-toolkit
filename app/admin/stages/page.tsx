@@ -11,22 +11,29 @@ export default function(){
 
     return <>
         <Link href="stages/ajout">Ajouter un stage</Link>
-        <ul>
-            {stages?.map((stage) => {
-                const session = sessions?.find((el) => el.id == stage.session)
-
-                return <li key={stage.id}>
-                    <p>Session: {session?.saison} {session?.annee}</p> 
-                    <p>ETC par stagiaire: {stage.ETCparStagiaire} ETC</p> 
-                    <p>Nombre de stagiaires: {stage.nbStagiaires}</p>
-                    <p>
-                        <Link href={`stages/${stage.id}`}>Modifier</Link>
-                        <button onClick={() => db.stages.delete(stage.id)}>Supprimer</button>
-                    </p>
-                </li>
-            }
-                
-            )}
-        </ul>
+        <table className="table table-striped">
+            <thead>
+                <tr>
+                    <th>Session</th>
+                    <th>ETC par stagiaire</th>
+                    <th>Nombre de stagiaires</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {stages?.map((stage) => {
+                    const session = sessions?.find((el) => el.id == stage.session)
+                    return <tr key={stage.id}>
+                        <td>{session?.saison} {session?.annee}</td>
+                        <td>{stage.ETCparStagiaire}</td>
+                        <td>{stage.nbStagiaires}</td>
+                        <td>
+                            <Link href={`stages/${stage.id}`}>Modifier</Link>
+                            <button onClick={() => db.stages.delete(stage.id)}>Supprimer</button>
+                        </td>
+                    </tr>
+                })}
+            </tbody>
+        </table>
     </>
 }

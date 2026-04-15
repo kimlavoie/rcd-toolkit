@@ -16,26 +16,35 @@ export default function(){
 
     return <>
         <Link href={`${params.session}/ajout`}>Ajouter une charge</Link>
-        <ul>
-            {charges?.filter((charge) => {
-                const groupe = groupes?.find((el) => el.id == charge?.groupe)
-                return groupe?.session == Number(params.session)
-            })?.map((charge) => {
-                const enseignant = enseignants?.find((el) => el.id == charge.enseignant)
-                const groupe = groupes?.find((el) => el.id == charge?.groupe)
-                const cours = coursListe?.find((el) => el.id == groupe?.cours)
-                const session = sessions?.find((el) => el.id == groupe?.session)
-
-                return <li key={charge.id}>
-                    <p>Groupe: {cours?.sigle} - {cours?.nom} ({session?.saison} {session?.annee})</p>
-                    <p>Enseignant: {enseignant?.prenom} {enseignant?.nom}</p> 
-                    <p>Nombre de semaines: {charge.nbSemaines}</p>
-                    <p>
-                        <Link href={`${params.session}/${charge.id}`}>Modifier</Link>
-                        <button onClick={() => db.charges.delete(charge.id)}>Supprimer</button>
-                    </p>
-                </li>
-            })}
-        </ul>
+        <table className="table table-striped">
+            <thead>
+                <tr>
+                    <th>Enseignant</th>
+                    <th>Groupe</th>
+                    <th>Nombre de semaines</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {charges?.filter((charge) => {
+                    const groupe = groupes?.find((el) => el.id == charge?.groupe)
+                    return groupe?.session == Number(params.session)
+                })?.map((charge) => {
+                    const enseignant = enseignants?.find((el) => el.id == charge.enseignant)
+                    const groupe = groupes?.find((el) => el.id == charge?.groupe)
+                    const cours = coursListe?.find((el) => el.id == groupe?.cours)
+                    const session = sessions?.find((el) => el.id == groupe?.session)
+                    return <tr key={charge.id}>
+                        <td>{enseignant?.prenom} {enseignant?.nom}</td>
+                        <td>{cours?.sigle} - {cours?.nom}</td>
+                        <td>{charge.nbSemaines}</td>
+                        <td>
+                            <Link href={`${params.session}/${charge.id}`}>Modifier</Link>
+                            <button onClick={() => db.charges.delete(charge.id)}>Supprimer</button>
+                        </td>
+                    </tr>
+                })}
+            </tbody>
+        </table>
     </>
 }

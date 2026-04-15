@@ -9,17 +9,26 @@ export default function(){
 
     return <>
         <Link href="sessions/ajout">Ajouter une session</Link>
-        <ul>
-            {sessions?.map((session) => (
-                <li key={session.id}>
-                    <p>Saison: {session.saison}</p> 
-                    <p>Année: {session.annee}</p>
-                    <p>
-                        <Link href={`sessions/${session.id}`}>Modifier</Link>
-                        <button onClick={() => db.sessions.delete(session.id)}>Supprimer</button>
-                    </p>
-                </li>
-            ))}
-        </ul>
+        <table className="table table-striped">
+            <thead>
+                <tr>
+                    <th>Saison</th>
+                    <th>Année</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {sessions?.map((session) => (
+                    <tr key={session.id}>
+                        <td>{session.saison}</td>
+                        <td>{session.annee}</td>
+                        <td>
+                            <Link href={`sessions/${session.id}`}>Modifier</Link>
+                            <button onClick={() => db.sessions.delete(session.id)}>Supprimer</button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
     </>
 }
