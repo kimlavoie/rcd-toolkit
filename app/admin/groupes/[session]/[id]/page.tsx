@@ -15,8 +15,8 @@ export default function(){
     }
 
     return <>
+        <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(".")}>←</button>  
         <GroupeForm id={params.id} onSubmit={submit} session={params.session} />
-        <button onClick={() => router.push(`../${params.session}`)}>Retour</button>
     </>
     
 }

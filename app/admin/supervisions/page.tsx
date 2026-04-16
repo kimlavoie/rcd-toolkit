@@ -16,7 +16,8 @@ export default function(){
     const router = useRouter()
 
     return <>
-        <Link href="supervisions/ajout">Ajouter une supervision</Link>        <table className="table table-striped">
+        <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(".")}>←</button>       
+        <table className="table table-striped">
             <thead>
                 <tr>
                     <th>Session du stage</th>

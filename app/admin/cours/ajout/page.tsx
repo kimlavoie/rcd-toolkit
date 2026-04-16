@@ -14,8 +14,8 @@ export default function(){
     }
 
     return <>
+        <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(".")}>←</button>  
         <CoursForm onSubmit={submit} />
-        <button onClick={() => router.push("../cours")}>Retour</button>
     </>
     
 }
