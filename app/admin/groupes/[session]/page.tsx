@@ -13,11 +13,13 @@ export default function(){
 
     const router = useRouter()
 
+    const session = sessions?.find((el) => el.id == Number(params.session))
+
     return <>
+        <h1>{session?.saison} {session?.annee}</h1>
         <table className="table table-striped">
             <thead>
                 <tr>
-                    <th>Session</th>
                     <th>Cours</th>
                     <th>Nombre d'étudiants</th>
                     <th>Actions</th>
@@ -25,11 +27,10 @@ export default function(){
             </thead>
             <tbody>
                 {groupes?.filter((groupe) => groupe?.session == Number(params.session))?.map((groupe) => {
-                    const session = sessions?.find((el) => el.id == groupe.session)
+                    
                     const cour = cours?.find((el) => el.id == groupe.cours)
                     
                     return <tr key={groupe.id}>
-                        <td>{session?.saison} {session?.annee}</td> 
                         <td>{cour?.sigle} {cour?.nom}</td> 
                         <td>{groupe.nbEtudiants}</td>
                         <td>
