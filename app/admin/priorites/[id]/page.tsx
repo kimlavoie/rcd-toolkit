@@ -4,8 +4,8 @@ import { db } from "@/app/db/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import SelectEnseignant from "../../components/SelectEnseignant";
-import SelectCours from "../../components/SelectCours";
+import SelectEnseignant from "../../components/inputs/SelectEnseignant";
+import SelectCours from "../../components/inputs/SelectCours";
 
 export default function(){
     const [id, setId] = useState(-1)

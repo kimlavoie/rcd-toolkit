@@ -3,7 +3,7 @@
 import { db } from "@/app/db/db"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import SelectCours from "../../../components/SelectCours"
+import SelectCours from "../../../components/inputs/SelectCours"
 
 export default function(){
     const [cours, setCours] = useState(0)

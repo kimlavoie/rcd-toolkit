@@ -3,8 +3,8 @@
 import { db } from "@/app/db/db";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import SelectSession from "../../components/SelectSession";
-import SelectEnseignant from "../../components/SelectEnseignant";
+import SelectSession from "../../components/inputs/SelectSession";
+import SelectEnseignant from "../../components/inputs/SelectEnseignant";
 
 export default function(){
     const [id, setId] = useState(0)

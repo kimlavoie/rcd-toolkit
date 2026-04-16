@@ -3,7 +3,7 @@
 import { db } from "@/app/db/db"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import SelectSession from "../../components/SelectSession"
+import SelectSession from "../../components/inputs/SelectSession"
 
 export default function(){
     const [session, setSession] = useState(0)

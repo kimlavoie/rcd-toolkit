@@ -3,8 +3,8 @@
 import { db } from "@/app/db/db"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import SelectSession from "../../components/SelectSession"
-import SelectEnseignant from "../../components/SelectEnseignant"
+import SelectSession from "../../components/inputs/SelectSession"
+import SelectEnseignant from "../../components/inputs/SelectEnseignant"
 
 interface Liberation{
     id: number

@@ -1,6 +1,6 @@
 'use client'
 import { useRouter } from "next/navigation";
-import SelectSession from "../components/SelectSession";
+import SelectSession from "../components/inputs/SelectSession";
 
 export default function(){
 

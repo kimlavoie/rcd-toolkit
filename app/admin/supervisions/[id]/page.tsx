@@ -3,8 +3,8 @@
 import { db } from "@/app/db/db";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import SelectEnseignant from "../../components/SelectEnseignant";
-import SelectStage from "../../components/SelectStage";
+import SelectEnseignant from "../../components/inputs/SelectEnseignant";
+import SelectStage from "../../components/inputs/SelectStage";
 
 export default function(){
     const [id, setId] = useState(-1)

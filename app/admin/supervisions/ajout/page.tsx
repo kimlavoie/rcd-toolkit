@@ -3,8 +3,8 @@
 import { db } from "@/app/db/db"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import SelectEnseignant from "../../components/SelectEnseignant"
-import SelectStage from "../../components/SelectStage"
+import SelectEnseignant from "../../components/inputs/SelectEnseignant"
+import SelectStage from "../../components/inputs/SelectStage"
 
 
 

@@ -1,7 +1,7 @@
 'use client'
 
-import SelectEnseignant from "@/app/admin/components/SelectEnseignant";
-import SelectGroupe from "@/app/admin/components/SelectGroupe";
+import SelectEnseignant from "@/app/admin/components/inputs/SelectEnseignant";
+import SelectGroupe from "@/app/admin/components/inputs/SelectGroupe";
 import { db } from "@/app/db/db";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";

@@ -1,6 +1,6 @@
 'use client'
 
-import SelectCours from "@/app/admin/components/SelectCours";
+import SelectCours from "@/app/admin/components/inputs/SelectCours";
 import { db } from "@/app/db/db";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
