@@ -38,7 +38,7 @@ export default function(){
                         <td>{liberation.quantite}</td>
                         <td>{enseignant?.prenom} {enseignant?.nom}</td>
                         <td>
-                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`liberations/${liberation.id}`)}>✏️</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`${params.session}/${liberation.id}`)}>✏️</button>
                             <button type="button" className="btn btn-primary rounded-pill" onClick={() => db.liberations.delete(liberation.id)}>🗑️</button>
                         </td>
                     </tr>
