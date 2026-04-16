@@ -4,6 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks"
 import Link from "next/link"
 import { db } from "@/app/db/db"
 import { useParams, useRouter } from "next/navigation"
+import { extractSessionInfos } from "@/app/utilities/sessions"
 
 export default function(){
     const liberations = useLiveQuery(() => db.liberations.toArray())
@@ -12,11 +13,11 @@ export default function(){
     const router = useRouter()
     const params = useParams()
 
-    const sessions = useLiveQuery(() => db.sessions.toArray())
-    const session = sessions?.find((el) => el.id == Number(params.session))
+    const session = params.session as string
+    const {saison, annee} = extractSessionInfos(session)
 
     return <>
-        <h1>{session?.saison} {session?.annee}</h1>
+        <h1>{saison} {annee}</h1>
         <table className="table table-striped">
             <thead>
                 <tr>
@@ -29,7 +30,7 @@ export default function(){
             </thead>
             <tbody>
                 {liberations?.filter((liberation) => {
-                    return liberation?.session == Number(params.session)
+                    return liberation?.session == params.session
                 })?.map((liberation) => {
                     const enseignant = enseignants?.find((el) => el.id == liberation.enseignant)
                     return <tr key={liberation.id}>

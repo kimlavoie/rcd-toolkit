@@ -1,15 +1,23 @@
-import { db } from "@/app/db/db"
-import { useLiveQuery } from "dexie-react-hooks"
+import { extractSessionInfos, makeSessionCode } from "@/app/utilities/sessions"
+import { useEffect, useState } from "react"
 
-export default function({value, onChange}: any){
-    const sessions = useLiveQuery(() => db.sessions.toArray())
+export default function({code, onChange}: any){
+    const [saison, setSaison] = useState("Automne")
+    const [annee, setAnnee] = useState(2026)
+
+    useEffect(() => {
+        const {saison:saisonDepart, annee:anneeDepart} = extractSessionInfos(code)
+        setSaison(saisonDepart)
+        setAnnee(Number(anneeDepart))
+    }, [code])
 
     return <>
-        <label>Session: <select name="session" value={value} onChange={(ev:any) => onChange(ev.target.value, ev.target.options[ev.target.selectedIndex].dataset.saison)}>
-            <option value="0" hidden disabled>Choisissez une session</option>
-            {sessions?.map((session) => (
-                <option key={session.id} value={session.id} data-saison={session.saison}>{session.saison} {session.annee}</option>
-            ))}
-        </select></label>
+        <label>Session: 
+            <select name="saison" value={saison} onChange={(ev) => {setSaison(ev.target.value); onChange(makeSessionCode(ev.target.value, String(annee)))}}>
+                <option value="Automne">Automne</option>
+                <option value="Hiver">Hiver</option>
+            </select>
+            <input type="number" min="2000" name="annee" value={annee} onChange={(ev) => {setAnnee(Number(ev.target.value)); onChange(makeSessionCode(String(saison),ev.target.value))}} />
+        </label>
     </>
 }

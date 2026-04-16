@@ -1,11 +1,13 @@
 'use client'
 import { useRouter } from "next/navigation";
 import SelectSession from "../components/inputs/SelectSession";
+import { useState } from "react";
 
 export default function(){
-
+    const [session, setSession] = useState("A26")
     const router = useRouter()
     return <>
-        <SelectSession value="0" onChange={(id: any) => router.push(`groupes/${id}`)} />
+        <SelectSession code="A26" onChange={(code: any) => setSession(code)} />
+        <button onClick={() => router.push(`groupes/${session}`)}>Sélectionner</button>
     </>
 }

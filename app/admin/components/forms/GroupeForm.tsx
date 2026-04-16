@@ -1,11 +1,14 @@
 import { db } from "@/app/db/db"
 import { useEffect, useState } from "react"
 import SelectCours from "../inputs/SelectCours"
+import { extractSessionInfos } from "@/app/utilities/sessions"
 
 export default function({id, session, onSubmit}:any){
+    const {saison:saisonDepart, annee:anneeDepart} = extractSessionInfos(session)
+
     const [cours, setCours] = useState(0)
     const [nbEtudiants, setNbEtudiants] = useState(0)
-    const [saison, setSaison] = useState("automne")
+    const [saison, setSaison] = useState(saisonDepart)
 
     useEffect(() => {
         db.groupes.get(Number(id))
@@ -13,12 +16,6 @@ export default function({id, session, onSubmit}:any){
             setCours(groupe?.cours ?? 0)
             setNbEtudiants(groupe?.nbEtudiants ?? 0)
         })  
-    }, [])
-
-    useEffect(() => {
-        db.sessions.get(Number(session)).then((session) => {
-            setSaison(session?.saison ?? "")
-        })
     }, [])
 
     function submit(event: React.SubmitEvent){

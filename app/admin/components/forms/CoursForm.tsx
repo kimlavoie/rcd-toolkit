@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 export default function({id, onSubmit}:any){
     const [sigle, setSigle] = useState("")
     const [nom, setNom] = useState("")
-    const [saison, setSaison] = useState("automne")
+    const [saison, setSaison] = useState("Automne")
     const [heuresTheorie, setHeuresTheorie] = useState(0)
     const [heuresPratique, setHeuresPratique] = useState(0)
     const [heuresMaison, setHeuresMaison] = useState(0)
@@ -28,7 +28,7 @@ export default function({id, onSubmit}:any){
     function resetForm(){
         setSigle("")
         setNom("")
-        setSaison("automne")
+        setSaison("Automne")
         setHeuresTheorie(0)
         setHeuresPratique(0)
         setHeuresMaison(0)
@@ -39,8 +39,8 @@ export default function({id, onSubmit}:any){
             <p><label>Sigle: <input type="text" name="sigle" value={sigle} onChange={(ev) => setSigle(ev.target.value)} /></label></p>
             <p><label>Nom: <input type="text" name="nom" value={nom} onChange={(ev) => setNom(ev.target.value)} /></label></p>
             <p><label>Saison: <select name="saison" value={saison} onChange={(ev) => setSaison(ev.target.value)}>
-                <option value="automne">Automne</option>
-                <option value="hiver">Hiver</option>
+                <option value="Automne">Automne</option>
+                <option value="Hiver">Hiver</option>
             </select></label></p>
             <p><label>Heures de théorie: <input type="number" min="0" name="heuresTheorie" value={heuresTheorie} onChange={(ev) => setHeuresTheorie(Number(ev.target.value))} /></label></p>
             <p><label>Heures de pratique: <input type="number" min="0" name="heuresPratique" value={heuresPratique} onChange={(ev) => setHeuresPratique(Number(ev.target.value))} /></label></p>

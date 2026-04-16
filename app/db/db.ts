@@ -18,15 +18,9 @@ interface Cours {
     heuresMaison: number
 }
 
-interface Session {
-    id: number
-    saison: string
-    annee: number
-}
-
 interface Groupe {
     id: number
-    session: number
+    session: string
     cours: number
     nbEtudiants: number
 }
@@ -35,7 +29,7 @@ interface Priorite{
     id: number
     enseignant: number
     cours: number
-    sessionDebut: number
+    sessionDebut: string
 }
 
 interface Liberation{
@@ -43,13 +37,13 @@ interface Liberation{
     code: string
     description: string
     quantite: number
-    session: number
+    session: string
     enseignant: number
 }
 
 interface Stage{
     id: number
-    session: number
+    session: string
     ETCparStagiaire: number
     nbStagiaires: number
 }
@@ -71,7 +65,6 @@ interface Charge{
 const db = new Dexie("RCDToolkitDatabase") as Dexie & {
   enseignants: EntityTable<Enseignant, "id">,
   cours: EntityTable<Cours, "id">,
-  sessions: EntityTable<Session, "id">,
   groupes: EntityTable<Groupe, "id">,
   priorites: EntityTable<Priorite, "id">,
   liberations: EntityTable<Liberation, "id">,
@@ -84,7 +77,6 @@ const db = new Dexie("RCDToolkitDatabase") as Dexie & {
 db.version(1).stores({
     enseignants: "++id, numeroEmploye, prenom, nom, courriel",
     cours: "++id, nom, saison, heuresTheorie, heuresPratique, heuresMaison",
-    sessions: "++id, saison, annee",
     groupes: "++id, session, cours, nbEtudiants",
     priorites: "++id, enseignant, cours, sessionDebut",
     liberations: "++id, code, description, quantite, session, enseignant",
@@ -93,5 +85,5 @@ db.version(1).stores({
     charges: "++id, enseignant, groupe, nbSemaines",
 })
 
-export type { Enseignant, Cours, Session, Groupe, Priorite, Liberation, Stage, Supervision, Charge }
+export type { Enseignant, Cours, Groupe, Priorite, Liberation, Stage, Supervision, Charge }
 export { db }

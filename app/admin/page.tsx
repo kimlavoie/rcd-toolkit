@@ -9,7 +9,6 @@ export default function(){
         <p><Link href="admin/groupes">Gestion des groupes</Link></p>
         <p><Link href="admin/liberations">Gestion des libérations</Link></p>
         <p><Link href="admin/priorites">Gestion des priorités</Link></p>
-        <p><Link href="admin/sessions">Gestion des sessions</Link></p>
         <p><Link href="admin/stages">Gestion des stages</Link></p>
         <p><Link href="admin/supervisions">Gestion des supervisions</Link></p>
         <p><Link href="admin/charges">Gestion des charges</Link></p>

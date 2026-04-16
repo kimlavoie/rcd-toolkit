@@ -34,7 +34,7 @@ export default function({id, session, onSubmit}:any){
         <form onSubmit={submit}>
             <p><label>Code: <input type="text" name="numeroEmploye" value={code} onChange={(ev) => setCode(ev.target.value)} /></label></p>
             <p><label>Description: <input type="text" name="prenom" value={description} onChange={(ev) => setDescription(ev.target.value)} /></label></p>
-            <p><label>Quantité: <input type="number" min="0" max="1" step="0.05"name="nom" value={quantite} onChange={(ev) => setQuantite(Number(ev.target.value))} /></label></p>
+            <p><label>Quantité: <input type="number" min="0" max="1" step="0.01"name="nom" value={quantite} onChange={(ev) => setQuantite(Number(ev.target.value))} /></label></p>
             <p><SelectEnseignant value={enseignant} onChange={(id: any) => setEnseignant(id)} /></p>
             
             <input type="submit" value="Envoyer" />
