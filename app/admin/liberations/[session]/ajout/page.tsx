@@ -3,17 +3,8 @@
 import { db } from "@/app/db/db"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import SelectSession from "../../components/inputs/SelectSession"
-import SelectEnseignant from "../../components/inputs/SelectEnseignant"
-
-interface Liberation{
-    id: number
-    code: string
-    description: string
-    quantite: number
-    session: number
-    enseignant: number
-}
+import SelectSession from "../../../components/inputs/SelectSession"
+import SelectEnseignant from "../../../components/inputs/SelectEnseignant"
 
 export default function(){
     const [code, setCode] = useState("")
