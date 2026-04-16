@@ -2,7 +2,6 @@
 
 import { db } from "@/app/db/db"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
 import EnseignantForm from "../../components/forms/EnseignantForm"
 
 export default function(){
@@ -15,7 +14,7 @@ export default function(){
     }
 
     return <>
-        <EnseignantForm enseignant={{}} onSubmit={submit} />
+        <EnseignantForm onSubmit={submit} />
         <button onClick={() => router.push("../enseignants")}>Retour</button>
     </>
     
