@@ -15,8 +15,10 @@ export default function(){
     const coursListe = useLiveQuery(() => db.cours.toArray())
     const sessions = useLiveQuery(() => db.sessions.toArray())
 
+    const session = sessions?.find((el) => el.id == Number(params.session))
+
     return <>
-        
+        <h1>{session?.saison} {session?.annee}</h1>
         <table className="table table-striped">
             <thead>
                 <tr>
@@ -37,7 +39,7 @@ export default function(){
                     const session = sessions?.find((el) => el.id == groupe?.session)
                     return <tr key={charge.id}>
                         <td>{enseignant?.prenom} {enseignant?.nom}</td>
-                        <td>{cours?.sigle} - {cours?.nom}</td>
+                        <td>{cours?.sigle} - {cours?.nom} ({groupe?.nbEtudiants})</td>
                         <td>{charge.nbSemaines}</td>
                         <td>
                             <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`${params.session}/${charge.id}`)}>✏️</button>
