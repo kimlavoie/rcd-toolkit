@@ -32,13 +32,19 @@ interface Priorite{
     sessionDebut: string
 }
 
-interface Liberation{
+interface Allocation{
     id: number
     code: string
     description: string
     quantite: number
     session: string
+}
+
+interface Liberation{
+    id: number
+    allocation: number
     enseignant: number
+    quantite: number
 }
 
 interface Stage{
@@ -67,6 +73,7 @@ const db = new Dexie("RCDToolkitDatabase") as Dexie & {
   cours: EntityTable<Cours, "id">,
   groupes: EntityTable<Groupe, "id">,
   priorites: EntityTable<Priorite, "id">,
+  allocations: EntityTable<Allocation, "id">,
   liberations: EntityTable<Liberation, "id">,
   stages: EntityTable<Stage, "id">,
   supervisions: EntityTable<Supervision, "id">,
@@ -74,16 +81,17 @@ const db = new Dexie("RCDToolkitDatabase") as Dexie & {
 }
 
 // Schema declaration:
-db.version(1).stores({
+db.version(3).stores({
     enseignants: "++id, numeroEmploye, prenom, nom, courriel",
     cours: "++id, nom, saison, heuresTheorie, heuresPratique, heuresMaison",
     groupes: "++id, session, cours, nbEtudiants",
     priorites: "++id, enseignant, cours, sessionDebut",
-    liberations: "++id, code, description, quantite, session, enseignant",
+    allocations: "++id, code, description, quantite, session",
+    liberations: "++id, allocation, enseignant, quantite",
     stages: "++id, session, ETCparStagiaire, nbStagiaires",
     supervisions: "++id, enseignant, stage, nbStagiaires",
     charges: "++id, enseignant, groupe, nbSemaines",
 })
 
-export type { Enseignant, Cours, Groupe, Priorite, Liberation, Stage, Supervision, Charge }
+export type { Enseignant, Cours, Groupe, Priorite, Allocation, Liberation, Stage, Supervision, Charge }
 export { db }

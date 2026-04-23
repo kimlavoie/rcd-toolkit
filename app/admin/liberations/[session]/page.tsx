@@ -8,6 +8,7 @@ import { extractSessionInfos } from "@/app/utilities/sessions"
 
 export default function(){
     const liberations = useLiveQuery(() => db.liberations.toArray())
+    const allocations = useLiveQuery(() => db.allocations.toArray())
     const enseignants = useLiveQuery(() => db.enseignants.toArray())
 
     const router = useRouter()
@@ -22,26 +23,26 @@ export default function(){
         <table className="table table-striped">
             <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>Description</th>
-                    <th>Quantité</th>
+                    <th>Allocation</th>
                     <th>Enseignant</th>
+                    <th>Quantité</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {liberations?.filter((liberation) => {
-                    return liberation?.session == params.session
+                    const allocation = allocations?.find((allocation) => allocation.id == liberation.allocation)
+                    return allocation?.session == params.session
                 })?.map((liberation) => {
-                    const enseignant = enseignants?.find((el) => el.id == liberation.enseignant)
+                    const allocation = allocations?.find((allocation) => allocation.id == liberation.allocation)
+                    const enseignant = enseignants?.find((enseignant) => enseignant.id == liberation.enseignant)
                     return <tr key={liberation.id}>
-                        <td>{liberation.code}</td>
-                        <td>{liberation.description}</td>
-                        <td>{liberation.quantite}</td>
+                        <td>{allocation?.code} - {allocation?.description}({allocation?.quantite})</td>
                         <td>{enseignant?.prenom} {enseignant?.nom}</td>
+                        <td>{liberation.quantite}</td>
                         <td>
                             <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(`${params.session}/${liberation.id}`)}>✏️</button>
-                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => db.liberations.delete(liberation.id)}>🗑️</button>
+                            <button type="button" className="btn btn-primary rounded-pill" onClick={() => db.allocations.delete(liberation.id)}>🗑️</button>
                         </td>
                     </tr>
                 })}
