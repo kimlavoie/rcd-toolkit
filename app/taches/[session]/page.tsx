@@ -1,14 +1,13 @@
 'use client'
 
 import { use, useEffect, useState } from "react"
-import Groupe from "./Groupe"
 import calculateur from "../../calculateur/calculateur"
-import {groupesData, enseignantsData} from "../data"
 import { useLiveQuery } from "dexie-react-hooks"
 import { db } from "../../db/db"
 import { useParams } from "next/navigation"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import Liberation from "./Liberation"
+import Charge from "./Charge"
 
 export default function(){
     const enseignants = useLiveQuery(() => db.enseignants.toArray())
@@ -17,25 +16,62 @@ export default function(){
     const charges = useLiveQuery(() => db.charges.toArray())
     const allocations = useLiveQuery(() => db.allocations.toArray())
     const liberations = useLiveQuery(() => db.liberations.toArray())
+    const stages = useLiveQuery(() => db.stages.toArray())
+    const supervisions = useLiveQuery(() => db.supervisions.toArray())
 
     const params = useParams()
 
     const session = params.session as string
     const {saison, annee} = extractSessionInfos(session)
 
-    function newSelection(ev: React.ChangeEvent<HTMLSelectElement>){
+    function newSelectionGroupe(ev: React.ChangeEvent<HTMLSelectElement>){
+
+        const quantite = Number(prompt("Entrez le nombre de semaines", "15"))
+
+        if(isNaN(quantite)){
+            alert("Erreur lors de l'entrée du nombre")
+            return
+        }
         const charge = {
             enseignant: Number(ev.target.dataset.enseignantId),
             groupe: Number(ev.target.options[ev.target.selectedIndex].dataset.id),
-            nbSemaines: 15
+            nbSemaines: quantite
         }
 
         db.charges.add(charge)
 
         ev.target.value = ""
     }
-    
-    function newLiberationSelection(ev: React.ChangeEvent<HTMLSelectElement>){
+
+    function dragOverHandlerGroupe(ev:any){
+        ev.preventDefault()
+    }
+
+    function dropHandlerGroupe(ev:any){
+        const idNouveauEnseignant = ev.target.dataset.enseignantId
+        const idGroupe = ev.dataTransfer.getData("groupeId")
+        const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
+
+        const ancienneCharge = charges?.find(charge => charge.enseignant == idAncienEnseignant && charge.groupe == idGroupe)
+
+        db.charges.delete(Number(ancienneCharge?.id))
+
+        const nouvelleCharge = {
+            enseignant: idNouveauEnseignant,
+            groupe: idGroupe,
+            nbSemaines: 15
+        }
+
+        db.charges.add(nouvelleCharge)
+    }
+
+    function removeHandlerGroupe(groupeId:any, enseignantId:any){
+        const charge = charges?.find(charge => charge.enseignant == enseignantId && charge.groupe == groupeId)
+
+        db.charges.delete(Number(charge?.id))        
+    }
+
+    function newSelectionLiberation(ev: React.ChangeEvent<HTMLSelectElement>){
         const quantite = Number(prompt("Entrez la quantité de libération en ETC", "0.00"))
 
         if(isNaN(quantite)){
@@ -52,28 +88,6 @@ export default function(){
         db.liberations.add(liberation)
 
         ev.target.value = ""
-    }
-
-    function dragOverHandler(ev:any){
-        ev.preventDefault()
-    }
-
-    function dropHandler(ev:any){
-        const idNouveauEnseignant = ev.target.dataset.enseignantId
-        const idGroupe = ev.dataTransfer.getData("groupeId")
-        const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
-
-        const ancienneCharge = charges?.find(charge => charge.enseignant == idAncienEnseignant && charge.groupe == idGroupe)
-
-        db.charges.delete(Number(ancienneCharge?.id))
-
-        const nouvelleCharge = {
-            enseignant: idNouveauEnseignant,
-            groupe: idGroupe,
-            nbSemaines: 15
-        }
-
-        db.charges.add(nouvelleCharge)
     }
 
     function dragOverHandlerLiberation(ev:any){
@@ -98,22 +112,10 @@ export default function(){
         db.liberations.delete(Number(ancienneLiberation?.id))
     }
 
-    function removeHandler(groupeId:any, enseignantId:any){
-        const charge = charges?.find(charge => charge.enseignant == enseignantId && charge.groupe == groupeId)
-
-        db.charges.delete(Number(charge?.id))        
-    }
+    
 
     function removeHandlerLiberation(liberationId:any, enseignantId:any){
         db.liberations.delete(Number(liberationId))        
-    }
-
-    function liberationHandler(ev:any){
-        /* const iEnseignant = enseignants.findIndex((e: any) => e.id == Number(ev.target.dataset.enseignantId))
-        let enseignantsCopie = [...enseignants]
-        enseignantsCopie[iEnseignant].liberations = Number(ev.target.value)
-        setEnseignants(enseignantsCopie)
-        console.log(enseignantsCopie) */
     }
 
     function stagiairesHandler(ev:any){
@@ -147,7 +149,7 @@ export default function(){
                         const groupesSession = groupes?.filter((groupe: any) => groupe.session == params.session)
                         const sortedGroupes = sortGroupes(groupesSession)
                         return <td key={enseignant.id}>
-                            <select data-enseignant-id={enseignant.id} onChange={newSelection} value="">
+                            <select data-enseignant-id={enseignant.id} onChange={newSelectionGroupe} value="">
                                 <option></option>
                                 {sortedGroupes?.filter((groupe:any) => {
                                     const charge = charges?.find(charge => charge.groupe == groupe.id)
@@ -166,14 +168,14 @@ export default function(){
                     <th>Cours Attribués</th>
                     {enseignants?.map(enseignant => {
                         const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
-                        return <td key={enseignant.id} data-enseignant-id={enseignant.id} onDrop={dropHandler} onDragOver={dragOverHandler} style={{paddingBottom: "50px"}}>
+                        return <td key={enseignant.id} data-enseignant-id={enseignant.id} onDrop={dropHandlerGroupe} onDragOver={dragOverHandlerGroupe} style={{paddingBottom: "50px"}}>
                             {chargesEnseignant?.filter(charge => {
                                 const groupe = groupes?.find(groupe => charge.groupe == groupe.id)
                                 return groupe?.session == params.session
                             })?.map((charge: any) => {
                                 const groupe = groupes?.find(groupe => charge.groupe == groupe.id)
                                 const cour = cours?.find(cour => groupe?.cours == cour.id)
-                                return <Groupe key={groupe?.id} groupe={groupe} cours={cour} enseignantId={enseignant.id} onRemove={removeHandler}/>
+                                return <Charge key={groupe?.id} charge={charge} groupe={groupe} cours={cour} enseignantId={enseignant.id} onRemove={removeHandlerGroupe}/>
                             })}
                         </td>
                     })}
@@ -183,7 +185,7 @@ export default function(){
                     {enseignants?.map(enseignant => {
                         const allocationsSession = allocations?.filter((allocation: any) => allocation.session == params.session)
                         return <td key={enseignant.id}>
-                            <select data-enseignant-id={enseignant.id} onChange={newLiberationSelection} value="">
+                            <select data-enseignant-id={enseignant.id} onChange={newSelectionLiberation} value="">
                                 <option></option>
                                 {allocationsSession?.filter((allocation:any) => {
                                     const liberation = liberations?.find(liberation => liberation.allocation == allocation.id)
