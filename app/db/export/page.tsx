@@ -29,7 +29,7 @@ async function download(){
 
 export default function(){    
     return <>
-        <button onClick={download}>Télécharger les données</button>
-        <Link href="/">Retour à l'accueil</Link>
+        <p><button onClick={download}>Télécharger les données</button></p>
+        <p><Link href="/">Retour à l'accueil</Link></p>
     </>
 }

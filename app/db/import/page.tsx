@@ -25,8 +25,8 @@ export default function(){
     }
 
     return <>
-        <input type="file" id="fileInput" ref={ref}/>
-        <button onClick={upload}>Charger les données</button>
-        <Link href="/">Retour à l'accueil</Link>
+        <p><input type="file" id="fileInput" ref={ref}/></p>
+        <p><button onClick={upload}>Charger les données</button></p>
+        <p><Link href="/">Retour à l'accueil</Link></p>
     </>
 }
