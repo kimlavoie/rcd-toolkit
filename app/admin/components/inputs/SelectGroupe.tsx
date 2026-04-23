@@ -5,7 +5,6 @@ import { useEffect, useState } from "react"
 export default function({value, onChange, session}: any){
     const [groupes, setGroupes] = useState([])
     const coursListe = useLiveQuery(() => db.cours.toArray())
-    const sessions = useLiveQuery(() => db.sessions.toArray())
 
     useEffect(() => {
         db.groupes.where('session').equals(session).toArray().then((groupes:any) => {

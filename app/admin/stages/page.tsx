@@ -4,15 +4,16 @@ import { useLiveQuery } from "dexie-react-hooks"
 import Link from "next/link"
 import { db } from "@/app/db/db"
 import { useRouter } from "next/navigation"
+import { extractSessionInfos } from "@/app/utilities/sessions"
 
 
 export default function(){
     const stages = useLiveQuery(() => db.stages.toArray())
-    const sessions = useLiveQuery(() => db.sessions.toArray())
 
     const router = useRouter()
 
     return <>
+        <button type="button" className="btn btn-primary rounded-pill" onClick={() => router.push(".")}>←</button>  
         <table className="table table-striped">
             <thead>
                 <tr>
@@ -24,9 +25,9 @@ export default function(){
             </thead>
             <tbody>
                 {stages?.map((stage) => {
-                    const session = sessions?.find((el) => el.id == stage.session)
+                    const {saison, annee} = extractSessionInfos(stage.session)
                     return <tr key={stage.id}>
-                        <td>{session?.saison} {session?.annee}</td>
+                        <td>{saison} {annee}</td>
                         <td>{stage.ETCparStagiaire}</td>
                         <td>{stage.nbStagiaires}</td>
                         <td>
