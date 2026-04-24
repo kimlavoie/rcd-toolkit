@@ -89,10 +89,25 @@ export default function(){
             alert("Erreur lors de l'entrée du nombre")
             return
         }
+
+
+        const enseignantID = Number(ev.target.dataset.enseignantId)
+        const allocationID = Number(ev.target.options[ev.target.selectedIndex].dataset.id)
+
+        const liberationsAllocation = liberations?.filter(liberation => liberation.allocation == allocationID)
+        const sommeLiberations = liberationsAllocation?.reduce((somme, liberation) => somme + liberation.quantite, 0)
+
+        const allocation = allocations?.find(allocation => allocation.id == allocationID)
+        const qteAllocation = allocation?.quantite
+
+        if(sommeLiberations! + quantite > qteAllocation!){
+            alert("La quantité de libération est trop grande pour l'allocation. Veuillez choisir une autre quantité")
+            return
+        }
         
         const liberation = {
-            enseignant: Number(ev.target.dataset.enseignantId),
-            allocation: Number(ev.target.options[ev.target.selectedIndex].dataset.id),
+            enseignant: enseignantID,
+            allocation: allocationID,
             quantite: quantite
         }
         
@@ -205,8 +220,11 @@ export default function(){
                             <select data-enseignant-id={enseignant.id} onChange={newSelectionLiberation} value="">
                                 <option></option>
                                 {allocationsSession?.filter((allocation:any) => {
-                                    const liberation = liberations?.find(liberation => liberation.allocation == allocation.id)
-                                    return liberation == undefined
+                                    const liberation = liberations?.filter(liberation => liberation.allocation == allocation.id)
+                                    const sommeLiberations = liberation?.reduce((somme, liberation) => somme + liberation.quantite, 0)
+                                    const liberationExiste = liberations?.find(liberation => liberation.enseignant == enseignant.id && liberation.allocation == allocation.id)
+
+                                    return sommeLiberations! < allocation.quantite && !liberationExiste
                                 })?.map((allocation: any, index:number) => {
                                     return <option key={index} data-id={allocation.id}>
                                         {allocation.code} - {allocation.description.substring(0,20)} ({allocation.quantite})
