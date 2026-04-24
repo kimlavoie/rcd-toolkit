@@ -24,8 +24,6 @@ export default function(){
     const {saison, annee} = extractSessionInfos(session)
 
     function newSelectionGroupe(ev: React.ChangeEvent<HTMLSelectElement>){
-        
-
         const enseignantID = Number(ev.target.dataset.enseignantId)
         const groupeID = Number(ev.target.options[ev.target.selectedIndex].dataset.id)
 
@@ -67,6 +65,13 @@ export default function(){
         const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
 
         const ancienneCharge = charges?.find(charge => charge.enseignant == idAncienEnseignant && charge.groupe == idGroupe)
+
+        const chargeExiste = charges?.find(charge => charge.enseignant == idNouveauEnseignant && charge.groupe == idGroupe)
+        
+        if(chargeExiste){
+            alert("Cet enseignant a deja cette charge")
+            return
+        }
 
         const nouvelleCharge = {
             enseignant: idNouveauEnseignant,
@@ -130,6 +135,13 @@ export default function(){
         const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
 
         const ancienneLiberation = liberations?.find(liberation => liberation.enseignant == idAncienEnseignant && liberation.id == idLiberation)
+
+        const liberationExiste = liberations?.find(liberation => liberation.enseignant == idNouveauEnseignant && liberation.allocation == ancienneLiberation?.allocation)
+        
+        if(liberationExiste){
+            alert("Cet enseignant a deja cette liberation")
+            return
+        }
 
         const nouvelleLiberation = {
             enseignant: idNouveauEnseignant,
