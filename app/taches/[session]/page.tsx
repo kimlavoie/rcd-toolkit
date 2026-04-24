@@ -25,18 +25,22 @@ export default function(){
     const {saison, annee} = extractSessionInfos(session)
 
     function newSelectionGroupe(ev: React.ChangeEvent<HTMLSelectElement>){
-        const quantite = Number(prompt("Entrez le nombre de semaines", "15"))
-
-        if(isNaN(quantite)){
-            alert("Erreur lors de l'entrée du nombre")
-            return
-        }
+        
 
         const enseignantID = Number(ev.target.dataset.enseignantId)
         const groupeID = Number(ev.target.options[ev.target.selectedIndex].dataset.id)
 
         const chargesGroupe = charges?.filter(charge => charge.groupe == groupeID)
         const sommeCharges = chargesGroupe?.reduce((somme, charge) => somme + charge.nbSemaines, 0)
+
+        const semainesRestantes = String(15 - sommeCharges!)
+
+        const quantite = Number(prompt("Entrez le nombre de semaines (max: " + semainesRestantes + ")", semainesRestantes))
+
+        if(isNaN(quantite)){
+            alert("Erreur lors de l'entrée du nombre")
+            return
+        }
 
         if(sommeCharges! + quantite > 15){
             alert("La quantité de semaines de ce groupe est trop grande. Veuillez choisir un autre groupe ou une autre quantité")
@@ -83,14 +87,6 @@ export default function(){
     }
 
     function newSelectionLiberation(ev: React.ChangeEvent<HTMLSelectElement>){
-        const quantite = Number(prompt("Entrez la quantité de libération en ETC", "0.00"))
-
-        if(isNaN(quantite)){
-            alert("Erreur lors de l'entrée du nombre")
-            return
-        }
-
-
         const enseignantID = Number(ev.target.dataset.enseignantId)
         const allocationID = Number(ev.target.options[ev.target.selectedIndex].dataset.id)
 
@@ -99,6 +95,15 @@ export default function(){
 
         const allocation = allocations?.find(allocation => allocation.id == allocationID)
         const qteAllocation = allocation?.quantite
+
+        const qteRestante = String((qteAllocation! - sommeLiberations!).toFixed(2))
+
+        const quantite = Number(prompt("Entrez la quantité de libération en ETC (max: " + qteRestante + ")", qteRestante))
+
+        if(isNaN(quantite)){
+            alert("Erreur lors de l'entrée du nombre")
+            return
+        }
 
         if(sommeLiberations! + quantite > qteAllocation!){
             alert("La quantité de libération est trop grande pour l'allocation. Veuillez choisir une autre quantité")
