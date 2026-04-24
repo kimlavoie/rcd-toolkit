@@ -198,15 +198,18 @@ export default function({session, tri}:any){
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const groupesSession = groupes?.filter((groupe: any) => groupe.session == session)
-                        const sortedGroupes = sortGroupes(groupesSession)
                         return <td key={enseignant.id}>
                             <select data-enseignant-id={enseignant.id} onChange={newSelectionGroupe} value="" style={{width: "50px"}}>
                                 <option></option>
-                                {sortedGroupes?.filter((groupe:any) => {
+                                {groupesSession?.filter((groupe:any) => {
                                     const chargesGroupe = charges?.filter(charge => charge.groupe == groupe.id)
                                     const sommeCharges = chargesGroupe?.reduce((somme, charge) => somme + charge.nbSemaines, 0)
                                     const chargeExiste = charges?.find(charge => charge.enseignant == enseignant.id && charge.groupe == groupe.id)
                                     return sommeCharges! < 15 && !chargeExiste
+                                })?.toSorted((a:any, b:any) => {
+                                    const coursA = cours?.find(cour => cour.id == a.cours)
+                                    const coursB = cours?.find(cour => cour.id == b.cours)
+                                    return coursA?.sigle.localeCompare(coursB?.sigle!)!
                                 })?.map((groupe: any, index:number) => {
                                     const cour = cours?.find(cour => cour.id == groupe.cours)
                                     return <option key={index} data-id={groupe.id}>
@@ -248,7 +251,9 @@ export default function({session, tri}:any){
                                     const liberationExiste = liberations?.find(liberation => liberation.enseignant == enseignant.id && liberation.allocation == allocation.id)
 
                                     return allocation.quantite - sommeLiberations! > 0.001  && !liberationExiste
-                                })?.map((allocation: any, index:number) => {
+                                })
+                                ?.toSorted((a:any, b:any) => a.description.localeCompare(b.description))
+                                ?.map((allocation: any, index:number) => {
                                     return <option key={index} data-id={allocation.id}>
                                         {allocation.code} - {allocation.description} ({allocation.quantite})
                                     </option>
