@@ -149,14 +149,21 @@ export default function(){
     function stagiairesHandler(ev:any){
         const enseignantId = Number(ev.target.dataset.enseignantId)
         const stageId = Number(ev.target.dataset.stageId)
+        const nouvelleValeur = Number(ev.target.value)
         const supervision = supervisions?.find(supervision => supervision.enseignant == enseignantId && supervision.stage == stageId)
-        console.log(supervision)
+        const supervisionsSimilaires = supervisions?.filter(supervision => supervision.stage == stageId && supervision.enseignant != enseignantId)
+        const sommeSupervisions = supervisionsSimilaires?.reduce((somme, supervision) => somme + supervision.nbStagiaires, 0)
+        const stage = stages?.find(stage => stage.id == stageId)
+
+        if(sommeSupervisions! + nouvelleValeur > stage?.nbStagiaires!){
+            alert("La quantité de stagiaires est trop grande pour ce stage. Veuillez choisir une autre quantité")
+            return
+        }
 
         if(supervision){
-            db.supervisions.update(Number(supervision.id), {nbStagiaires: Number(ev.target.value)})
+            db.supervisions.update(Number(supervision.id), {nbStagiaires: nouvelleValeur})
         } else {
-            console.log("Without supervision")
-            db.supervisions.add({enseignant: Number(ev.target.dataset.enseignantId), stage: Number(ev.target.dataset.stageId), nbStagiaires: Number(ev.target.value)})
+            db.supervisions.add({enseignant: enseignantId, stage: stageId, nbStagiaires: nouvelleValeur})
         }
     }
 
@@ -259,7 +266,6 @@ export default function(){
                         const stage = stages?.find(stage => stage.session == params.session)
                         const supervision = supervisions?.find(supervision => supervision.stage == stage?.id && supervision.enseignant == enseignant.id)
                         const value = supervision ? supervision.nbStagiaires : 0
-                        console.log(value)
                         return stage 
                             ?<td key={enseignant.id}>
                                 <p><input className="w-100" type="number" min="0" step="1" value={value} data-enseignant-id={enseignant.id} data-stage-id={stage.id} onChange={stagiairesHandler}/>/{stage.nbStagiaires}</p>
@@ -292,7 +298,7 @@ export default function(){
                         const stagesSession = stages?.filter(stage => stage.session == params.session)
                         const supervisionsSession = supervisionsEnseignant?.find(supervision => stagesSession?.find(stage => stage.id == supervision.stage))
                         const stagiaires = supervisionsSession?.nbStagiaires ?? 0
-                        const ETCparStagiaire = stagesSession?.[0].ETCparStagiaire ?? 0
+                        const ETCparStagiaire = stagesSession?.[0]?.ETCparStagiaire ?? 0
                         return <th key={enseignant.id}>
                             {calculateur(chargesInfos!, liberationsInfos!, stagiaires, ETCparStagiaire).total.toFixed(2)}
                         </th>
