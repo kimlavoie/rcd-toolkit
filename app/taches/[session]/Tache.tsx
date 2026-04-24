@@ -3,7 +3,6 @@
 import calculateur from "../../calculateur/calculateur"
 import { useLiveQuery } from "dexie-react-hooks"
 import { db } from "../../db/db"
-import { useParams } from "next/navigation"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import Liberation from "./Liberation"
 import Charge from "./Charge"
@@ -191,18 +190,14 @@ export default function({session}:any){
     }
 
     return <>
-    <h1>{saison} {annee}</h1>
-    <div style={{width: "100%"}}>
-        <table className="table table-bordered" data-toggle="table" data-resizable="true" >
-            <thead>
+            <tr><th colSpan={100} style={{fontSize: "1.5em", backgroundColor: "#eeeeee"}}>{saison} {annee}</th></tr>
+            
                 <tr>
                     <th>Enseignants</th>
                     {enseignants?.map(enseignant => (
                         <th key={enseignant.id}>{enseignant.prenom} {enseignant.nom}</th>
                     ))}
                 </tr>
-            </thead>
-            <tbody>
                 <tr>
                     <th>Ajouter un cours</th>
                     {enseignants?.map(enseignant => {
@@ -292,8 +287,6 @@ export default function({session}:any){
                             :<td key={enseignant.id}>Aucun stage</td>
                     })}
                 </tr>
-            </tbody>
-            <tfoot>
                 <tr>
                     <th>CI</th>
                     {enseignants?.map(enseignant => {
@@ -326,8 +319,5 @@ export default function({session}:any){
                         </th>
                     })}
                 </tr>
-            </tfoot>
-        </table>
-        </div>
     </>
 }

@@ -2,6 +2,7 @@
 import { useParams } from "next/navigation"
 import Tache from "./Tache"
 import { extractSessionInfos, makeSessionCode } from "@/app/utilities/sessions"
+import Summary from "./Summary"
 
 export default function(){
     const params = useParams()
@@ -18,7 +19,14 @@ export default function(){
     console.log(sessions)
 
     return <>
-        <Tache session={sessions[0]} />
-        <Tache session={sessions[1]} />
+    <div style={{width: "100%"}}>
+        <table className="table table-bordered">
+            <tbody>
+                <Tache session={sessions[0]} />
+                <Tache session={sessions[1]} />
+                <Summary sessions={sessions} />
+            </tbody>
+        </table>
+    </div>
     </>
 }
