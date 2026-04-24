@@ -21,7 +21,7 @@ export default function({sessions}:any){
                         let chargesInfos = chargesSession?.map(charge => {
                             const groupe = groupes?.find(groupe => groupe.id == charge.groupe)
                             const cour = cours?.find(cour => groupe?.cours == cour.id)
-                            return {sigle: cour?.sigle!, etudiants: groupe?.nbEtudiants!, heures: cour?.heuresTheorie! + cour?.heuresPratique!}
+                            return {sigle: cour?.sigle!, etudiants: groupe?.nbEtudiants!, heures: cour?.heuresTheorie! + cour?.heuresPratique!, semaines: charge.nbSemaines}
                         })
                         let liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
                         let allocationsSession = allocations?.filter(allocation => allocation.session == sessions[0])
@@ -43,7 +43,7 @@ export default function({sessions}:any){
                         chargesInfos = chargesSession?.map(charge => {
                             const groupe = groupes?.find(groupe => groupe.id == charge.groupe)
                             const cour = cours?.find(cour => groupe?.cours == cour.id)
-                            return {sigle: cour?.sigle!, etudiants: groupe?.nbEtudiants!, heures: cour?.heuresTheorie! + cour?.heuresPratique!}
+                            return {sigle: cour?.sigle!, etudiants: groupe?.nbEtudiants!, heures: cour?.heuresTheorie! + cour?.heuresPratique!, semaines: charge.nbSemaines}
                         })
                         liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
                         allocationsSession = allocations?.filter(allocation => allocation.session == sessions[1])
@@ -59,7 +59,7 @@ export default function({sessions}:any){
                         const CIH = calculateur(chargesInfos!, liberationsInfos!, stagiaires, ETCparStagiaire).total
 
                         const CI = CIA + CIH
-                        const couleur = CI < 30 ? "black" : CI < 40 ? "darkkhaki" : CI < 45 ? "green" : CI < 55 ? "orange" : "red"
+                        const couleur = CI < 70 ? "black" : CI < 80 ? "darkkhaki" : CI < 85 ? "green" : "red"
                         
                         
                         return <td key={enseignant.id} style={{color: couleur, backgroundColor: "#eeeeee"}}>

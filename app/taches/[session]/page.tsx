@@ -16,8 +16,6 @@ export default function(){
         sessions = [makeSessionCode("Automne", String(Number(annee)-1)),session]
     }
 
-    console.log(sessions)
-
     return <>
     <div style={{width: "100%"}}>
         <table className="table table-bordered">

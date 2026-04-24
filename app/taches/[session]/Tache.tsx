@@ -296,7 +296,7 @@ export default function({session}:any){
                         const chargesInfos = chargesSession?.map(charge => {
                             const groupe = groupes?.find(groupe => groupe.id == charge.groupe)
                             const cour = cours?.find(cour => groupe?.cours == cour.id)
-                            return {sigle: cour?.sigle!, etudiants: groupe?.nbEtudiants!, heures: cour?.heuresTheorie! + cour?.heuresPratique!}
+                            return {sigle: cour?.sigle!, etudiants: groupe?.nbEtudiants!, heures: cour?.heuresTheorie! + cour?.heuresPratique!, semaines: charge.nbSemaines}
                         })
 
                         const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)

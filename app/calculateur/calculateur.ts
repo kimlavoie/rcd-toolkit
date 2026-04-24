@@ -2,6 +2,7 @@ interface Groupe {
     sigle: string
     etudiants: number
     heures: number
+    semaines: number
 }
 
 interface Liberation {
@@ -35,7 +36,7 @@ export default function(groupes: Array<Groupe>, liberations: Array<Liberation>, 
         const preparation = notSeen ? groupe.heures * facteurPreparation : 0
         const prestation = groupe.heures * facteurPrestation
         const PES = groupe.heures * groupe.etudiants * facteurPES
-        const CI = preparation + prestation + PES
+        const CI = (preparation + prestation + PES) * (groupe.semaines/15)
 
         return { ...groupe, preparation, prestation, PES, CI }
     })
@@ -60,9 +61,7 @@ export default function(groupes: Array<Groupe>, liberations: Array<Liberation>, 
     vueCI.exceptions.stages = stagiaires * CIparStagiaire
 
     vueCI.total = 
-        vueCI.sommes.preparations + 
-        vueCI.sommes.prestations + 
-        vueCI.sommes.PES + 
+        vueCI.sommes.total + 
         vueCI.exceptions.PES415 + 
         vueCI.exceptions.NES160 + 
         vueCI.exceptions.NES75 +
