@@ -119,11 +119,17 @@ export default function(){
     }
 
     function stagiairesHandler(ev:any){
-        /* const iEnseignant = enseignants.findIndex((e: any) => e.id == Number(ev.target.dataset.enseignantId))
-        let enseignantsCopie = [...enseignants]
-        enseignantsCopie[iEnseignant].stagiaires = Number(ev.target.value)
-        setEnseignants(enseignantsCopie)
-        console.log(enseignantsCopie) */
+        const enseignantId = Number(ev.target.dataset.enseignantId)
+        const stageId = Number(ev.target.dataset.stageId)
+        const supervision = supervisions?.find(supervision => supervision.enseignant == enseignantId && supervision.stage == stageId)
+        console.log(supervision)
+
+        if(supervision){
+            db.supervisions.update(Number(supervision.id), {nbStagiaires: Number(ev.target.value)})
+        } else {
+            console.log("Without supervision")
+            db.supervisions.add({enseignant: Number(ev.target.dataset.enseignantId), stage: Number(ev.target.dataset.stageId), nbStagiaires: Number(ev.target.value)})
+        }
     }
 
     function sortGroupes(groupes:any){
@@ -216,11 +222,17 @@ export default function(){
                 </tr>
                 <tr>
                     <th>Stagiaires</th>
-                    {enseignants?.map(enseignant => (
-                        <td key={enseignant.id}>
-                            <input className="w-100" type="number" min="0" step="1" data-enseignant-id={enseignant.id} onChange={stagiairesHandler}/>
-                        </td>
-                    ))}
+                    {enseignants?.map(enseignant => {
+                        const stage = stages?.find(stage => stage.session == params.session)
+                        const supervision = supervisions?.find(supervision => supervision.stage == stage?.id && supervision.enseignant == enseignant.id)
+                        const value = supervision ? supervision.nbStagiaires : 0
+                        console.log(value)
+                        return stage 
+                            ?<td key={enseignant.id}>
+                                <p><input className="w-100" type="number" min="0" step="1" value={value} data-enseignant-id={enseignant.id} data-stage-id={stage.id} onChange={stagiairesHandler}/>/{stage.nbStagiaires}</p>
+                            </td>
+                            :<td key={enseignant.id}>Aucun stage</td>
+                    })}
                 </tr>
             </tbody>
             <tfoot>
