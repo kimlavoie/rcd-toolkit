@@ -25,16 +25,27 @@ export default function(){
     const {saison, annee} = extractSessionInfos(session)
 
     function newSelectionGroupe(ev: React.ChangeEvent<HTMLSelectElement>){
-
         const quantite = Number(prompt("Entrez le nombre de semaines", "15"))
 
         if(isNaN(quantite)){
             alert("Erreur lors de l'entrée du nombre")
             return
         }
+
+        const enseignantID = Number(ev.target.dataset.enseignantId)
+        const groupeID = Number(ev.target.options[ev.target.selectedIndex].dataset.id)
+
+        const chargesGroupe = charges?.filter(charge => charge.groupe == groupeID)
+        const sommeCharges = chargesGroupe?.reduce((somme, charge) => somme + charge.nbSemaines, 0)
+
+        if(sommeCharges! + quantite > 15){
+            alert("La quantité de semaines de ce groupe est trop grande. Veuillez choisir un autre groupe ou une autre quantité")
+            return
+        }
+
         const charge = {
-            enseignant: Number(ev.target.dataset.enseignantId),
-            groupe: Number(ev.target.options[ev.target.selectedIndex].dataset.id),
+            enseignant: enseignantID,
+            groupe: groupeID,
             nbSemaines: quantite
         }
 
@@ -156,8 +167,10 @@ export default function(){
                             <select data-enseignant-id={enseignant.id} onChange={newSelectionGroupe} value="">
                                 <option></option>
                                 {sortedGroupes?.filter((groupe:any) => {
-                                    const charge = charges?.find(charge => charge.groupe == groupe.id)
-                                    return charge == undefined
+                                    const chargesGroupe = charges?.filter(charge => charge.groupe == groupe.id)
+                                    const sommeCharges = chargesGroupe?.reduce((somme, charge) => somme + charge.nbSemaines, 0)
+                                    const chargeExiste = charges?.find(charge => charge.enseignant == enseignant.id && charge.groupe == groupe.id)
+                                    return sommeCharges! < 15 && !chargeExiste
                                 })?.map((groupe: any, index:number) => {
                                     const cour = cours?.find(cour => cour.id == groupe.cours)
                                     return <option key={index} data-id={groupe.id}>
