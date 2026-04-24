@@ -204,7 +204,7 @@ export default function({session}:any){
                         const groupesSession = groupes?.filter((groupe: any) => groupe.session == session)
                         const sortedGroupes = sortGroupes(groupesSession)
                         return <td key={enseignant.id}>
-                            <select data-enseignant-id={enseignant.id} onChange={newSelectionGroupe} value="">
+                            <select data-enseignant-id={enseignant.id} onChange={newSelectionGroupe} value="" style={{width: "50px"}}>
                                 <option></option>
                                 {sortedGroupes?.filter((groupe:any) => {
                                     const chargesGroupe = charges?.filter(charge => charge.groupe == groupe.id)
@@ -214,7 +214,7 @@ export default function({session}:any){
                                 })?.map((groupe: any, index:number) => {
                                     const cour = cours?.find(cour => cour.id == groupe.cours)
                                     return <option key={index} data-id={groupe.id}>
-                                        {cour?.sigle} - {cour?.nom.substring(0,20)} ({groupe.nbEtudiants})
+                                        {cour?.sigle} - {cour?.nom} ({groupe.nbEtudiants})
                                     </option>
                                 })}
                             </select>
@@ -242,17 +242,17 @@ export default function({session}:any){
                     {enseignants?.map(enseignant => {
                         const allocationsSession = allocations?.filter((allocation: any) => allocation.session == session)
                         return <td key={enseignant.id}>
-                            <select data-enseignant-id={enseignant.id} onChange={newSelectionLiberation} value="">
+                            <select data-enseignant-id={enseignant.id} onChange={newSelectionLiberation} value="" style={{width: "50px"}}>
                                 <option></option>
                                 {allocationsSession?.filter((allocation:any) => {
                                     const liberation = liberations?.filter(liberation => liberation.allocation == allocation.id)
                                     const sommeLiberations = liberation?.reduce((somme, liberation) => somme + liberation.quantite, 0)
                                     const liberationExiste = liberations?.find(liberation => liberation.enseignant == enseignant.id && liberation.allocation == allocation.id)
 
-                                    return sommeLiberations! < allocation.quantite && !liberationExiste
+                                    return allocation.quantite - sommeLiberations! > 0.001  && !liberationExiste
                                 })?.map((allocation: any, index:number) => {
                                     return <option key={index} data-id={allocation.id}>
-                                        {allocation.code} - {allocation.description.substring(0,20)} ({allocation.quantite})
+                                        {allocation.code} - {allocation.description} ({allocation.quantite})
                                     </option>
                                 })}
                             </select>
