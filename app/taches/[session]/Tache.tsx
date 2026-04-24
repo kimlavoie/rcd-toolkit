@@ -192,13 +192,7 @@ export default function({session, tri}:any){
     return <>
             <tr><th colSpan={100} style={{fontSize: "1.5em", backgroundColor: "#eeeeee"}}>{saison} {annee}</th></tr>
             
-                <tr>
-                    <th>Enseignants</th>
-                    {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
-                    .map(enseignant => (
-                        <th key={enseignant.id}>{enseignant.prenom} {enseignant.nom}</th>
-                    ))}
-                </tr>
+                
                 <tr>
                     <th>Ajouter un cours</th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
