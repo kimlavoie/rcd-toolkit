@@ -272,10 +272,30 @@ export default function(){
                 <tr>
                     <th>CI</th>
                     {enseignants?.map(enseignant => {
-                        return <th key={enseignant.id}>TODO</th>
-                        {/* <th key={enseignant.id}>
-                            {calculateur(enseignant.groupes, [{qte: enseignant.liberations}], enseignant.stagiaires).total}
-                        </th> */}
+                        const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
+                        const groupesSession = groupes?.filter(groupe => groupe.session == params.session)
+                        const chargesSession = chargesEnseignant?.filter(charge => groupesSession?.find(groupe => groupe.id == charge.groupe))
+                        const chargesInfos = chargesSession?.map(charge => {
+                            const groupe = groupes?.find(groupe => groupe.id == charge.groupe)
+                            const cour = cours?.find(cour => groupe?.cours == cour.id)
+                            return {sigle: cour?.sigle!, etudiants: groupe?.nbEtudiants!, heures: cour?.heuresTheorie! + cour?.heuresPratique!}
+                        })
+
+                        const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
+                        const allocationsSession = allocations?.filter(allocation => allocation.session == params.session)
+                        const liberationsSession = liberationsEnseignant?.filter(liberation => allocationsSession?.find(allocation => allocation.id == liberation.allocation))
+                        const liberationsInfos = liberationsSession?.map(liberation => {
+                            return {qte: liberation.quantite}
+                        })
+
+                        const supervisionsEnseignant = supervisions?.filter(supervision => supervision.enseignant == enseignant.id)
+                        const stagesSession = stages?.filter(stage => stage.session == params.session)
+                        const supervisionsSession = supervisionsEnseignant?.find(supervision => stagesSession?.find(stage => stage.id == supervision.stage))
+                        const stagiaires = supervisionsSession?.nbStagiaires ?? 0
+                        const ETCparStagiaire = stagesSession?.[0].ETCparStagiaire ?? 0
+                        return <th key={enseignant.id}>
+                            {calculateur(chargesInfos!, liberationsInfos!, stagiaires, ETCparStagiaire).total.toFixed(2)}
+                        </th>
                     })}
                 </tr>
             </tfoot>

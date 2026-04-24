@@ -6,7 +6,6 @@ interface Groupe {
 
 interface Liberation {
     qte: number
-    [key: string]: any
 }
 
 function coursUniques(groupes:Array<Groupe>){
@@ -24,13 +23,11 @@ function somme(tableau: Array<number>){
     return tableau.reduce((acc, n) => acc + n, 0)
 }
 
-export default function(groupes: Array<Groupe>, liberations: Array<Liberation>, stagiaires: number){
-    
-
+export default function(groupes: Array<Groupe>, liberations: Array<Liberation>, stagiaires: number, ETCparStagiaire: number){
     const facteurPreparation = calculerNbPrep(groupes)
     const facteurPrestation = 1.2
     const facteurPES = 0.04
-    const CIparStagiaire = 2.5
+    const CIparStagiaire = ETCparStagiaire * 40
 
     let vueCI:any = {} //define later
     vueCI.groupes = groupes.map((groupe, index, self) => {
