@@ -1,0 +1,8 @@
+- Pouvoir trier le tableau des tâches
+- Gérer les données directement dans les tableaux
+- Pouvoir trier et filtrer les données des tableaux
+- Pouvoir ajuster les colonnes des tâches
+- Pouvoir cacher et afficher des colonnes
+- Utiliser une vraie BD
+- Utiliser un système d'authentification
+- Mettre l'application disponible en ligne
