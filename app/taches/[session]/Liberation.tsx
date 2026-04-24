@@ -5,6 +5,7 @@ export default function({liberation, allocation, enseignantId, onRemove}: any){
     }
 
     return <div style={{border: "1px solid black"}} draggable="true" onDragStart={dragStartHandler}>      
-        {allocation.code} - {allocation.description} ({liberation.quantite}/{allocation.quantite}) <button onClick={ev => onRemove(liberation.id, enseignantId)}>X</button>
+        <p>{allocation.code} - {allocation.description}</p>
+        <p>({liberation.quantite}/{allocation.quantite}) <button onClick={ev => onRemove(liberation.id, enseignantId)}>X</button></p>  
     </div>
 }

@@ -61,6 +61,11 @@ export default function(){
 
     function dropHandlerGroupe(ev:any){
         const idNouveauEnseignant = ev.target.dataset.enseignantId
+
+        if(!idNouveauEnseignant){
+            return
+        }
+
         const idGroupe = ev.dataTransfer.getData("groupeId")
         const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
 
@@ -131,6 +136,11 @@ export default function(){
 
     function dropHandlerLiberation(ev:any){
         const idNouveauEnseignant = ev.target.dataset.enseignantId
+
+        if(!idNouveauEnseignant){
+            return
+        }
+
         const idLiberation = ev.dataTransfer.getData("liberationId")
         const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
 
@@ -311,8 +321,11 @@ export default function(){
                         const supervisionsSession = supervisionsEnseignant?.find(supervision => stagesSession?.find(stage => stage.id == supervision.stage))
                         const stagiaires = supervisionsSession?.nbStagiaires ?? 0
                         const ETCparStagiaire = stagesSession?.[0]?.ETCparStagiaire ?? 0
-                        return <th key={enseignant.id}>
-                            {calculateur(chargesInfos!, liberationsInfos!, stagiaires, ETCparStagiaire).total.toFixed(2)}
+
+                        const CI = calculateur(chargesInfos!, liberationsInfos!, stagiaires, ETCparStagiaire).total
+                        const couleur = CI < 30 ? "black" : CI < 40 ? "darkkhaki" : CI < 45 ? "green" : CI < 55 ? "orange" : "red"
+                        return <th key={enseignant.id} style={{color: couleur}}>
+                            {CI.toFixed(2)}
                         </th>
                     })}
                 </tr>
