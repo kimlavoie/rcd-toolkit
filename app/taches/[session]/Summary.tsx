@@ -14,7 +14,8 @@ export default function({sessions}:any){
     return <>
                 <tr>
                     <th style={{backgroundColor: "#eeeeee"}}>CI Annuelle</th>
-                    {enseignants?.map(enseignant => {
+                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    .map(enseignant => {
                         let chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
                         let groupesSession = groupes?.filter(groupe => groupe.session == sessions[0])
                         let chargesSession = chargesEnseignant?.filter(charge => groupesSession?.find(groupe => groupe.id == charge.groupe))

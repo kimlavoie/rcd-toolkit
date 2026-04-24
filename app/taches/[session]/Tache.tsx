@@ -194,13 +194,15 @@ export default function({session}:any){
             
                 <tr>
                     <th>Enseignants</th>
-                    {enseignants?.map(enseignant => (
+                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    .map(enseignant => (
                         <th key={enseignant.id}>{enseignant.prenom} {enseignant.nom}</th>
                     ))}
                 </tr>
                 <tr>
                     <th>Ajouter un cours</th>
-                    {enseignants?.map(enseignant => {
+                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    .map(enseignant => {
                         const groupesSession = groupes?.filter((groupe: any) => groupe.session == session)
                         const sortedGroupes = sortGroupes(groupesSession)
                         return <td key={enseignant.id}>
@@ -223,7 +225,8 @@ export default function({session}:any){
                 </tr>
                 <tr>
                     <th>Cours Attribués</th>
-                    {enseignants?.map(enseignant => {
+                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    .map(enseignant => {
                         const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
                         return <td key={enseignant.id} data-enseignant-id={enseignant.id} onDrop={dropHandlerGroupe} onDragOver={dragOverHandlerGroupe} style={{paddingBottom: "50px"}}>
                             {chargesEnseignant?.filter(charge => {
@@ -239,7 +242,8 @@ export default function({session}:any){
                 </tr>
                 <tr>
                     <th>Ajouter une libération</th>
-                    {enseignants?.map(enseignant => {
+                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    .map(enseignant => {
                         const allocationsSession = allocations?.filter((allocation: any) => allocation.session == session)
                         return <td key={enseignant.id}>
                             <select data-enseignant-id={enseignant.id} onChange={newSelectionLiberation} value="" style={{width: "50px"}}>
@@ -261,7 +265,8 @@ export default function({session}:any){
                 </tr>
                 <tr>
                     <th>Libérations Attribuées</th>
-                    {enseignants?.map(enseignant => {
+                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    .map(enseignant => {
                         const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
                         return <td key={enseignant.id} data-enseignant-id={enseignant.id} onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} style={{paddingBottom: "50px"}}>
                             {liberationsEnseignant?.filter(liberation => {
@@ -276,7 +281,8 @@ export default function({session}:any){
                 </tr>
                 <tr>
                     <th>Stagiaires</th>
-                    {enseignants?.map(enseignant => {
+                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    .map(enseignant => {
                         const stage = stages?.find(stage => stage.session == session)
                         const supervision = supervisions?.find(supervision => supervision.stage == stage?.id && supervision.enseignant == enseignant.id)
                         const value = supervision ? supervision.nbStagiaires : 0
@@ -289,7 +295,8 @@ export default function({session}:any){
                 </tr>
                 <tr>
                     <th>CI</th>
-                    {enseignants?.map(enseignant => {
+                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    .map(enseignant => {
                         const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
                         const groupesSession = groupes?.filter(groupe => groupe.session == session)
                         const chargesSession = chargesEnseignant?.filter(charge => groupesSession?.find(groupe => groupe.id == charge.groupe))
