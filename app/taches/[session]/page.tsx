@@ -54,15 +54,15 @@ export default function(){
 
         const ancienneCharge = charges?.find(charge => charge.enseignant == idAncienEnseignant && charge.groupe == idGroupe)
 
-        db.charges.delete(Number(ancienneCharge?.id))
-
         const nouvelleCharge = {
             enseignant: idNouveauEnseignant,
             groupe: idGroupe,
-            nbSemaines: 15
+            nbSemaines: ancienneCharge?.nbSemaines ?? 0
         }
 
         db.charges.add(nouvelleCharge)
+
+        db.charges.delete(Number(ancienneCharge?.id))
     }
 
     function removeHandlerGroupe(groupeId:any, enseignantId:any){
@@ -111,8 +111,6 @@ export default function(){
 
         db.liberations.delete(Number(ancienneLiberation?.id))
     }
-
-    
 
     function removeHandlerLiberation(liberationId:any, enseignantId:any){
         db.liberations.delete(Number(liberationId))        
