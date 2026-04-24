@@ -1,6 +1,5 @@
 'use client'
 
-import { use, useEffect, useState } from "react"
 import calculateur from "../../calculateur/calculateur"
 import { useLiveQuery } from "dexie-react-hooks"
 import { db } from "../../db/db"
