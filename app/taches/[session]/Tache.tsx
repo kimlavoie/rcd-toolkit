@@ -7,7 +7,7 @@ import { extractSessionInfos } from "@/app/utilities/sessions"
 import Liberation from "./Liberation"
 import Charge from "./Charge"
 
-export default function({session}:any){
+export default function({session, tri}:any){
     const enseignants = useLiveQuery(() => db.enseignants.toArray())
     const groupes = useLiveQuery(() => db.groupes.toArray())
     const cours = useLiveQuery(() => db.cours.toArray())
@@ -194,14 +194,14 @@ export default function({session}:any){
             
                 <tr>
                     <th>Enseignants</th>
-                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => (
                         <th key={enseignant.id}>{enseignant.prenom} {enseignant.nom}</th>
                     ))}
                 </tr>
                 <tr>
                     <th>Ajouter un cours</th>
-                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const groupesSession = groupes?.filter((groupe: any) => groupe.session == session)
                         const sortedGroupes = sortGroupes(groupesSession)
@@ -225,7 +225,7 @@ export default function({session}:any){
                 </tr>
                 <tr>
                     <th>Cours Attribués</th>
-                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
                         return <td key={enseignant.id} data-enseignant-id={enseignant.id} onDrop={dropHandlerGroupe} onDragOver={dragOverHandlerGroupe} style={{paddingBottom: "50px"}}>
@@ -242,7 +242,7 @@ export default function({session}:any){
                 </tr>
                 <tr>
                     <th>Ajouter une libération</th>
-                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const allocationsSession = allocations?.filter((allocation: any) => allocation.session == session)
                         return <td key={enseignant.id}>
@@ -265,7 +265,7 @@ export default function({session}:any){
                 </tr>
                 <tr>
                     <th>Libérations Attribuées</th>
-                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
                         return <td key={enseignant.id} data-enseignant-id={enseignant.id} onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} style={{paddingBottom: "50px"}}>
@@ -281,7 +281,7 @@ export default function({session}:any){
                 </tr>
                 <tr>
                     <th>Stagiaires</th>
-                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const stage = stages?.find(stage => stage.session == session)
                         const supervision = supervisions?.find(supervision => supervision.stage == stage?.id && supervision.enseignant == enseignant.id)
@@ -295,7 +295,7 @@ export default function({session}:any){
                 </tr>
                 <tr>
                     <th>CI</th>
-                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
                         const groupesSession = groupes?.filter(groupe => groupe.session == session)

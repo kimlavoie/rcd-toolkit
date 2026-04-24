@@ -2,7 +2,7 @@ import calculateur from "@/app/calculateur/calculateur"
 import { db } from "@/app/db/db"
 import { useLiveQuery } from "dexie-react-hooks"
 
-export default function({sessions}:any){
+export default function({sessions, tri}:any){
     const enseignants = useLiveQuery(() => db.enseignants.toArray())
     const liberations = useLiveQuery(() => db.liberations.toArray())
     const allocations = useLiveQuery(() => db.allocations.toArray())
@@ -14,7 +14,7 @@ export default function({sessions}:any){
     return <>
                 <tr>
                     <th style={{backgroundColor: "#eeeeee"}}>CI Annuelle</th>
-                    {enseignants?.toSorted((a, b) => a.prenom.localeCompare(b.prenom))
+                    {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         let chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
                         let groupesSession = groupes?.filter(groupe => groupe.session == sessions[0])
