@@ -3,6 +3,7 @@ import { useState } from "react"
 
 export default function({charge, groupe, cours, enseignantId, onRemove}: any){
     const [hideMenu, setHideMenu] = useState(true)
+    const [position, setPosition] = useState({left: "0px", top: "0px"})
     function dragStartHandler(ev: any){
         ev.dataTransfer.setData("groupeId", groupe.id)
         ev.dataTransfer.setData("enseignantId", enseignantId)
@@ -10,12 +11,14 @@ export default function({charge, groupe, cours, enseignantId, onRemove}: any){
 
     function openMenu(ev: any){
         ev.preventDefault()
-        setHideMenu(!hideMenu)
+        setHideMenu(false)
+        setPosition({left: ev.clientX + "px", top: ev.clientY + "px"})
     }
 
     function supprimer(ev: any){
         onRemove(groupe.id, enseignantId)
         setHideMenu(true)
+        
     }
 
     async function changerSemaines(ev: any){
@@ -47,11 +50,11 @@ export default function({charge, groupe, cours, enseignantId, onRemove}: any){
         db.charges.update(charge.id, nouvelleCharge)
     }
 
-    return <div onContextMenu={openMenu} style={{border: "1px solid black", backgroundColor: cours.couleur}} draggable="true" onDragStart={dragStartHandler}>      
+    return <div onContextMenu={openMenu} onMouseLeave={ev => setHideMenu(true)} style={{border: "1px solid black", backgroundColor: cours.couleur}} draggable="true" onDragStart={dragStartHandler}>      
         <p style={{fontWeight: "bold"}}>{cours.sigle}</p>
         <p><span style={{fontWeight: "bold"}}>{cours.nom}</span> ({groupe.nbEtudiants})</p>
         {charge.nbSemaines < 15 && <p>Semaines: [{charge.nbSemaines}/15]</p> }
-        <div style={{position: "absolute", backgroundColor: "darkgrey", display: "block", margin: "10px"}} hidden={hideMenu}>
+        <div style={{position: "absolute", left: position.left, top: position.top, backgroundColor: "darkgrey", display: "block", padding: "2px"}} hidden={hideMenu}>
             <p><button onClick={supprimer}>Supprimer</button></p>
             <p><button onClick={changerSemaines}>Changer les semaines</button></p>
         </div>
