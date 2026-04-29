@@ -54,11 +54,11 @@ export default function({session, charge, groupe, cours, enseignantId, onRemove}
         <p style={{fontWeight: "bold"}}>{cours.sigle}</p>
         <p><span style={{fontWeight: "bold"}}>{cours.nom}</span> ({groupe.nbEtudiants})</p>
         {charge.nbSemaines < 15 && <p>Semaines: [{charge.nbSemaines}/15]</p> }
-        <div style={{position: "absolute", left: position.left, top: position.top, backgroundColor: "darkgrey", display: "block", padding: "2px"}} hidden={hideMenu}>
-            <p><button onClick={supprimer}>Supprimer</button></p>
-            <p><button onClick={changerSemaines}>Changer les semaines</button></p>
-            <p><button onClick={ev => window.open("/admin/cours/" + cours.id, "_blank")}>Modifier le cours</button></p>
-            <p><button onClick={ev => window.open("/admin/groupes/" + session + "/" + groupe.id, "_blank")}>Modifier le groupe</button></p>
+        <div style={{position: "absolute", left: position.left, top: position.top, backgroundColor: "darkgrey", display: "block", padding: "5px"}} hidden={hideMenu}>
+            <p><button style={{width: "100%"}} onClick={supprimer}>Supprimer</button></p>
+            <p><button style={{width: "100%"}} onClick={changerSemaines}>Changer les semaines</button></p>
+            <p><button style={{width: "100%"}} onClick={ev => window.open("/admin/cours/" + cours.id, "_blank")}>Modifier le cours</button></p>
+            <p><button style={{width: "100%"}} onClick={ev => window.open("/admin/groupes/" + session + "/" + groupe.id, "_blank")}>Modifier le groupe</button></p>
         </div>
         <p></p>
     </div>

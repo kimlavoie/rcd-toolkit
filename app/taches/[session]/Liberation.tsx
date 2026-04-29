@@ -59,10 +59,10 @@ export default function({session, liberation, allocation, enseignantId, onRemove
     return <div onContextMenu={openMenu} onMouseLeave={ev => setHideMenu(true)} style={{border: "1px solid black"}} draggable="true" onDragStart={dragStartHandler}>      
         <p>{allocation.code} - {allocation.description}</p>
         <p>({liberation.quantite}/{allocation.quantite})</p>
-        <div style={{position: "absolute", left: position.left, top: position.top, backgroundColor: "darkgrey", display: "block", padding: "2px"}} hidden={hideMenu}>
-            <p><button onClick={supprimer}>Supprimer</button></p>
-            <p><button onClick={changerQuantite}>Changer la quantité</button></p>
-            <p><button onClick={modifierAllocation}>Modifier l'allocation</button></p>
+        <div style={{position: "absolute", left: position.left, top: position.top, backgroundColor: "darkgrey", display: "block", padding: "5px"}} hidden={hideMenu}>
+            <p><button style={{width: "100%"}} onClick={supprimer}>Supprimer</button></p>
+            <p><button style={{width: "100%"}} onClick={changerQuantite}>Changer la quantité</button></p>
+            <p><button style={{width: "100%"}} onClick={modifierAllocation}>Modifier l'allocation</button></p>
         </div>
     </div>
 }
