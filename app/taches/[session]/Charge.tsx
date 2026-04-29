@@ -25,10 +25,8 @@ export default function({charge, groupe, cours, enseignantId, onRemove}: any){
         const sommeCharges = chargesGroupe?.reduce((somme, charge) => somme + charge.nbSemaines, 0)
 
         const semainesRestantes = String(15 - sommeCharges! + charge.nbSemaines)
-        console.log(sommeCharges!, charge.nbSemaines, semainesRestantes)
 
         const quantite = Number(prompt("Entrez le nombre de semaines (max: " + semainesRestantes + ")", semainesRestantes))
-        console.log(quantite)
 
         if(quantite <= 0){
             return
