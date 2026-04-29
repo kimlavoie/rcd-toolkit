@@ -25,7 +25,6 @@ export default function({liberation, allocation, enseignantId, onRemove}: any){
     async function changerQuantite(ev: any){
         setHideMenu(true)
         const liberations = await db.liberations.toArray()
-        const allocations = await db.allocations.toArray()
 
         const liberationsAllocation = liberations?.filter(liberation => liberation.allocation == allocation?.id)
         const sommeLiberations = liberationsAllocation?.reduce((somme, liberation) => somme + liberation.quantite, 0)
@@ -45,7 +44,7 @@ export default function({liberation, allocation, enseignantId, onRemove}: any){
             return
         }
 
-        if(sommeLiberations! + quantite > qteAllocation!){
+        if(sommeLiberations! + quantite - liberation.quantite > qteAllocation!){
             alert("La quantité de libération est trop grande pour l'allocation. Veuillez choisir une autre quantité")
             return
         }
