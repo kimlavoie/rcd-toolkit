@@ -56,6 +56,7 @@ export default function({session, tri}:any){
     }
 
     function dropHandlerGroupe(ev:any){
+        ev.target.style.border = "1px solid #dee2e6"
         const idNouveauEnseignant = ev.target.dataset.enseignantId
 
         if(!idNouveauEnseignant){
@@ -131,6 +132,7 @@ export default function({session, tri}:any){
     }
 
     function dropHandlerLiberation(ev:any){
+        ev.target.style.border = "1px solid #dee2e6"
         const idNouveauEnseignant = ev.target.dataset.enseignantId
 
         if(!idNouveauEnseignant){
@@ -185,9 +187,21 @@ export default function({session, tri}:any){
         }
     }
 
-    function sortGroupes(groupes:any){
-        return groupes
+    function dragEnter(ev:any){
+        if(ev.target.dataset.dropzone == "liberation" && ev.dataTransfer.types.includes("liberationid")){
+            ev.target.style.border = "2px solid red"
+        }
+        if(ev.target.dataset.dropzone == "charge" && ev.dataTransfer.types.includes("groupeid")){
+            ev.target.style.border = "2px solid red"
+        }
     }
+    
+    function dragLeave(ev:any){
+        if(ev.target.dataset.dropzone){
+            ev.target.style.border = "1px solid #dee2e6"
+        }
+    }
+
 
     return <>
             <tr><th colSpan={100} style={{fontSize: "1.5em", backgroundColor: "#eeeeee"}}>{saison} {annee}</th></tr>
@@ -225,7 +239,7 @@ export default function({session, tri}:any){
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
-                        return <td key={enseignant.id} data-enseignant-id={enseignant.id} onDrop={dropHandlerGroupe} onDragOver={dragOverHandlerGroupe} style={{paddingBottom: "50px"}}>
+                        return <td key={enseignant.id} data-dropzone="charge" data-enseignant-id={enseignant.id} onDrop={dropHandlerGroupe} onDragOver={dragOverHandlerGroupe} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px"}}>
                             {chargesEnseignant?.filter(charge => {
                                 const groupe = groupes?.find(groupe => charge.groupe == groupe.id)
                                 return groupe?.session == session
@@ -267,7 +281,7 @@ export default function({session, tri}:any){
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
-                        return <td key={enseignant.id} data-enseignant-id={enseignant.id} onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} style={{paddingBottom: "50px"}}>
+                        return <td key={enseignant.id} data-enseignant-id={enseignant.id} data-dropzone="liberation" onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px"}}>
                             {liberationsEnseignant?.filter(liberation => {
                                 const allocation:any = allocations?.find(allocation => liberation.allocation == allocation.id)
                                 return allocation?.session == session
