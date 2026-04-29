@@ -194,7 +194,7 @@ export default function({session, tri}:any){
             
                 
                 <tr>
-                    <th>Ajouter un cours</th>
+                    <th>Attribuer un cours</th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const groupesSession = groupes?.filter((groupe: any) => groupe.session == session)
@@ -232,13 +232,13 @@ export default function({session, tri}:any){
                             })?.map((charge: any) => {
                                 const groupe = groupes?.find(groupe => charge.groupe == groupe.id)
                                 const cour = cours?.find(cour => groupe?.cours == cour.id)
-                                return <Charge key={groupe?.id} charge={charge} groupe={groupe} cours={cour} enseignantId={enseignant.id} onRemove={removeHandlerGroupe}/>
+                                return <Charge key={groupe?.id} session={session} charge={charge} groupe={groupe} cours={cour} enseignantId={enseignant.id} onRemove={removeHandlerGroupe}/>
                             })}
                         </td>
                     })}
                 </tr>
                 <tr>
-                    <th>Ajouter une libération</th>
+                    <th>Attribuer une libération</th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const allocationsSession = allocations?.filter((allocation: any) => allocation.session == session)

@@ -1,7 +1,7 @@
 import { db } from "@/app/db/db"
 import { useState } from "react"
 
-export default function({charge, groupe, cours, enseignantId, onRemove}: any){
+export default function({session, charge, groupe, cours, enseignantId, onRemove}: any){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: "0px", top: "0px"})
     function dragStartHandler(ev: any){
@@ -57,6 +57,8 @@ export default function({charge, groupe, cours, enseignantId, onRemove}: any){
         <div style={{position: "absolute", left: position.left, top: position.top, backgroundColor: "darkgrey", display: "block", padding: "2px"}} hidden={hideMenu}>
             <p><button onClick={supprimer}>Supprimer</button></p>
             <p><button onClick={changerSemaines}>Changer les semaines</button></p>
+            <p><button onClick={ev => window.open("/admin/cours/" + cours.id, "_blank")}>Modifier le cours</button></p>
+            <p><button onClick={ev => window.open("/admin/groupes/" + session + "/" + groupe.id, "_blank")}>Modifier le groupe</button></p>
         </div>
         <p></p>
     </div>
