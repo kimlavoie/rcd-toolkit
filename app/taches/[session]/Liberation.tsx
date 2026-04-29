@@ -1,7 +1,7 @@
 import { db } from "@/app/db/db"
 import { useState } from "react"
 
-export default function({liberation, allocation, enseignantId, onRemove}: any){
+export default function({session, liberation, allocation, enseignantId, onRemove}: any){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: "0px", top: "0px"})
 
@@ -52,12 +52,17 @@ export default function({liberation, allocation, enseignantId, onRemove}: any){
         db.liberations.update(liberation.id, nouvelleLiberation)
     }
 
+    function modifierAllocation(ev: any){
+        window.open("/admin/allocations/" + session + "/" + allocation.id, "_blank")
+    }
+
     return <div onContextMenu={openMenu} onMouseLeave={ev => setHideMenu(true)} style={{border: "1px solid black"}} draggable="true" onDragStart={dragStartHandler}>      
         <p>{allocation.code} - {allocation.description}</p>
         <p>({liberation.quantite}/{allocation.quantite})</p>
         <div style={{position: "absolute", left: position.left, top: position.top, backgroundColor: "darkgrey", display: "block", padding: "2px"}} hidden={hideMenu}>
             <p><button onClick={supprimer}>Supprimer</button></p>
             <p><button onClick={changerQuantite}>Changer la quantité</button></p>
+            <p><button onClick={modifierAllocation}>Modifier l'allocation</button></p>
         </div>
     </div>
 }

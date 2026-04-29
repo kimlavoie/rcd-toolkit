@@ -273,7 +273,7 @@ export default function({session, tri}:any){
                                 return allocation?.session == session
                             })?.map((liberation: any) => {
                                 const allocation:any = allocations?.find(allocation => liberation.allocation == allocation.id)
-                                return <Liberation key={liberation?.id} liberation={liberation} allocation={allocation} enseignantId={enseignant.id} onRemove={removeHandlerLiberation}/>
+                                return <Liberation key={liberation?.id} session={session} liberation={liberation} allocation={allocation} enseignantId={enseignant.id} onRemove={removeHandlerLiberation}/>
                             })}
                         </td>
                     })}
