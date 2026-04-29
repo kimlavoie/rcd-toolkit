@@ -1,11 +1,64 @@
+import { db } from "@/app/db/db"
+import { useState } from "react"
+
 export default function({liberation, allocation, enseignantId, onRemove}: any){
+    const [hideMenu, setHideMenu] = useState(true)
+    const [position, setPosition] = useState({left: "0px", top: "0px"})
+
     function dragStartHandler(ev: any){
         ev.dataTransfer.setData("liberationId", liberation.id)
         ev.dataTransfer.setData("enseignantId", enseignantId)
     }
 
-    return <div style={{border: "1px solid black"}} draggable="true" onDragStart={dragStartHandler}>      
+    function openMenu(ev: any){
+        ev.preventDefault()
+        setHideMenu(false)
+        setPosition({left: ev.clientX + "px", top: ev.clientY + "px"})
+    }
+
+    function supprimer(ev: any){
+        onRemove(liberation.id, enseignantId)
+        setHideMenu(true)
+        
+    }
+
+    async function changerQuantite(ev: any){
+        setHideMenu(true)
+        const liberations = await db.liberations.toArray()
+        const allocations = await db.allocations.toArray()
+
+        const liberationsAllocation = liberations?.filter(liberation => liberation.allocation == allocation?.id)
+        const sommeLiberations = liberationsAllocation?.reduce((somme, liberation) => somme + liberation.quantite, 0)
+
+        const qteAllocation = allocation?.quantite
+
+        const qteRestante = String((qteAllocation! - sommeLiberations! + liberation.quantite).toFixed(2))
+
+        const quantite = Number(prompt("Entrez la quantité de libération en ETC (max: " + qteRestante + ")", qteRestante))
+
+        if(quantite <= 0){
+            return
+        }
+
+        if(isNaN(quantite)){
+            alert("Erreur lors de l'entrée du nombre")
+            return
+        }
+
+        if(sommeLiberations! + quantite > qteAllocation!){
+            alert("La quantité de libération est trop grande pour l'allocation. Veuillez choisir une autre quantité")
+            return
+        }
+        const nouvelleLiberation = {quantite: quantite}
+        db.liberations.update(liberation.id, nouvelleLiberation)
+    }
+
+    return <div onContextMenu={openMenu} onMouseLeave={ev => setHideMenu(true)} style={{border: "1px solid black"}} draggable="true" onDragStart={dragStartHandler}>      
         <p>{allocation.code} - {allocation.description}</p>
-        <p>({liberation.quantite}/{allocation.quantite}) <button onClick={ev => onRemove(liberation.id, enseignantId)}>X</button></p>  
+        <p>({liberation.quantite}/{allocation.quantite})</p>
+        <div style={{position: "absolute", left: position.left, top: position.top, backgroundColor: "darkgrey", display: "block", padding: "2px"}} hidden={hideMenu}>
+            <p><button onClick={supprimer}>Supprimer</button></p>
+            <p><button onClick={changerQuantite}>Changer la quantité</button></p>
+        </div>
     </div>
 }
