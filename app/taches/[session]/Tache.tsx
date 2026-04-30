@@ -56,8 +56,8 @@ export default function({session, tri}:any){
     }
 
     function dropHandlerGroupe(ev:any){
-        ev.target.style.border = "1px solid #dee2e6"
-        const idNouveauEnseignant = ev.target.dataset.enseignantId
+        ev.currentTarget.style.border = "1px solid #dee2e6"
+        const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
 
         if(!idNouveauEnseignant){
             return
@@ -132,8 +132,8 @@ export default function({session, tri}:any){
     }
 
     function dropHandlerLiberation(ev:any){
-        ev.target.style.border = "1px solid #dee2e6"
-        const idNouveauEnseignant = ev.target.dataset.enseignantId
+        ev.currentTarget.style.border = "1px solid #dee2e6"
+        const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
 
         if(!idNouveauEnseignant){
             return
@@ -188,11 +188,11 @@ export default function({session, tri}:any){
     }
 
     function dragEnter(ev:any){
-        if(ev.target.dataset.dropzone == "liberation" && ev.dataTransfer.types.includes("liberationid")){
-            ev.target.style.border = "2px solid red"
+        if(ev.currentTarget.dataset.dropzone == "liberation" && ev.dataTransfer.types.includes("liberationid")){
+            ev.currentTarget.style.border = "2px solid red"
         }
-        if(ev.target.dataset.dropzone == "charge" && ev.dataTransfer.types.includes("groupeid")){
-            ev.target.style.border = "2px solid red"
+        if(ev.currentTarget.dataset.dropzone == "charge" && ev.dataTransfer.types.includes("groupeid")){
+            ev.currentTarget.style.border = "2px solid red"
         }
     }
     
