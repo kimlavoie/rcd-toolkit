@@ -57,14 +57,14 @@ export default function({session, tri}:any){
 
     function dropHandlerGroupe(ev:any){
         ev.currentTarget.style.border = "1px solid #dee2e6"
-        const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
+        const idNouveauEnseignant = Number(ev.currentTarget.dataset.enseignantId)
 
         if(!idNouveauEnseignant){
             return
         }
 
-        const idGroupe = ev.dataTransfer.getData("groupeId")
-        const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
+        const idGroupe = Number(ev.dataTransfer.getData("groupeId"))
+        const idAncienEnseignant = Number(ev.dataTransfer.getData("enseignantId"))
 
         const ancienneCharge = charges?.find(charge => charge.enseignant == idAncienEnseignant && charge.groupe == idGroupe)
 
@@ -133,14 +133,14 @@ export default function({session, tri}:any){
 
     function dropHandlerLiberation(ev:any){
         ev.currentTarget.style.border = "1px solid #dee2e6"
-        const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
+        const idNouveauEnseignant = Number(ev.currentTarget.dataset.enseignantId)
 
         if(!idNouveauEnseignant){
             return
         }
 
-        const idLiberation = ev.dataTransfer.getData("liberationId")
-        const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
+        const idLiberation = Number(ev.dataTransfer.getData("liberationId"))
+        const idAncienEnseignant = Number(ev.dataTransfer.getData("enseignantId"))
 
         const ancienneLiberation = liberations?.find(liberation => liberation.enseignant == idAncienEnseignant && liberation.id == idLiberation)
 
