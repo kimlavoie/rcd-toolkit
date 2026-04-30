@@ -45,6 +45,7 @@ export default function(){
                 <Summary sessions={sessions} tri={tri}/>
             </tbody>
         </table>
+        <p><button onClick={ev => window.open("/db/export/", "_blank")}>Sauvegarder les données</button></p>
     </div>
     </>
 }
