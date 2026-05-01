@@ -323,7 +323,7 @@ export default function({session, tri}:any){
                     })}
                 </tr>
                 <tr>
-                    <th>CI</th>
+                    <th>CI Session</th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
