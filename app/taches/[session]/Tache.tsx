@@ -166,6 +166,13 @@ export default function({session, tri}:any){
         db.liberations.delete(Number(liberationId))        
     }
 
+    function stagiairesRestants(){
+        const stage = stages?.find(stage => stage.session == session)
+        const supervisionsSimilaires = supervisions?.filter(supervision => supervision.stage == stage?.id)
+        const sommeSupervisions = supervisionsSimilaires?.reduce((somme, supervision) => somme + supervision.nbStagiaires, 0)
+        return stage?.nbStagiaires! - sommeSupervisions!
+    }
+
     function stagiairesHandler(ev:any){
         const enseignantId = Number(ev.target.dataset.enseignantId)
         const stageId = Number(ev.target.dataset.stageId)
@@ -293,7 +300,16 @@ export default function({session, tri}:any){
                     })}
                 </tr>
                 <tr>
-                    <th>Stagiaires</th>
+                    <th>
+                        <p>Stagiaires</p> 
+                        <p>{
+                            !isNaN(stagiairesRestants())
+                            && (stagiairesRestants() > 0
+                            ?<span style={{color: "red"}}>{stagiairesRestants()} restants</span>
+                            :<span style={{color: "green"}}>{stagiairesRestants()} restants</span>)
+                        }
+                        </p>
+                    </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const stage = stages?.find(stage => stage.session == session)
