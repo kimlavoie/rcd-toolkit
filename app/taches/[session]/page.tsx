@@ -15,12 +15,72 @@ export default function(){
     const params = useParams()
     const session = params.session
     const {saison, annee} = extractSessionInfos(String(session))
-    let sessions = []
+    let sessions: Array<string> = []
 
     if(saison == "Automne"){
-        sessions = [session, makeSessionCode("Hiver", String(Number(annee)+1))]
+        sessions = [String(session), makeSessionCode("Hiver", String(Number(annee)+1))]
     } else{
-        sessions = [makeSessionCode("Automne", String(Number(annee)-1)),session]
+        sessions = [makeSessionCode("Automne", String(Number(annee)-1)), String(session)]
+    }
+
+    async function validerSession(session: string){
+        const charges = await db.charges.toArray()
+        const liberations = await db.liberations.toArray()
+        const stages = await db.stages.toArray()
+        const supervisions = await db.supervisions.toArray()
+        const groupes = await db.groupes.toArray()
+        const allocations = await db.allocations.toArray()
+
+        const allocationsSession = allocations.filter(allocation => allocation.session == session)
+        const groupesSession = groupes.filter(groupe => groupe.session == session)
+
+        const liberationsManquantes = allocationsSession.filter(allocation => {
+            const liberation = liberations.filter(liberation => liberation.allocation == allocation.id)
+            const sommeLiberations = liberation.reduce((somme, liberation) => somme + liberation.quantite, 0)
+            return allocation.quantite - sommeLiberations > 0.001
+        })
+        console.log(liberationsManquantes)
+
+        const chargesManquantes = groupesSession.filter(groupe => {
+            const charge = charges.filter(charge => charge.groupe == groupe.id)
+            const sommeCharges = charge.reduce((somme, charge) => somme + charge.nbSemaines, 0)
+            return 15 - sommeCharges > 0.001
+        })
+
+        const stage = stages?.find(stage => stage.session == session)
+        const supervisionsSimilaires = supervisions?.filter(supervision => supervision.stage == stage?.id)
+        const sommeSupervisions = supervisionsSimilaires?.reduce((somme, supervision) => somme + supervision.nbStagiaires, 0)
+        const stagiairesRestants = stage?.nbStagiaires! - sommeSupervisions!
+
+        let rapport = ""
+
+        if(liberationsManquantes.length > 0){
+            rapport += `Libérations manquantes: ${liberationsManquantes.length}\n`
+        }
+        if(chargesManquantes.length > 0){
+            rapport += `Charges manquantes: ${chargesManquantes.length}\n`
+        }
+        if(stagiairesRestants > 0){
+            rapport += `Stagiaires manquants: ${stagiairesRestants}\n`
+        }
+
+        return rapport
+    }
+
+    async function valider(){
+        const sessionAutomne = await validerSession(sessions[0])
+        const sessionHiver = await validerSession(sessions[1])
+        
+        let rapportFinal = ""
+        if(sessionAutomne.length > 0){
+            rapportFinal += `Session ${sessions[0]}:\n${sessionAutomne}\n`
+        }
+        if(sessionHiver.length > 0){
+            rapportFinal += `Session ${sessions[1]}:\n${sessionHiver}`
+        }
+        rapportFinal = rapportFinal == "" ? "Toutes les tâches sont validées" : rapportFinal
+
+        alert(rapportFinal)
     }
 
     return <>
@@ -45,7 +105,10 @@ export default function(){
                 <Summary sessions={sessions} tri={tri}/>
             </tbody>
         </table>
-        <p><button onClick={ev => window.open("/db/export/", "_blank")}>Sauvegarder les données</button></p>
+        <p>
+            <button onClick={ev => window.open("/db/export/", "_blank")}>Sauvegarder les données</button>
+            <button onClick={valider}>Valider les tâches</button>
+        </p>
     </div>
     </>
 }
