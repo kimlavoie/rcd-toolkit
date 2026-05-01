@@ -47,7 +47,7 @@ export default function({session, liberation, allocation, enseignantId, onRemove
             return
         }
 
-        if(sommeLiberations! + quantite - liberation.quantite > qteAllocation!){
+        if(sommeLiberations! + quantite - liberation.quantite - qteAllocation! > 0.001){
             alert("La quantité de libération est trop grande pour l'allocation. Veuillez choisir une autre quantité")
             return
         }
