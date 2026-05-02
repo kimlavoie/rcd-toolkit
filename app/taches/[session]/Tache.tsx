@@ -166,6 +166,33 @@ export default function({session, tri}:any){
         db.liberations.delete(Number(liberationId))        
     }
 
+    function chargesManquantes(session:string){
+        const groupesSession = groupes?.filter(groupe => groupe.session == session)
+
+        const chargesManquantes = groupesSession?.filter(groupe => {
+            const charge = charges?.filter(charge => charge.groupe == groupe.id)
+            const sommeCharges = charge?.reduce((somme, charge) => somme + charge.nbSemaines, 0)
+            return 15 - sommeCharges! > 0.001
+        })
+
+        return chargesManquantes?.length
+
+    }
+
+    function liberationsManquantes(session:string){
+
+
+        const allocationsSession = allocations?.filter(allocation => allocation.session == session)
+
+        const liberationsManquantes = allocationsSession?.filter(allocation => {
+            const liberation = liberations?.filter(liberation => liberation.allocation == allocation.id)
+            const sommeLiberations = liberation?.reduce((somme, liberation) => somme + liberation.quantite, 0)
+            return allocation.quantite - sommeLiberations! > 0.001
+        })
+
+        return liberationsManquantes?.length
+    }
+
     function stagiairesRestants(){
         const stage = stages?.find(stage => stage.session == session)
         const supervisionsSimilaires = supervisions?.filter(supervision => supervision.stage == stage?.id)
@@ -215,7 +242,15 @@ export default function({session, tri}:any){
             
                 
                 <tr>
-                    <th>Attribuer un cours</th>
+                    <th>
+                        <p>Attribuer un cours</p>
+                        <p>{
+                            chargesManquantes(session)! > 0
+                            ?<span style={{color: "red"}}>{chargesManquantes(session)!} restants</span>
+                            :<span style={{color: "green"}}>{chargesManquantes(session)!} restants</span>
+                        }
+                        </p>
+                    </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const groupesSession = groupes?.filter((groupe: any) => groupe.session == session)
@@ -259,7 +294,15 @@ export default function({session, tri}:any){
                     })}
                 </tr>
                 <tr>
-                    <th>Attribuer une libération</th>
+                    <th>
+                        <p>Attribuer une libération</p>
+                        <p>{
+                            liberationsManquantes(session)! > 0
+                            ?<span style={{color: "red"}}>{liberationsManquantes(session)!} restants</span>
+                            :<span style={{color: "green"}}>{liberationsManquantes(session)!} restants</span>
+                        }
+                        </p>
+                    </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const allocationsSession = allocations?.filter((allocation: any) => allocation.session == session)
