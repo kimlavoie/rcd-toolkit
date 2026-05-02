@@ -29,7 +29,7 @@ export default function({id, onSubmit}:any){
     return <>
         <form onSubmit={submit}>
             <p><SelectSession code={session} onChange={setSession} /></p>
-            <p><label>ETC par stagiaire: <input type="number" min="0" max="1" step="0.01" name="ETCparStagiaire" value={ETCparStagiaire} onChange={(ev) => setETCparStagiaire(Number(ev.target.value))} /></label></p>
+            <p><label>ETC par stagiaire: <input type="number" min="0" max="1" step="0.001" name="ETCparStagiaire" value={ETCparStagiaire} onChange={(ev) => setETCparStagiaire(Number(ev.target.value))} /></label></p>
             <p><label>Nombre de stagiaires: <input type="number" min="0" name="nbStagiaires" value={nbStagiaires} onChange={(ev) => setNbStagiaires(Number(ev.target.value))} /></label></p>
             
             <input type="submit" value="Envoyer" />
