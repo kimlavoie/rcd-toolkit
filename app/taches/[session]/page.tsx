@@ -39,7 +39,6 @@ export default function(){
             const sommeLiberations = liberation.reduce((somme, liberation) => somme + liberation.quantite, 0)
             return allocation.quantite - sommeLiberations > 0.001
         })
-        console.log(liberationsManquantes)
 
         const chargesManquantes = groupesSession.filter(groupe => {
             const charge = charges.filter(charge => charge.groupe == groupe.id)
