@@ -236,9 +236,41 @@ export default function({session, tri}:any){
         }
     }
 
+    async function clearStagiaires(){
+        const stageSession = stages?.find(stage => stage.session == session)
+        const supervisionStage = supervisions?.filter(supervision => supervision.stage == stageSession?.id)
+        supervisionStage?.forEach(supervision => db.supervisions.delete(Number(supervision.id)))
+    }
+
+    async function clearLiberations(){
+        const allocationsSession = allocations?.filter(allocation => allocation.session == session)
+        const liberationsSession = liberations?.filter(liberation => {
+            const allocation = allocationsSession?.find(allocation => allocation.id == liberation.allocation)
+            return allocation
+        })
+        liberationsSession?.forEach(liberation => db.liberations.delete(Number(liberation.id)))
+    }
+
+    async function clearCharges(){
+        const groupesSession = groupes?.filter(groupe => groupe.session == session)
+        const chargesSession = charges?.filter(charge => {
+            const groupe = groupesSession?.find(groupe => groupe.id == charge.groupe)
+            return groupe
+        })
+        chargesSession?.forEach(charge => db.charges.delete(Number(charge.id)))
+    }
+    
+    async function clearAll(){
+        await clearStagiaires()
+        await clearLiberations()
+        await clearCharges()
+    }
 
     return <>
-            <tr><th colSpan={100} style={{fontSize: "1.5em", backgroundColor: "#eeeeee"}}>{saison} {annee}</th></tr>
+            <tr><th colSpan={100} style={{fontSize: "1.5em", backgroundColor: "#eeeeee"}}>
+                {saison} {annee}
+                <button type="button" className="btn btn-primary rounded-circle" style={{float: "right", padding: "0px 5px"}} onClick={clearAll}>⟲</button>
+            </th></tr>
             
                 
                 <tr>
@@ -277,7 +309,10 @@ export default function({session, tri}:any){
                     })}                    
                 </tr>
                 <tr>
-                    <th>Cours Attribués</th>
+                    <th>
+                        <button type="button" onClick={clearCharges} className="btn btn-primary rounded-circle" style={{float: "right", padding: "0px 5px"}}>⟲</button>  
+                        Cours Attribués
+                    </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
@@ -327,7 +362,10 @@ export default function({session, tri}:any){
                     })}                    
                 </tr>
                 <tr>
-                    <th>Libérations Attribuées</th>
+                    <th>
+                        <button type="button" onClick={clearLiberations} className="btn btn-primary rounded-circle" style={{float: "right", padding: "0px 5px"}}>⟲</button>   
+                        Libérations Attribuées
+                    </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
@@ -344,7 +382,9 @@ export default function({session, tri}:any){
                 </tr>
                 <tr>
                     <th>
-                        <p>Stagiaires</p> 
+                        <p>Stagiaires 
+                            <button type="button" onClick={clearStagiaires} className="btn btn-primary rounded-circle" style={{float: "right", padding: "0px 5px"}}>⟲</button>    
+                        </p> 
                         <p>{
                             !isNaN(stagiairesRestants())
                             && (stagiairesRestants() > 0
