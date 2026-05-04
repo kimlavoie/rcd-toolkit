@@ -56,7 +56,7 @@ export default function({session, tri}:any){
     }
 
     function dropHandlerGroupe(ev:any){
-        ev.currentTarget.style.border = "1px solid #dee2e6"
+        ev.currentTarget.style.boxShadow = "inset 0 0 0 0"
         const idNouveauEnseignant = Number(ev.currentTarget.dataset.enseignantId)
 
         if(!idNouveauEnseignant){
@@ -132,7 +132,7 @@ export default function({session, tri}:any){
     }
 
     function dropHandlerLiberation(ev:any){
-        ev.currentTarget.style.border = "1px solid #dee2e6"
+        ev.currentTarget.style.boxShadow = "inset 0 0 0 0"
         const idNouveauEnseignant = Number(ev.currentTarget.dataset.enseignantId)
 
         if(!idNouveauEnseignant){
@@ -223,16 +223,16 @@ export default function({session, tri}:any){
 
     function dragEnter(ev:any){
         if(ev.currentTarget.dataset.dropzone == "liberation" && ev.dataTransfer.types.includes("liberationid")){
-            ev.currentTarget.style.border = "2px solid red"
+            ev.currentTarget.style.boxShadow = "inset 0 0 0 2px red"
         }
         if(ev.currentTarget.dataset.dropzone == "charge" && ev.dataTransfer.types.includes("groupeid")){
-            ev.currentTarget.style.border = "2px solid red"
+            ev.currentTarget.style.boxShadow = "inset 0 0 0 2px red"
         }
     }
     
     function dragLeave(ev:any){
         if(!ev.currentTarget.contains(ev.relatedTarget)){
-            ev.currentTarget.style.border = "1px solid #dee2e6"
+            ev.currentTarget.style.boxShadow = "inset 0 0 0 0"
         }
     }
 
@@ -333,8 +333,8 @@ export default function({session, tri}:any){
                         <p>Attribuer une libération</p>
                         <p>{
                             liberationsManquantes(session)! > 0
-                            ?<span style={{color: "red"}}>{liberationsManquantes(session)!} restants</span>
-                            :<span style={{color: "green"}}>{liberationsManquantes(session)!} restants</span>
+                            ?<span style={{color: "red"}}>{liberationsManquantes(session)!} restantes</span>
+                            :<span style={{color: "green"}}>{liberationsManquantes(session)!} restantes</span>
                         }
                         </p>
                     </th>
@@ -369,7 +369,7 @@ export default function({session, tri}:any){
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .map(enseignant => {
                         const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
-                        return <td key={enseignant.id} data-enseignant-id={enseignant.id} data-dropzone="liberation" onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px"}}>
+                        return <td key={enseignant.id} data-enseignant-id={enseignant.id} data-dropzone="liberation" onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} onDragEnter={dragEnter} onDragLeave={dragLeave}>
                             {liberationsEnseignant?.filter(liberation => {
                                 const allocation:any = allocations?.find(allocation => liberation.allocation == allocation.id)
                                 return allocation?.session == session

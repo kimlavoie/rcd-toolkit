@@ -4,7 +4,6 @@ import { useState } from "react"
 export default function({session, charge, groupe, cours, enseignantId, onRemove}: any){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: "0px", top: "0px"})
-    const [border, setBorder] = useState({size: 1, color: "black"})
     function dragStartHandler(ev: any){
         ev.dataTransfer.setData("groupeId", groupe.id)
         ev.dataTransfer.setData("enseignantId", enseignantId)
@@ -51,7 +50,7 @@ export default function({session, charge, groupe, cours, enseignantId, onRemove}
         db.charges.update(charge.id, nouvelleCharge)
     }
 
-    return <div onContextMenu={openMenu} onMouseLeave={ev => {setHideMenu(true); setBorder({size: 1, color: "black"})}} onMouseEnter={ev => setBorder({size: 3, color: "red"})} style={{border: `${border.size}px solid ${border.color}`, backgroundColor: cours.couleur, padding: `${5 - border.size}px`, marginBottom: "4px"}} draggable="true" onDragStart={dragStartHandler}>      
+    return <div onContextMenu={openMenu} onMouseLeave={ev => {setHideMenu(true); ev.currentTarget.style.boxShadow = "inset 0 0 0 0"}} onMouseEnter={ev => ev.currentTarget.style.boxShadow = "inset 0 0 0 2px red"} style={{border: `1px solid black`, backgroundColor: cours.couleur, padding: `5px`, marginBottom: "4px"}} draggable="true" onDragStart={dragStartHandler}>      
         <p style={{fontWeight: "bold"}}>{cours.sigle}</p>
         <p><span style={{fontWeight: "bold"}}>{cours.nom}</span> ({groupe.nbEtudiants})</p>
         {charge.nbSemaines < 15 && <p>Semaines: [{charge.nbSemaines}/15]</p> }
