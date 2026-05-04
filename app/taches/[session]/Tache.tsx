@@ -231,8 +231,8 @@ export default function({session, tri}:any){
     }
     
     function dragLeave(ev:any){
-        if(ev.target.dataset.dropzone){
-            ev.target.style.border = "1px solid #dee2e6"
+        if(!ev.currentTarget.contains(ev.relatedTarget)){
+            ev.currentTarget.style.border = "1px solid #dee2e6"
         }
     }
 
