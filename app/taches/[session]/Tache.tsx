@@ -7,7 +7,7 @@ import { extractSessionInfos } from "@/app/utilities/sessions"
 import Liberation from "./Liberation"
 import Charge from "./Charge"
 
-export default function({session, tri}:any){
+export default function({cache, session, tri}:any){
     const enseignants = useLiveQuery(() => db.enseignants.toArray())
     const groupes = useLiveQuery(() => db.groupes.toArray())
     const cours = useLiveQuery(() => db.cours.toArray())
@@ -284,6 +284,7 @@ export default function({session, tri}:any){
                         </p>
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+                    .filter(enseignant => !cache.includes(enseignant.id))
                     .map(enseignant => {
                         const groupesSession = groupes?.filter((groupe: any) => groupe.session == session)
                         return <td key={enseignant.id}>
@@ -314,6 +315,7 @@ export default function({session, tri}:any){
                         Cours Attribués
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+                    .filter(enseignant => !cache.includes(enseignant.id))
                     .map(enseignant => {
                         const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
                         return <td key={enseignant.id} data-dropzone="charge" data-enseignant-id={enseignant.id} onDrop={dropHandlerGroupe} onDragOver={dragOverHandlerGroupe} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px"}}>
@@ -339,6 +341,7 @@ export default function({session, tri}:any){
                         </p>
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+                    .filter(enseignant => !cache.includes(enseignant.id))
                     .map(enseignant => {
                         const allocationsSession = allocations?.filter((allocation: any) => allocation.session == session)
                         return <td key={enseignant.id}>
@@ -367,6 +370,7 @@ export default function({session, tri}:any){
                         Libérations Attribuées
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+                    .filter(enseignant => !cache.includes(enseignant.id))
                     .map(enseignant => {
                         const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
                         return <td key={enseignant.id} data-enseignant-id={enseignant.id} data-dropzone="liberation" onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} onDragEnter={dragEnter} onDragLeave={dragLeave}>
@@ -394,6 +398,7 @@ export default function({session, tri}:any){
                         </p>
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+                    .filter(enseignant => !cache.includes(enseignant.id))
                     .map(enseignant => {
                         const stage = stages?.find(stage => stage.session == session)
                         const supervision = supervisions?.find(supervision => supervision.stage == stage?.id && supervision.enseignant == enseignant.id)
@@ -408,6 +413,7 @@ export default function({session, tri}:any){
                 <tr>
                     <th>CI Session</th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+                    .filter(enseignant => !cache.includes(enseignant.id))
                     .map(enseignant => {
                         const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
                         const groupesSession = groupes?.filter(groupe => groupe.session == session)

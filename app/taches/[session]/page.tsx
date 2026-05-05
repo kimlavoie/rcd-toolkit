@@ -9,6 +9,7 @@ import { db } from "@/app/db/db"
 
 export default function(){
     const [tri, setTri] = useState("numeroEmploye")
+    const [cache, setCache] = useState<Array<number>>([])
 
     const enseignants = useLiveQuery(() => db.enseignants.toArray())
 
@@ -93,15 +94,20 @@ export default function(){
                             <option value="prenom">Prénom</option>
                             <option value="nom">Nom</option>
                         </select>
+                        <p><button onClick={() => setCache([])}>+</button></p>
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+                    .filter(enseignant => !cache.includes(enseignant.id))
                     .map(enseignant => (
-                        <th style={{position: "sticky", top: "0", color: "black", backgroundColor: "lightgray"}} key={enseignant.id}>{enseignant.prenom} {enseignant.nom}</th>
+                        <th style={{position: "sticky", top: "0", color: "black", backgroundColor: "lightgray"}} key={enseignant.id}>
+                            <p>{enseignant.prenom} {enseignant.nom}</p>
+                            <button onClick={() => setCache([...cache, enseignant.id])}>-</button>
+                        </th>
                     ))}
                 </tr>
-                <Tache session={sessions[0]} tri={tri}/>
-                <Tache session={sessions[1]} tri={tri}/>
-                <Summary sessions={sessions} tri={tri}/>
+                <Tache cache={cache} session={sessions[0]} tri={tri}/>
+                <Tache cache={cache} session={sessions[1]} tri={tri}/>
+                <Summary cache={cache} sessions={sessions} tri={tri}/>
             </tbody>
         </table>
         <p>
