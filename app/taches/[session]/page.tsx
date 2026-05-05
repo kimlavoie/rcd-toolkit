@@ -6,10 +6,12 @@ import Summary from "./Summary"
 import { useState } from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { db } from "@/app/db/db"
+import Enseignant from "./Enseignant"
 
 export default function(){
     const [tri, setTri] = useState("numeroEmploye")
     const [cache, setCache] = useState<Array<number>>([])
+    const [hideMenu, setHideMenu] = useState(true)
 
     const enseignants = useLiveQuery(() => db.enseignants.toArray())
 
@@ -22,6 +24,11 @@ export default function(){
         sessions = [String(session), makeSessionCode("Hiver", String(Number(annee)+1))]
     } else{
         sessions = [makeSessionCode("Automne", String(Number(annee)-1)), String(session)]
+    }
+
+    function openMenu(ev: any){
+        ev.preventDefault()
+        setHideMenu(false)
     }
 
     async function validerSession(session: string){
@@ -88,21 +95,20 @@ export default function(){
         <table className="table table-bordered">
             <tbody>
                 <tr>
-                    <th style={{position: "sticky", top: "0", color: "black", backgroundColor: "lightgray"}}>
+                    <th onContextMenu={openMenu} onMouseLeave={ev => {setHideMenu(true)}} style={{position: "sticky", top: "0", color: "black", backgroundColor: "lightgray"}}>
                         Enseignants <select name="tri" value={tri} onChange={(ev) => setTri(ev.target.value)}>
                             <option value="numeroEmploye">N° employé</option>
                             <option value="prenom">Prénom</option>
                             <option value="nom">Nom</option>
                         </select>
-                        <p><button onClick={() => setCache([])}>+</button></p>
+                        <div style={{position: "absolute", backgroundColor: "darkgrey", display: "block", padding: "5px"}} hidden={hideMenu}>
+                            <button onClick={() => setCache([])}>Tout afficher</button>
+                        </div>
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .filter(enseignant => !cache.includes(enseignant.id))
                     .map(enseignant => (
-                        <th style={{position: "sticky", top: "0", color: "black", backgroundColor: "lightgray"}} key={enseignant.id}>
-                            <p>{enseignant.prenom} {enseignant.nom}</p>
-                            <button onClick={() => setCache([...cache, enseignant.id])}>-</button>
-                        </th>
+                        <Enseignant key={enseignant.id} enseignant={enseignant} onCache={() => setCache([...cache, enseignant.id])}/>
                     ))}
                 </tr>
                 <Tache cache={cache} session={sessions[0]} tri={tri}/>
