@@ -102,10 +102,11 @@ export default function(){
                             <option value="nom">Nom</option>
                         </select>
                         <div style={{position: "absolute", backgroundColor: "darkgrey", display: "block", padding: "5px"}} hidden={hideMenu}>
-                            <button onClick={() => setCache([])}>Tout afficher</button>
+                            {cache.length != 0 && <p><button className="btn btn-primary" onClick={() => setCache([])}>Tout afficher</button></p>}
+                            {enseignants?.length != cache.length && <p><button className="btn btn-primary" onClick={() => setCache(enseignants?.map(enseignant => enseignant.id)!)}>Tout cacher</button></p>}
                             {cache.map(enseignantCache => {
                                 const findEnseignant = enseignants?.find(enseignant => enseignant.id == enseignantCache)
-                                return <button key={enseignantCache} onClick={() => setCache(cache.filter(enseignant => enseignant != enseignantCache))}>{findEnseignant?.prenom} {findEnseignant?.nom}</button>
+                                return <p key={enseignantCache}><button onClick={() => setCache(cache.filter(enseignant => enseignant != enseignantCache))}>{findEnseignant?.prenom} {findEnseignant?.nom}</button></p>
                             })}
                         </div>
                     </th>
