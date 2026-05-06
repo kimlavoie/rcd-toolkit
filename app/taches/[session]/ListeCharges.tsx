@@ -17,7 +17,7 @@ export default function({enseignant, session}: any){
     function openMenu(ev: any) {
         ev.preventDefault()
         setHideMenu(false)
-        setPosition({left: ev.clientX + "px", top: ev.clientY + "px"})
+        setPosition({left: ev.pageX + "px", top: ev.pageY + "px"})
     }
 
     function newSelectionGroupe(ev: any){
