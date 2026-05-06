@@ -271,17 +271,9 @@ export default function({cache, session, tri}:any){
                 {saison} {annee}
                 <button type="button" className="btn btn-primary rounded-circle" style={{float: "right", padding: "0px 5px"}} onClick={clearAll}>⟲</button>
             </th></tr>
-            
-                
                 <tr>
                     <th>
                         <p>Attribuer un cours</p>
-                        <p>{
-                            chargesManquantes(session)! > 0
-                            ?<span style={{color: "red"}}>{chargesManquantes(session)!} restants</span>
-                            :<span style={{color: "green"}}>{chargesManquantes(session)!} restants</span>
-                        }
-                        </p>
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .filter(enseignant => !cache.includes(enseignant.id))
@@ -312,7 +304,13 @@ export default function({cache, session, tri}:any){
                 <tr>
                     <th>
                         <button type="button" onClick={clearCharges} className="btn btn-primary rounded-circle" style={{float: "right", padding: "0px 5px"}}>⟲</button>  
-                        Cours Attribués
+                        <p>Cours Attribués</p>
+                        <p>{
+                            chargesManquantes(session)! > 0
+                            ?<span style={{color: "red"}}>{chargesManquantes(session)!} restants</span>
+                            :<span style={{color: "green"}}>{chargesManquantes(session)!} restants</span>
+                        }
+                        </p>
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .filter(enseignant => !cache.includes(enseignant.id))
@@ -333,12 +331,6 @@ export default function({cache, session, tri}:any){
                 <tr>
                     <th>
                         <p>Attribuer une libération</p>
-                        <p>{
-                            liberationsManquantes(session)! > 0
-                            ?<span style={{color: "red"}}>{liberationsManquantes(session)!} restantes</span>
-                            :<span style={{color: "green"}}>{liberationsManquantes(session)!} restantes</span>
-                        }
-                        </p>
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .filter(enseignant => !cache.includes(enseignant.id))
@@ -367,7 +359,13 @@ export default function({cache, session, tri}:any){
                 <tr>
                     <th>
                         <button type="button" onClick={clearLiberations} className="btn btn-primary rounded-circle" style={{float: "right", padding: "0px 5px"}}>⟲</button>   
-                        Libérations Attribuées
+                        <p>Libérations Attribuées</p>
+                        <p>{
+                            liberationsManquantes(session)! > 0
+                            ?<span style={{color: "red"}}>{liberationsManquantes(session)!} restantes</span>
+                            :<span style={{color: "green"}}>{liberationsManquantes(session)!} restantes</span>
+                        }
+                        </p>
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .filter(enseignant => !cache.includes(enseignant.id))
