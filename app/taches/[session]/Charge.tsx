@@ -11,6 +11,7 @@ export default function({session, charge, groupe, cours, enseignantId, onRemove}
 
     function openMenu(ev: any){
         ev.preventDefault()
+        ev.stopPropagation()
         setHideMenu(false)
         setPosition({left: ev.pageX + "px", top: ev.pageY + "px"})
     }
