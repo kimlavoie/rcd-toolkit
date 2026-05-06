@@ -108,7 +108,7 @@ export default function({enseignant, session}: any){
     const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
     const allocationsSession = allocations?.filter((allocation: any) => allocation.session == session)
                 
-    return <td onContextMenu={openMenu} onMouseLeave={ev => {setHideMenu(true); ev.currentTarget.style.boxShadow = "inset 0 0 0 0"}} key={enseignant.id} data-enseignant-id={enseignant.id} data-dropzone="liberation" onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} onDragEnter={dragEnter} onDragLeave={dragLeave}>
+    return <td onContextMenu={openMenu} onMouseLeave={ev => {setHideMenu(true); ev.currentTarget.style.boxShadow = "inset 0 0 0 0"}} key={enseignant.id} data-enseignant-id={enseignant.id} data-dropzone="liberation" onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px"}}>
         {liberationsEnseignant?.filter(liberation => {
             const allocation:any = allocations?.find(allocation => liberation.allocation == allocation.id)
             return allocation?.session == session
