@@ -103,6 +103,10 @@ export default function(){
                         </select>
                         <div style={{position: "absolute", backgroundColor: "darkgrey", display: "block", padding: "5px"}} hidden={hideMenu}>
                             <button onClick={() => setCache([])}>Tout afficher</button>
+                            {cache.map(enseignantCache => {
+                                const findEnseignant = enseignants?.find(enseignant => enseignant.id == enseignantCache)
+                                return <button key={enseignantCache} onClick={() => setCache(cache.filter(enseignant => enseignant != enseignantCache))}>{findEnseignant?.prenom} {findEnseignant?.nom}</button>
+                            })}
                         </div>
                     </th>
                     {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
