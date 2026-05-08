@@ -1,6 +1,6 @@
 'use client'
 import { useLiveQuery } from "dexie-react-hooks"
-import { db } from "../../db/db"
+import { db } from "../../../db/db"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import ListeCharges from "./ListeCharges"
 import ListeLiberations from "./ListeLiberations"

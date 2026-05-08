@@ -1,12 +1,12 @@
 'use client'
 import { useParams } from "next/navigation"
-import Tache from "./Tache"
 import { extractSessionInfos, makeSessionCode } from "@/app/utilities/sessions"
-import Summary from "./Summary"
 import { useState } from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { db } from "@/app/db/db"
-import Enseignant from "./Enseignant"
+import Enseignant from "./components/Enseignant"
+import Tache from "./components/Tache"
+import Summary from "./components/Summary"
 
 export default function(){
     const [tri, setTri] = useState("numeroEmploye")

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import calculerCI from "./calculerCI"
+import calculerCI from "../calculerCI"
 
 export default function({enseignant, session}: any){
     const [CI, setCI] = useState(0)
