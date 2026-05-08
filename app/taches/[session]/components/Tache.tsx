@@ -9,7 +9,6 @@ import CI from "./CI"
 export default function({cache, session, tri}:any){
     const enseignants = useLiveQuery(() => db.enseignants.toArray())
     const groupes = useLiveQuery(() => db.groupes.toArray())
-    const cours = useLiveQuery(() => db.cours.toArray())
     const charges = useLiveQuery(() => db.charges.toArray())
     const allocations = useLiveQuery(() => db.allocations.toArray())
     const liberations = useLiveQuery(() => db.liberations.toArray())
@@ -70,8 +69,6 @@ export default function({cache, session, tri}:any){
             db.supervisions.add({enseignant: enseignantId, stage: stageId, nbStagiaires: nouvelleValeur})
         }
     }
-
-    
 
     async function clearStagiaires(){
         const stageSession = stages?.find(stage => stage.session == session)

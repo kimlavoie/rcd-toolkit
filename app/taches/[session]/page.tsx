@@ -123,6 +123,7 @@ export default function(){
         </table>
         <p>
             <button onClick={ev => window.open("/db/export/", "_blank")}>Sauvegarder les données</button>
+            <button onClick={ev => window.open("/db/import/", "_blank")}>Restaurer des données</button>
             <button onClick={valider}>Valider les tâches</button>
         </p>
     </div>
