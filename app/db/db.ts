@@ -69,6 +69,13 @@ interface Charge{
     nbSemaines: number
 }
 
+interface CIReelle {
+    id: number
+    enseignant: number
+    session: string
+    CI: number
+}
+
 const db = new Dexie("RCDToolkitDatabase") as Dexie & {
   enseignants: EntityTable<Enseignant, "id">,
   cours: EntityTable<Cours, "id">,
@@ -79,10 +86,11 @@ const db = new Dexie("RCDToolkitDatabase") as Dexie & {
   stages: EntityTable<Stage, "id">,
   supervisions: EntityTable<Supervision, "id">,
   charges: EntityTable<Charge, "id">,
+  CIReelles: EntityTable<CIReelle, "id">
 }
 
 // Schema declaration:
-db.version(4).stores({
+db.version(5).stores({
     enseignants: "++id, numeroEmploye, prenom, nom, courriel",
     cours: "++id, sigle, nom, saison, couleur, heuresTheorie, heuresPratique, heuresMaison",
     groupes: "++id, session, cours, nbEtudiants",
@@ -92,7 +100,8 @@ db.version(4).stores({
     stages: "++id, session, ETCparStagiaire, nbStagiaires",
     supervisions: "++id, enseignant, stage, nbStagiaires",
     charges: "++id, enseignant, groupe, nbSemaines",
+    CIReelles: "++id, enseignant, session, CI",
 })
 
-export type { Enseignant, Cours, Groupe, Priorite, Allocation, Liberation, Stage, Supervision, Charge }
+export type { Enseignant, Cours, Groupe, Priorite, Allocation, Liberation, Stage, Supervision, Charge, CIReelle }
 export { db }
