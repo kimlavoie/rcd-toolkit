@@ -7,6 +7,7 @@ import { db } from "@/app/db/db"
 import Enseignant from "./components/Enseignant"
 import Tache from "./components/Tache"
 import Summary from "./components/Summary"
+import CIReelle from "./components/CIReelle"
 
 export default function(){
     const [tri, setTri] = useState("numeroEmploye")
@@ -24,6 +25,22 @@ export default function(){
         sessions = [String(session), makeSessionCode("Hiver", String(Number(annee)+1))]
     } else{
         sessions = [makeSessionCode("Automne", String(Number(annee)-1)), String(session)]
+    }
+
+    function afficherTaches(){
+        if(saison == "Automne"){
+            return <>
+                <Tache cache={cache} session={sessions[0]} tri={tri}/>
+                <Tache cache={cache} session={sessions[1]} tri={tri}/>
+                <Summary cache={cache} sessions={sessions} tri={tri} saison={saison}/>
+            </>
+        } else{
+            return <>
+                <CIReelle cache={cache} session={sessions[0]} tri={tri}/>
+                <Tache cache={cache} session={sessions[1]} tri={tri}/>
+                <Summary cache={cache} sessions={sessions} tri={tri} saison={saison}/>
+            </>
+        }
     }
 
     function openMenu(ev: any){
@@ -116,9 +133,8 @@ export default function(){
                         <Enseignant key={enseignant.id} enseignant={enseignant} onCache={() => setCache([...cache, enseignant.id])}/>
                     ))}
                 </tr>
-                <Tache cache={cache} session={sessions[0]} tri={tri}/>
-                <Tache cache={cache} session={sessions[1]} tri={tri}/>
-                <Summary cache={cache} sessions={sessions} tri={tri}/>
+                {afficherTaches()}
+                
             </tbody>
         </table>
         <p>
