@@ -120,14 +120,15 @@ export default function(){
                         </select>
                         <div style={{position: "absolute", backgroundColor: "darkgrey", display: "block", padding: "5px"}} hidden={hideMenu}>
                             {cache.length != 0 && <p><button className="btn btn-primary" onClick={() => setCache([])}>Tout afficher</button></p>}
-                            {enseignants?.length != cache.length && <p><button className="btn btn-primary" onClick={() => setCache(enseignants?.map(enseignant => enseignant.id)!)}>Tout cacher</button></p>}
+                            {enseignants && enseignants.length != cache.length && <p><button className="btn btn-primary" onClick={() => setCache(enseignants.map(enseignant => enseignant.id))}>Tout cacher</button></p>}
                             {cache.map(enseignantCache => {
                                 const findEnseignant = enseignants?.find(enseignant => enseignant.id == enseignantCache)
                                 return <p key={enseignantCache}><button onClick={() => setCache(cache.filter(enseignant => enseignant != enseignantCache))}>{findEnseignant?.prenom} {findEnseignant?.nom}</button></p>
                             })}
                         </div>
                     </th>
-                    {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+                    { (enseignants ?? [])
+                    .toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                     .filter(enseignant => !cache.includes(enseignant.id))
                     .map(enseignant => (
                         <Enseignant key={enseignant.id} enseignant={enseignant} onCache={() => setCache([...cache, enseignant.id])}/>

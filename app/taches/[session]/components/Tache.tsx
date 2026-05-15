@@ -116,7 +116,8 @@ export default function({cache, session, tri}:any){
                     :<span style={{color: "green"}}>{chargesManquantes(session)!} restants</span>
                 }</p>
             </th>
-            {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+            { (enseignants ?? [])
+            .toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
             .filter(enseignant => !cache.includes(enseignant.id))
             .map(enseignant => {
                 return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session}/>
@@ -133,7 +134,8 @@ export default function({cache, session, tri}:any){
                 }
                 </p>
             </th>
-            {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+            { (enseignants ?? [])
+            .toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
             .filter(enseignant => !cache.includes(enseignant.id))
             .map(enseignant => {
                 return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session}/>
@@ -152,7 +154,8 @@ export default function({cache, session, tri}:any){
                 }
                 </p>
             </th>
-            {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+            { (enseignants ?? [])
+            .toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
             .filter(enseignant => !cache.includes(enseignant.id))
             .map(enseignant => {
                 const stage = stages?.find(stage => stage.session == session)
@@ -167,7 +170,8 @@ export default function({cache, session, tri}:any){
         </tr>
         <tr>
             <th>CI Session</th>
-            {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+            { (enseignants ?? [])
+            .toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
             .filter(enseignant => !cache.includes(enseignant.id))
             .map(enseignant => {
                 return <CI key={enseignant.id} enseignant={enseignant} session={session}/>

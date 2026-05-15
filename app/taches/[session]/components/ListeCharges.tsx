@@ -127,7 +127,7 @@ export default function({enseignant, session}: any){
                 })?.toSorted((a:any, b:any) => {
                     const coursA = cours?.find(cour => cour.id == a.cours)
                     const coursB = cours?.find(cour => cour.id == b.cours)
-                    return coursA?.sigle.localeCompare(coursB?.sigle!)!
+                    return (coursA?.sigle ?? "").localeCompare(coursB?.sigle ?? "")
                 })?.map((groupe: any, index:number) => {
                     const cour = cours?.find(cour => cour.id == groupe.cours)
                     return <p key={index}>

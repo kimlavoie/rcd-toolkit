@@ -41,7 +41,8 @@ export default function({cache, session, tri}:any){
                         <button type="button" onClick={clearCI} className="btn btn-primary rounded-circle" style={{float: "right", padding: "0px 5px"}}>⟲</button>    
                     </p> 
                 </th>
-                {enseignants?.toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+                { (enseignants ?? [])
+                .toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
                 .filter(enseignant => !cache.includes(enseignant.id))
                 .map(enseignant => {
                     const CIReelle = CIReelles?.find(CIReelle => CIReelle.enseignant == enseignant.id && CIReelle.session == session)
