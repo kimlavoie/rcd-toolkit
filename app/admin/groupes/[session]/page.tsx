@@ -60,7 +60,7 @@ export default function(){
                         {editingId === groupe.id ? (
                             <>
                                 <td>
-                                    <SelectCours id={editData.cours} onChange={(val:any) => setEditData({...editData, cours: Number(val)})} />
+                                    <SelectCours value={editData.cours} onChange={(val:any) => setEditData({...editData, cours: Number(val)})} />
                                 </td>
                                 <td>
                                     <input type="number" className="form-control" value={editData.nbEtudiants} onChange={e => setEditData({...editData, nbEtudiants: Number(e.target.value)})} />
@@ -84,7 +84,7 @@ export default function(){
                 })}
                 <tr className="table-info">
                     <td>
-                        <SelectCours id={newData.cours} onChange={(val:any) => setNewData({...newData, cours: Number(val)})} />
+                        <SelectCours value={newData.cours} onChange={(val:any) => setNewData({...newData, cours: Number(val)})} />
                     </td>
                     <td>
                         <input type="number" className="form-control" placeholder="Étudiants" value={newData.nbEtudiants} onChange={e => setNewData({...newData, nbEtudiants: Number(e.target.value)})} />

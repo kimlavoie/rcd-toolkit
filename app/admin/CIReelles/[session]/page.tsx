@@ -59,7 +59,7 @@ export default function(){
                         {editingId === ci.id ? (
                             <>
                                 <td>
-                                    <SelectEnseignant id={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: Number(val)})} />
+                                    <SelectEnseignant value={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: Number(val)})} />
                                 </td>
                                 <td>
                                     <input type="number" step="0.01" className="form-control" value={editData.CI} onChange={e => setEditData({...editData, CI: Number(e.target.value)})} />
@@ -83,7 +83,7 @@ export default function(){
                 })}
                 <tr className="table-info">
                     <td>
-                        <SelectEnseignant id={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: Number(val)})} />
+                        <SelectEnseignant value={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: Number(val)})} />
                     </td>
                     <td>
                         <input type="number" step="0.01" className="form-control" placeholder="CI" value={newData.CI} onChange={e => setNewData({...newData, CI: Number(e.target.value)})} />

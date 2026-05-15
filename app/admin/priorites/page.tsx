@@ -70,10 +70,10 @@ export default function(){
                         {editingId === priorite.id ? (
                             <>
                                 <td>
-                                    <SelectEnseignant id={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: Number(val)})} />
+                                    <SelectEnseignant value={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: Number(val)})} />
                                 </td>
                                 <td>
-                                    <SelectCours id={editData.cours} onChange={(val:any) => setEditData({...editData, cours: Number(val)})} />
+                                    <SelectCours value={editData.cours} onChange={(val:any) => setEditData({...editData, cours: Number(val)})} />
                                 </td>
                                 <td>
                                     <SelectSession code={editData.sessionDebut} onChange={(val:any) => setEditData({...editData, sessionDebut: val})} />
@@ -98,10 +98,10 @@ export default function(){
                 })}
                 <tr className="table-info">
                     <td>
-                        <SelectEnseignant id={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: Number(val)})} />
+                        <SelectEnseignant value={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: Number(val)})} />
                     </td>
                     <td>
-                        <SelectCours id={newData.cours} onChange={(val:any) => setNewData({...newData, cours: Number(val)})} />
+                        <SelectCours value={newData.cours} onChange={(val:any) => setNewData({...newData, cours: Number(val)})} />
                     </td>
                     <td>
                         <SelectSession code={newData.sessionDebut} onChange={(val:any) => setNewData({...newData, sessionDebut: val})} />

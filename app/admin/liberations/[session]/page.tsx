@@ -67,10 +67,10 @@ export default function(){
                         {editingId === liberation.id ? (
                             <>
                                 <td>
-                                    <SelectAllocation id={editData.allocation} session={session} onChange={(val:any) => setEditData({...editData, allocation: Number(val)})} />
+                                    <SelectAllocation value={editData.allocation} session={session} onChange={(val:any) => setEditData({...editData, allocation: Number(val)})} />
                                 </td>
                                 <td>
-                                    <SelectEnseignant id={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: Number(val)})} />
+                                    <SelectEnseignant value={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: Number(val)})} />
                                 </td>
                                 <td>
                                     <input type="number" step="0.001" className="form-control" value={editData.quantite} onChange={e => setEditData({...editData, quantite: Number(e.target.value)})} />
@@ -95,10 +95,10 @@ export default function(){
                 })}
                 <tr className="table-info">
                     <td>
-                        <SelectAllocation id={newData.allocation} session={session} onChange={(val:any) => setNewData({...newData, allocation: Number(val)})} />
+                        <SelectAllocation value={newData.allocation} session={session} onChange={(val:any) => setNewData({...newData, allocation: Number(val)})} />
                     </td>
                     <td>
-                        <SelectEnseignant id={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: Number(val)})} />
+                        <SelectEnseignant value={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: Number(val)})} />
                     </td>
                     <td>
                         <input type="number" step="0.001" className="form-control" placeholder="Qté" value={newData.quantite} onChange={e => setNewData({...newData, quantite: Number(e.target.value)})} />

@@ -69,10 +69,10 @@ export default function(){
                         {editingId === charge.id ? (
                             <>
                                 <td>
-                                    <SelectEnseignant id={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: Number(val)})} />
+                                    <SelectEnseignant value={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: Number(val)})} />
                                 </td>
                                 <td>
-                                    <SelectGroupe id={editData.groupe} session={session} onChange={(val:any) => setEditData({...editData, groupe: Number(val)})} />
+                                    <SelectGroupe value={editData.groupe} session={session} onChange={(val:any) => setEditData({...editData, groupe: Number(val)})} />
                                 </td>
                                 <td>
                                     <input type="number" className="form-control" value={editData.nbSemaines} onChange={e => setEditData({...editData, nbSemaines: Number(e.target.value)})} />
@@ -97,10 +97,10 @@ export default function(){
                 })}
                 <tr className="table-info">
                     <td>
-                        <SelectEnseignant id={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: Number(val)})} />
+                        <SelectEnseignant value={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: Number(val)})} />
                     </td>
                     <td>
-                        <SelectGroupe id={newData.groupe} session={session} onChange={(val:any) => setNewData({...newData, groupe: Number(val)})} />
+                        <SelectGroupe value={newData.groupe} session={session} onChange={(val:any) => setNewData({...newData, groupe: Number(val)})} />
                     </td>
                     <td>
                         <input type="number" className="form-control" placeholder="Semaines" value={newData.nbSemaines} onChange={e => setNewData({...newData, nbSemaines: Number(e.target.value)})} />

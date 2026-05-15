@@ -69,10 +69,10 @@ export default function(){
                         {editingId === supervision.id ? (
                             <>
                                 <td>
-                                    <SelectStage id={editData.stage} onChange={(val:any) => setEditData({...editData, stage: Number(val)})} />
+                                    <SelectStage value={editData.stage} onChange={(val:any) => setEditData({...editData, stage: Number(val)})} />
                                 </td>
                                 <td>
-                                    <SelectEnseignant id={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: Number(val)})} />
+                                    <SelectEnseignant value={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: Number(val)})} />
                                 </td>
                                 <td>
                                     <input type="number" className="form-control" value={editData.nbStagiaires} onChange={e => setEditData({...editData, nbStagiaires: Number(e.target.value)})} />
@@ -97,10 +97,10 @@ export default function(){
                 })}
                 <tr className="table-info">
                     <td>
-                        <SelectStage id={newData.stage} onChange={(val:any) => setNewData({...newData, stage: Number(val)})} />
+                        <SelectStage value={newData.stage} onChange={(val:any) => setNewData({...newData, stage: Number(val)})} />
                     </td>
                     <td>
-                        <SelectEnseignant id={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: Number(val)})} />
+                        <SelectEnseignant value={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: Number(val)})} />
                     </td>
                     <td>
                         <input type="number" className="form-control" placeholder="Stagiaires" value={newData.nbStagiaires} onChange={e => setNewData({...newData, nbStagiaires: Number(e.target.value)})} />
