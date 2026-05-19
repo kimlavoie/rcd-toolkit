@@ -1,15 +1,13 @@
-import { Dexie, type EntityTable } from "dexie"
-
-interface Enseignant {
-  id: number
+export interface Enseignant {
+  id: string
   numeroEmploye: string
   prenom: string
   nom: string
   courriel: string
 }
 
-interface Cours {
-    id: number
+export interface Cours {
+    id: string
     sigle: string
     nom: string
     saison: string
@@ -19,89 +17,52 @@ interface Cours {
     heuresMaison: number
 }
 
-interface Groupe {
-    id: number
+export interface Groupe {
+    id: string
     session: string
-    cours: number
+    cours: string
     nbEtudiants: number
 }
 
-interface Priorite{
-    id: number
-    enseignant: number
-    cours: number
-    sessionDebut: string
-}
-
-interface Allocation{
-    id: number
+export interface Allocation{
+    id: string
     code: string
     description: string
     quantite: number
     session: string
 }
 
-interface Liberation{
-    id: number
-    allocation: number
-    enseignant: number
+export interface Liberation{
+    id: string
+    allocation: string
+    enseignant: string
     quantite: number
 }
 
-interface Stage{
-    id: number
+export interface Stage{
+    id: string
     session: string
     ETCparStagiaire: number
     nbStagiaires: number
 }
 
-interface Supervision{
-    id: number
-    enseignant: number
-    stage: number
+export interface Supervision{
+    id: string
+    enseignant: string
+    stage: string
     nbStagiaires: number
 }
 
-interface Charge{
-    id: number
-    enseignant: number
-    groupe: number
+export interface Charge{
+    id: string
+    enseignant: string
+    groupe: string
     nbSemaines: number
 }
 
-interface CIReelle {
-    id: number
-    enseignant: number
+export interface CIReelle {
+    id: string
+    enseignant: string
     session: string
     CI: number
 }
-
-const db = new Dexie("RCDToolkitDatabase") as Dexie & {
-  enseignants: EntityTable<Enseignant, "id">,
-  cours: EntityTable<Cours, "id">,
-  groupes: EntityTable<Groupe, "id">,
-  priorites: EntityTable<Priorite, "id">,
-  allocations: EntityTable<Allocation, "id">,
-  liberations: EntityTable<Liberation, "id">,
-  stages: EntityTable<Stage, "id">,
-  supervisions: EntityTable<Supervision, "id">,
-  charges: EntityTable<Charge, "id">,
-  CIReelles: EntityTable<CIReelle, "id">
-}
-
-// Schema declaration:
-db.version(5).stores({
-    enseignants: "++id, numeroEmploye, prenom, nom, courriel",
-    cours: "++id, sigle, nom, saison, couleur, heuresTheorie, heuresPratique, heuresMaison",
-    groupes: "++id, session, cours, nbEtudiants",
-    priorites: "++id, enseignant, cours, sessionDebut",
-    allocations: "++id, code, description, quantite, session",
-    liberations: "++id, allocation, enseignant, quantite",
-    stages: "++id, session, ETCparStagiaire, nbStagiaires",
-    supervisions: "++id, enseignant, stage, nbStagiaires",
-    charges: "++id, enseignant, groupe, nbSemaines",
-    CIReelles: "++id, enseignant, session, CI",
-})
-
-export type { Enseignant, Cours, Groupe, Priorite, Allocation, Liberation, Stage, Supervision, Charge, CIReelle }
-export { db }

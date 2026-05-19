@@ -1,19 +1,30 @@
 'use client'
 
-import { useLiveQuery } from "dexie-react-hooks"
-import { db } from "@/app/db/db"
+import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import SelectSession from "../components/inputs/SelectSession"
+import { useAuth } from "@/app/utilities/auth"
+import type { Stage } from "@/app/db/db"
+import { useTableSort } from "@/app/utilities/sorting"
 
 export default function(){
-    const stages = useLiveQuery(() => db.stages.toArray())
+    const { user, loading } = useAuth()
+    const stages = useFirestoreCollection<Stage>("stages")
     const router = useRouter()
     
-    const [editingId, setEditingId] = useState<number | null>(null)
+    const { sortedData, toggleSort, getSortIcon } = useTableSort(stages, "session")
+
+    const [editingId, setEditingId] = useState<string | null>(null)
     const [editData, setEditData] = useState<any>({})
     const [newData, setNewData] = useState({ session: "A26", ETCparStagiaire: 0, nbStagiaires: 0 })
+
+    if (loading) return <div className="container mt-5">Chargement...</div>
+    if (!user) {
+        router.push("/login")
+        return null
+    }
 
     function startEdit(stage: any) {
         setEditingId(stage.id)
@@ -22,15 +33,14 @@ export default function(){
 
     async function saveEdit() {
         if (editingId) {
-            await db.stages.update(editingId, editData)
+            await firebaseDb.stages.update(editingId, editData)
             setEditingId(null)
         }
     }
 
     async function addNew() {
         if (newData.session) {
-            await db.stages.add(newData)
-            // Default to next session or reset
+            await firebaseDb.stages.add(newData)
             setNewData({ ...newData, nbStagiaires: 0 })
         } else {
             alert("La session est requise.")
@@ -46,19 +56,19 @@ export default function(){
         }
     }
 
-    return <>
-        <button type="button" className="btn btn-primary rounded-pill mb-3" onClick={() => router.push(".")}>←</button>  
+    return <div className="container mt-3">
+        <button type="button" className="btn btn-outline-primary rounded-pill mb-4 w-25" onClick={() => router.push(".")}>← Retour</button>  
         <table className="table table-striped align-middle">
             <thead>
                 <tr>
-                    <th>Session</th>
-                    <th>ETC par stagiaire</th>
-                    <th>Nombre de stagiaires</th>
+                    <th onClick={() => toggleSort("session")} style={{cursor: "pointer"}}>Session {getSortIcon("session")}</th>
+                    <th onClick={() => toggleSort("ETCparStagiaire")} style={{cursor: "pointer"}}>ETC par stagiaire {getSortIcon("ETCparStagiaire")}</th>
+                    <th onClick={() => toggleSort("nbStagiaires")} style={{cursor: "pointer"}}>Nombre de stagiaires {getSortIcon("nbStagiaires")}</th>
                     <th style={{width: "120px"}}>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {(stages ?? []).map((stage) => (
+                {sortedData.map((stage) => (
                     <tr key={stage.id}>
                         {editingId === stage.id ? (
                             <>
@@ -83,7 +93,7 @@ export default function(){
                                 <td>{stage.nbStagiaires}</td>
                                 <td>
                                     <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(stage)}>✏️</button>
-                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => db.stages.delete(stage.id)}>🗑️</button>
+                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => firebaseDb.stages.delete(stage.id)}>🗑️</button>
                                 </td>
                             </>
                         )}
@@ -105,5 +115,5 @@ export default function(){
                 </tr>
             </tbody>
         </table>
-    </>
+    </div>
 }

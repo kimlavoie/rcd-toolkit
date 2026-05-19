@@ -1,23 +1,14 @@
-import { db } from "@/app/db/db"
-import { useLiveQuery } from "dexie-react-hooks"
-import { useEffect, useState } from "react"
+import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
+import type { Allocation } from "@/app/db/db"
 
 export default function({value, onChange, session}: any){
-    const [allocations, setAllocations] = useState([])
+    const allocations = useFirestoreCollection<Allocation>("allocations")
+    const filteredAllocations = (allocations ?? [])?.filter(a => !session || a.session === session)
 
-    useEffect(() => {
-        db.allocations.where('session').equals(session).toArray().then((allocations:any) => {
-            setAllocations(allocations)
-            //if(value != 0 && allocations.find((cour: any) => cour.id == value) == undefined) onChange(0)
-        })
-    }, [session])
-
-    return <>
-        <label>Allocation: <select name="allocation" value={value} onChange={(ev) => onChange(Number(ev.target.value))}>
-            <option value="0" hidden disabled>Choisissez une allocation</option>
-            {allocations?.map((allocation: any) => {
-                return <option key={allocation.id} value={allocation.id}>{allocation?.code} - {allocation?.description} ({allocation?.quantite})</option>
-            })}
-        </select></label>
-    </>
+    return <select name="allocation" className="form-select" value={value} onChange={(ev) => onChange(ev.target.value)}>
+        <option value="" hidden disabled>Choisissez une allocation</option>
+        {filteredAllocations?.map((allocation: any) => {
+            return <option key={allocation.id} value={allocation.id}>{allocation?.code} - {allocation?.description} ({allocation?.quantite})</option>
+        })}
+    </select>
 }

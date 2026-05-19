@@ -2,74 +2,178 @@
 
 import SelectSession from "@/app/admin/components/inputs/SelectSession";
 import { extractSessionInfos, makeSessionCode } from "@/app/utilities/sessions";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { db } from "../db";
+import { useAuth } from "../../utilities/auth"
+import { firestore } from "../../utilities/firebase"
+import { collection, getDocs, addDoc, doc, deleteDoc, query, where } from "firebase/firestore"
 
 export default function(){
-    const [sessionDepart, setSessionDepart] = useState("A26")
+    const { user, loading: authLoading } = useAuth()
+    const router = useRouter()
+    
+    const [sessionDepart, setSessionDepart] = useState("A25")
     const [annee, setAnnee] = useState(2026)
+    const [copying, setCopying] = useState(false)
+    const [progress, setProgress] = useState("")
+
+    if (authLoading) return <div className="container mt-5 text-center">Chargement...</div>
+    if (!user) {
+        router.push("/login")
+        return null
+    }
 
     async function copy(){
-        const sessionArrivee = makeSessionCode(extractSessionInfos(sessionDepart).saison, String(annee))
+        try {
+            const sessionArrivee = makeSessionCode(extractSessionInfos(sessionDepart).saison, String(annee))
 
-        if(sessionDepart == sessionArrivee){
-            alert("Les deux sessions doivent être différentes")
-            return
+            if(sessionDepart == sessionArrivee){
+                alert("Les deux sessions doivent être différentes")
+                return
+            }
+
+            if (!confirm(`Voulez-vous copier les données de ${sessionDepart} vers ${sessionArrivee} ? Les données existantes de ${sessionArrivee} seront supprimées.`)) {
+                return
+            }
+
+            setCopying(true)
+            setProgress("Chargement des données sources...")
+
+            // 1. Fetch source data
+            const fetchCollection = async (name: string) => {
+                const snap = await getDocs(collection(firestore, name))
+                return snap.docs.map(d => ({id: d.id, ...d.data()}))
+            }
+
+            const allGroupes = await fetchCollection("groupes")
+            const allAllocations = await fetchCollection("allocations")
+            const allStages = await fetchCollection("stages")
+            const allCharges = await fetchCollection("charges")
+            const allLiberations = await fetchCollection("liberations")
+            const allSupervisions = await fetchCollection("supervisions")
+
+            setProgress(`Suppression des données existantes de ${sessionArrivee}...`)
+
+            // 2. Clear target session
+            const groupesArrivee = allGroupes.filter((g: any) => g.session === sessionArrivee)
+            for (const g of groupesArrivee) {
+                const chargesArrivee = allCharges.filter((c: any) => String(c.groupe) === String(g.id))
+                for (const c of chargesArrivee) await deleteDoc(doc(firestore, "charges", c.id))
+                await deleteDoc(doc(firestore, "groupes", g.id))
+            }
+
+            const allocationsArrivee = allAllocations.filter((a: any) => a.session === sessionArrivee)
+            for (const a of allocationsArrivee) {
+                const liberationsArrivee = allLiberations.filter((l: any) => String(l.allocation) === String(a.id))
+                for (const l of liberationsArrivee) await deleteDoc(doc(firestore, "liberations", l.id))
+                await deleteDoc(doc(firestore, "allocations", a.id))
+            }
+
+            const stagesArrivee = allStages.filter((s: any) => s.session === sessionArrivee)
+            for (const s of stagesArrivee) {
+                const supervisionsArrivee = allSupervisions.filter((sup: any) => String(sup.stage) === String(s.id))
+                for (const sup of supervisionsArrivee) await deleteDoc(doc(firestore, "supervisions", sup.id))
+                await deleteDoc(doc(firestore, "stages", s.id))
+            }
+
+            setProgress(`Copie vers ${sessionArrivee}...`)
+
+            // 3. Perform Copy
+            // Groupes & Charges
+            const groupesSource = allGroupes.filter((g: any) => g.session === sessionDepart)
+            for (const g of groupesSource) {
+                const { id: oldId, ...data } = g as any
+                const newRef = await addDoc(collection(firestore, "groupes"), { ...data, session: sessionArrivee })
+                const chargesSource = allCharges.filter((c: any) => String(c.groupe) === String(oldId))
+                for (const c of chargesSource) {
+                    const { id: _, ...cData } = c as any
+                    await addDoc(collection(firestore, "charges"), { ...cData, groupe: newRef.id })
+                }
+            }
+
+            // Allocations & Liberations
+            const allocationsSource = allAllocations.filter((a: any) => a.session === sessionDepart)
+            for (const a of allocationsSource) {
+                const { id: oldId, ...data } = a as any
+                const newRef = await addDoc(collection(firestore, "allocations"), { ...data, session: sessionArrivee })
+                const liberationsSource = allLiberations.filter((l: any) => String(l.allocation) === String(oldId))
+                for (const l of liberationsSource) {
+                    const { id: _, ...lData } = l as any
+                    await addDoc(collection(firestore, "liberations"), { ...lData, allocation: newRef.id })
+                }
+            }
+
+            // Stages & Supervisions
+            const stagesSource = allStages.filter((s: any) => s.session === sessionDepart)
+            for (const s of stagesSource) {
+                const { id: oldId, ...data } = s as any
+                const newRef = await addDoc(collection(firestore, "stages"), { ...data, session: sessionArrivee })
+                const supervisionsSource = allSupervisions.filter((sup: any) => String(sup.stage) === String(oldId))
+                for (const sup of supervisionsSource) {
+                    const { id: _, ...supData } = sup as any
+                    await addDoc(collection(firestore, "supervisions"), { ...supData, stage: newRef.id })
+                }
+            }
+
+            alert("Copie effectuée avec succès !")
+            router.push("/db")
+        } catch (error) {
+            console.error("Copy error:", error)
+            alert("Erreur lors de la copie")
+        } finally {
+            setCopying(false)
+            setProgress("")
         }
-
-        const groupes = await db.groupes.toArray()
-        const allocations = await db.allocations.toArray()
-        const stages = await db.stages.toArray()
-        const charges = await db.charges.toArray()
-        const liberations = await db.liberations.toArray()
-        const supervisions = await db.supervisions.toArray()
-
-        //Suppression (au cas)
-        groupes.filter(groupe => groupe.session == sessionArrivee).forEach(groupe => {
-            charges.filter(charge => charge.groupe == groupe.id).forEach(charge => db.charges.delete(charge.id))
-            db.groupes.delete(groupe.id)
-        })
-        allocations.filter(allocation => allocation.session == sessionArrivee).forEach(allocation => {
-            liberations.filter(liberation => liberation.allocation == allocation.id).forEach(liberation => db.liberations.delete(liberation.id))
-            db.allocations.delete(allocation.id)
-        })
-        stages.filter(stage => stage.session == sessionArrivee).forEach(stage => {
-            supervisions.filter(supervision => supervision.stage == stage.id).forEach(supervision => db.supervisions.delete(supervision.id))
-            db.stages.delete(stage.id)
-        })
-
-        //Copie
-        groupes.filter(groupe => groupe.session == sessionDepart).forEach(async groupe => {
-            const {id, ...anonGroupe} = groupe
-            const newId = await db.groupes.add({...anonGroupe, session: sessionArrivee})
-            charges.filter(charge => charge.groupe == groupe.id).forEach(charge => {
-                const {id, ...anonCharge} = charge
-                db.charges.add({...anonCharge, groupe: newId})
-            })
-        })
-        allocations.filter(allocation => allocation.session == sessionDepart).forEach(async allocation => {
-            const {id, ...anonAllocation} = allocation
-            const newId = await db.allocations.add({...anonAllocation, session: sessionArrivee})
-            liberations.filter(liberation => liberation.allocation == allocation.id).forEach(liberation => {
-                const {id, ...anonLiberation} = liberation
-                db.liberations.add({...anonLiberation, allocation: newId})
-            })
-        })
-        stages.filter(stage => stage.session == sessionDepart).forEach(async stage => {
-            const {id, ...anonStage} = stage
-            const newId = await db.stages.add({...anonStage, session: sessionArrivee})
-            supervisions.filter(supervision => supervision.stage == stage.id).forEach(supervision => {
-                const {id, ...anonSupervision} = supervision
-                db.supervisions.add({...anonSupervision, stage: newId})
-            })
-        })
-
-        alert("Copie effectuée")
     }
-    return <>
-        <p><SelectSession code={sessionDepart} onChange={setSessionDepart} /></p>
-        <p>Copier pour l'année <input type="number" min="2000" name="annee" value={annee} onChange={(ev) => setAnnee(Number(ev.target.value))} /></p>
-        <p><button onClick={copy}>Copier les données</button></p>
-        <p><Link href="/">Retour à l'accueil</Link></p>
-    </>}
+
+    return <div className="container mt-3">
+        <button type="button" className="btn btn-outline-primary rounded-pill mb-4 w-25" onClick={() => router.push("/db")}>← Retour</button>
+        
+        <div className="card shadow-sm mx-auto" style={{maxWidth: "600px"}}>
+            <div className="card-header bg-info text-white">
+                <h4 className="mb-0">👯 Copier une session</h4>
+            </div>
+            <div className="card-body py-4 px-4">
+                <div className="mb-4">
+                    <label className="form-label text-muted small">Session source (à copier) :</label>
+                    <SelectSession code={sessionDepart} onChange={setSessionDepart} />
+                </div>
+                
+                <div className="mb-4">
+                    <label className="form-label text-muted small">Année de destination :</label>
+                    <div className="input-group">
+                        <span className="input-group-text bg-light">Année</span>
+                        <input 
+                            type="number" 
+                            className="form-control"
+                            min="2000" 
+                            value={annee} 
+                            onChange={(ev) => setAnnee(Number(ev.target.value))} 
+                        />
+                    </div>
+                    <small className="text-muted mt-1 d-block">La saison (Automne/Hiver) sera la même que la source.</small>
+                </div>
+
+                <hr className="my-4" />
+
+                <div className="text-center">
+                    <button 
+                        className="btn btn-info text-white btn-lg px-5 rounded-pill shadow-sm w-100" 
+                        onClick={copy}
+                        disabled={copying}
+                    >
+                        {copying ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Copie en cours...
+                            </>
+                        ) : (
+                            "🔄 Lancer la copie"
+                        )}
+                    </button>
+                    {progress && <p className="mt-3 text-info small animate-pulse">{progress}</p>}
+                </div>
+            </div>
+        </div>
+    </div>
+}

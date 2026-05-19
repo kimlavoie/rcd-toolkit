@@ -1,15 +1,13 @@
-import { db } from "@/app/db/db"
-import { useLiveQuery } from "dexie-react-hooks"
+import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
+import type { Enseignant } from "@/app/db/db"
 
 export default function({value, onChange}: any){
-    const enseignants = useLiveQuery(() => db.enseignants.toArray())
+    const enseignants = useFirestoreCollection<Enseignant>("enseignants")
 
-    return <>
-        <label>Enseignant: <select name="enseignant" value={value} onChange={(ev) => onChange(Number(ev.target.value))}>
-            <option value="0" hidden disabled>Choisissez un enseignant</option>
-            {enseignants?.map((enseignant: any) => (
-                <option key={enseignant.id} value={enseignant.id}>{enseignant.prenom} {enseignant.nom}</option>
-            ))}
-        </select></label>
-    </>
+    return <select name="enseignant" className="form-select" value={value} onChange={(ev) => onChange(ev.target.value)}>
+        <option value="" hidden disabled>Choisissez un enseignant</option>
+        {enseignants?.map((enseignant: any) => (
+            <option key={enseignant.id} value={enseignant.id}>{enseignant.prenom} {enseignant.nom}</option>
+        ))}
+    </select>
 }

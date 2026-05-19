@@ -1,22 +1,54 @@
 'use client'
 
-import { useLiveQuery } from "dexie-react-hooks"
-import { db } from "@/app/db/db"
+import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import SelectEnseignant from "../components/inputs/SelectEnseignant"
 import SelectStage from "../components/inputs/SelectStage"
+import { useAuth } from "@/app/utilities/auth"
+import type { Supervision, Enseignant, Stage } from "@/app/db/db"
+import { useTableSort } from "@/app/utilities/sorting"
 
 export default function(){
-    const supervisions = useLiveQuery(() => db.supervisions.toArray())
-    const enseignants = useLiveQuery(() => db.enseignants.toArray())
-    const stages = useLiveQuery(() => db.stages.toArray())
+    const { user, loading } = useAuth()
+    const supervisions = useFirestoreCollection<Supervision>("supervisions")
+    const enseignants = useFirestoreCollection<Enseignant>("enseignants")
+    const stages = useFirestoreCollection<Stage>("stages")
     const router = useRouter()
     
-    const [editingId, setEditingId] = useState<number | null>(null)
+    const enrichedSupervisions = useMemo(() => {
+        return (supervisions ?? []).map(s => {
+            const enseignant = enseignants?.find(e => e.id === s.enseignant)
+            const stage = stages?.find(st => st.id === s.stage)
+            let stageLabel = "Stage inconnu"
+            if (stage) {
+                try {
+                    const {saison, annee} = extractSessionInfos(stage.session)
+                    stageLabel = `${saison} ${annee}`
+                } catch {
+                    stageLabel = stage.session
+                }
+            }
+            return {
+                ...s,
+                enseignantName: enseignant ? `${enseignant.nom} ${enseignant.prenom}` : "",
+                stageName: stageLabel
+            }
+        })
+    }, [supervisions, enseignants, stages])
+
+    const { sortedData, toggleSort, getSortIcon } = useTableSort(enrichedSupervisions, "stageName")
+
+    const [editingId, setEditingId] = useState<string | null>(null)
     const [editData, setEditData] = useState<any>({})
-    const [newData, setNewData] = useState({ enseignant: 0, stage: 0, nbStagiaires: 0 })
+    const [newData, setNewData] = useState({ enseignant: "", stage: "", nbStagiaires: 0 })
+
+    if (loading) return <div className="container mt-5">Chargement...</div>
+    if (!user) {
+        router.push("/login")
+        return null
+    }
 
     function startEdit(supervision: any) {
         setEditingId(supervision.id)
@@ -25,54 +57,43 @@ export default function(){
 
     async function saveEdit() {
         if (editingId) {
-            await db.supervisions.update(editingId, editData)
+            await firebaseDb.supervisions.update(editingId, editData)
             setEditingId(null)
         }
     }
 
     async function addNew() {
         if (newData.enseignant && newData.stage) {
-            await db.supervisions.add(newData)
+            await firebaseDb.supervisions.add(newData)
             setNewData({ ...newData, nbStagiaires: 0 })
         } else {
             alert("L'enseignant et le stage sont requis.")
         }
     }
 
-    function formatStage(stageId: number) {
-        const stage = stages?.find(s => s.id === stageId)
-        if (!stage) return "Stage inconnu"
-        try {
-            const {saison, annee} = extractSessionInfos(stage.session)
-            return `${saison} ${annee}`
-        } catch {
-            return stage.session
-        }
-    }
-
-    return <>
-        <button type="button" className="btn btn-primary rounded-pill mb-3" onClick={() => router.push(".")}>←</button>  
+    return <div className="container mt-3">
+        <button type="button" className="btn btn-outline-primary rounded-pill mb-4 w-25" onClick={() => router.push(".")}>← Retour</button>  
         <table className="table table-striped align-middle">
             <thead>
                 <tr>
-                    <th>Session du stage</th>
-                    <th>Enseignant</th>
-                    <th>Nombre de stagiaires</th>
+                    <th onClick={() => toggleSort("stageName")} style={{cursor: "pointer"}}>Session du stage {getSortIcon("stageName")}</th>
+                    <th onClick={() => toggleSort("enseignantName")} style={{cursor: "pointer"}}>Enseignant {getSortIcon("enseignantName")}</th>
+                    <th onClick={() => toggleSort("nbStagiaires")} style={{cursor: "pointer"}}>Nombre de stagiaires {getSortIcon("nbStagiaires")}</th>
                     <th style={{width: "120px"}}>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {(supervisions ?? []).map((supervision) => {
+                {sortedData.map((supervision) => {
                     const enseignant = enseignants?.find((el) => el.id == supervision.enseignant)
                     
                     return <tr key={supervision.id}>
                         {editingId === supervision.id ? (
                             <>
                                 <td>
-                                    <SelectStage value={editData.stage} onChange={(val:any) => setEditData({...editData, stage: Number(val)})} />
+                                    <SelectStage value={editData.stage} onChange={(val:any) => setEditData({...editData, stage: val})} />
                                 </td>
                                 <td>
-                                    <SelectEnseignant value={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: Number(val)})} />
+                                    <SelectEnseignant value={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: val})} />
                                 </td>
                                 <td>
                                     <input type="number" className="form-control" value={editData.nbStagiaires} onChange={e => setEditData({...editData, nbStagiaires: Number(e.target.value)})} />
@@ -84,12 +105,12 @@ export default function(){
                             </>
                         ) : (
                             <>
-                                <td>{formatStage(supervision.stage)}</td>
+                                <td>{supervision.stageName}</td>
                                 <td>{enseignant?.prenom} {enseignant?.nom}</td>
                                 <td>{supervision.nbStagiaires}</td>
                                 <td>
                                     <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(supervision)}>✏️</button>
-                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => db.supervisions.delete(supervision.id)}>🗑️</button>
+                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => firebaseDb.supervisions.delete(supervision.id)}>🗑️</button>
                                 </td>
                             </>
                         )}
@@ -97,10 +118,10 @@ export default function(){
                 })}
                 <tr className="table-info">
                     <td>
-                        <SelectStage value={newData.stage} onChange={(val:any) => setNewData({...newData, stage: Number(val)})} />
+                        <SelectStage value={newData.stage} onChange={(val:any) => setNewData({...newData, stage: val})} />
                     </td>
                     <td>
-                        <SelectEnseignant value={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: Number(val)})} />
+                        <SelectEnseignant value={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: val})} />
                     </td>
                     <td>
                         <input type="number" className="form-control" placeholder="Stagiaires" value={newData.nbStagiaires} onChange={e => setNewData({...newData, nbStagiaires: Number(e.target.value)})} />
@@ -111,5 +132,5 @@ export default function(){
                 </tr>
             </tbody>
         </table>
-    </>
+    </div>
 }

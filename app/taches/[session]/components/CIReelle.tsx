@@ -1,54 +1,63 @@
-import { db } from "@/app/db/db"
+import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { extractSessionInfos } from "@/app/utilities/sessions"
-import { useLiveQuery } from "dexie-react-hooks"
+import type { CIReelle, Enseignant } from "@/app/db/db"
 
-export default function({cache, session, tri}:any){
-    const CIReelles = useLiveQuery(() => db.CIReelles.toArray())
-    const enseignants = useLiveQuery(() => db.enseignants.toArray())
+export default function({cache, session, tri, firstColWidth}:any){
+    const CIReelles = useFirestoreCollection<CIReelle>("CIReelles")
+    const enseignants = useFirestoreCollection<Enseignant>("enseignants")
 
     const {saison, annee} = extractSessionInfos(session)
 
     async function clearAll(){
-        await clearCI()
+        if (confirm(`Voulez-vous vraiment réinitialiser toutes les CI Réelles pour la session ${saison} ${annee} ?`)) {
+            await clearCI()
+        }
     }
 
     async function clearCI(){
         const CIReellesSession = CIReelles?.filter(CIReelle => CIReelle.session == session)
-        CIReellesSession?.forEach(CIReelle => db.CIReelles.delete(Number(CIReelle.id)))
+        for (const CIReelle of (CIReellesSession ?? [])) {
+            await firebaseDb.CIReelles.delete(CIReelle.id)
+        }
     }
 
-    function CIHandler(ev:any){
-        const enseignantId = Number(ev.target.dataset.enseignantId)
+    async function CIHandler(ev:any){
+        const enseignantId = ev.target.dataset.enseignantId
         const CIReelle = CIReelles?.find(CIReelle => CIReelle.enseignant == enseignantId && CIReelle.session == session)
         const nouvelleValeur = Number(ev.target.value)
 
         if(CIReelle){
-            db.CIReelles.update(Number(CIReelle.id), {CI: nouvelleValeur})
+            await firebaseDb.CIReelles.update(CIReelle.id, {CI: nouvelleValeur})
         } else {
-            db.CIReelles.add({enseignant: enseignantId, CI: nouvelleValeur, session})
+            await firebaseDb.CIReelles.add({enseignant: enseignantId, CI: nouvelleValeur, session})
         }
     }
 
+    const firstColStyle = {
+        position: "sticky" as const, 
+        left: 0, 
+        zIndex: 101, 
+        backgroundColor: "#f8f9fa",
+        minWidth: `${firstColWidth}px`,
+        width: `${firstColWidth}px`
+    }
+
     return <>
-            <tr><th colSpan={100} style={{fontSize: "1.5em", backgroundColor: "#eeeeee"}}>
-                {saison} {annee}
-                <button type="button" className="btn btn-primary rounded-circle" style={{float: "right", padding: "0px 5px"}} onClick={clearAll}>⟲</button>
-                </th>
-            </tr>
-            <tr>
-                <th>
-                    <p>CI Réelles 
-                        <button type="button" onClick={clearCI} className="btn btn-primary rounded-circle" style={{float: "right", padding: "0px 5px"}}>⟲</button>    
-                    </p> 
+            <tr className="table-light">
+                <th style={firstColStyle}>
+                    <div className="d-flex justify-content-between align-items-center">
+                        <span className="small">CI Réelle {saison}</span>
+                        <button type="button" className="btn btn-link btn-sm text-danger p-0" onClick={clearAll} title="Réinitialiser">⟲</button>
+                    </div>
                 </th>
                 { (enseignants ?? [])
-                .toSorted((a:any, b:any) => a[tri].localeCompare(b[tri]))
+                .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
                 .filter(enseignant => !cache.includes(enseignant.id))
                 .map(enseignant => {
                     const CIReelle = CIReelles?.find(CIReelle => CIReelle.enseignant == enseignant.id && CIReelle.session == session)
                     const value = CIReelle ? CIReelle.CI : 0
-                    return <td key={enseignant.id}>
-                            <p><input className="w-100" type="number" min="0" step="0.01" value={value} data-enseignant-id={enseignant.id} onChange={CIHandler}/></p>
+                    return <td key={enseignant.id} className="bg-light">
+                            <input className="form-control form-control-sm text-center" type="number" min="0" step="0.01" value={value} data-enseignant-id={enseignant.id} onChange={CIHandler}/>
                         </td>
                 })}
             </tr>

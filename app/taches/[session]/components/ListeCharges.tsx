@@ -1,67 +1,85 @@
-import { db } from "@/app/db/db";
-import { useLiveQuery } from "dexie-react-hooks";
-import { useState } from "react";
+import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Charge from "./Charge";
+import InputModal from "./InputModal"
+import type { Groupe, Charge as ChargeType, Cours } from "@/app/db/db"
 
 export default function({enseignant, session}: any){
     const [hideMenu, setHideMenu] = useState(true)
-    const [position, setPosition] = useState({left: "0px", top: "0px"})
+    const [position, setPosition] = useState({left: 0, top: 0})
+    const menuRef = useRef<HTMLDivElement>(null)
+    const [mounted, setMounted] = useState(false)
+    const [modalOpen, setModalOpen] = useState(false)
+    const [selectedGroupe, setSelectedGroupe] = useState<any>(null)
 
-    const groupes = useLiveQuery(() => db.groupes.toArray())
-    const charges = useLiveQuery(() => db.charges.toArray())
-    const cours = useLiveQuery(() => db.cours.toArray())
+    const groupes = useFirestoreCollection<Groupe>("groupes")
+    const charges = useFirestoreCollection<ChargeType>("charges")
+    const cours = useFirestoreCollection<Cours>("cours")
 
     const groupesSession = groupes?.filter((groupe: any) => groupe.session == session)
     const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
 
+    useEffect(() => {
+        setMounted(true)
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setHideMenu(true);
+            }
+        };
+
+        if (!hideMenu) {
+            document.addEventListener("mousedown", handleClickOutside);
+        } else {
+            document.removeEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [hideMenu]);
+
     function openMenu(ev: any) {
         ev.preventDefault()
         setHideMenu(false)
-        setPosition({left: ev.pageX + "px", top: ev.pageY + "px"})
+        setPosition({left: ev.clientX, top: ev.clientY})
     }
 
-    function newSelectionGroupe(ev: any){
-        const enseignantID = Number(ev.target.dataset.enseignantId)
-        const groupeID = Number(ev.target.dataset.groupeId)
+    function startNewSelectionGroupe(groupe: any) {
+        setSelectedGroupe(groupe)
+        setModalOpen(true)
+        setHideMenu(true)
+    }
 
-        const chargesGroupe = charges?.filter(charge => charge.groupe == groupeID)
-        const sommeCharges = chargesGroupe?.reduce((somme, charge) => somme + charge.nbSemaines, 0)
+    const currentGroupeMax = selectedGroupe ? (() => {
+        const chargesGroupe = charges?.filter(charge => charge.groupe == selectedGroupe.id)
+        const sommeCharges = chargesGroupe?.reduce((somme, charge) => somme + (charge.nbSemaines ?? 0), 0)
+        return 15 - (sommeCharges ?? 0)
+    })() : 15
 
-        const semainesRestantes = String(15 - sommeCharges!)
-
-        const quantite = Number(prompt("Entrez le nombre de semaines (max: " + semainesRestantes + ")", semainesRestantes))
-
-        if(isNaN(quantite)){
-            alert("Erreur lors de l'entrée du nombre")
-            return
-        }
-
-        if(sommeCharges! + quantite > 15){
-            alert("La quantité de semaines de ce groupe est trop grande. Veuillez choisir un autre groupe ou une autre quantité")
-            return
-        }
+    async function handleAddChargeConfirm(quantite: number){
+        if (!selectedGroupe) return
 
         const charge = {
-            enseignant: enseignantID,
-            groupe: groupeID,
+            enseignant: enseignant.id,
+            groupe: selectedGroupe.id,
             nbSemaines: quantite
         }
 
-        db.charges.add(charge)
-
-        ev.target.value = ""
+        await firebaseDb.charges.add(charge)
+        setSelectedGroupe(null)
     }
 
-    function dropHandlerGroupe(ev:any){
+    async function dropHandlerGroupe(ev:any){
         ev.currentTarget.style.boxShadow = "inset 0 0 0 0"
-        const idNouveauEnseignant = Number(ev.currentTarget.dataset.enseignantId)
+        const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
 
         if(!idNouveauEnseignant){
             return
         }
 
-        const idGroupe = Number(ev.dataTransfer.getData("groupeId"))
-        const idAncienEnseignant = Number(ev.dataTransfer.getData("enseignantId"))
+        const idGroupe = ev.dataTransfer.getData("groupeId")
+        const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
 
         const ancienneCharge = charges?.find(charge => charge.enseignant == idAncienEnseignant && charge.groupe == idGroupe)
 
@@ -78,15 +96,17 @@ export default function({enseignant, session}: any){
             nbSemaines: ancienneCharge?.nbSemaines ?? 0
         }
 
-        db.charges.add(nouvelleCharge)
-
-        db.charges.delete(Number(ancienneCharge?.id))
+        await firebaseDb.charges.add(nouvelleCharge)
+        if (ancienneCharge) {
+            await firebaseDb.charges.delete(ancienneCharge.id)
+        }
     }
 
-    function removeHandlerGroupe(groupeId:any, enseignantId:any){
+    async function removeHandlerGroupe(groupeId:any, enseignantId:any){
         const charge = charges?.find(charge => charge.enseignant == enseignantId && charge.groupe == groupeId)
-
-        db.charges.delete(Number(charge?.id))        
+        if (charge) {
+            await firebaseDb.charges.delete(charge.id)
+        }
     }
 
     function dragOverHandlerGroupe(ev:any){
@@ -94,9 +114,6 @@ export default function({enseignant, session}: any){
     }
 
     function dragEnter(ev:any){
-        if(ev.currentTarget.dataset.dropzone == "liberation" && ev.dataTransfer.types.includes("liberationid")){
-            ev.currentTarget.style.boxShadow = "inset 0 0 0 2px red"
-        }
         if(ev.currentTarget.dataset.dropzone == "charge" && ev.dataTransfer.types.includes("groupeid")){
             ev.currentTarget.style.boxShadow = "inset 0 0 0 2px red"
         }
@@ -108,35 +125,69 @@ export default function({enseignant, session}: any){
         }
     }
 
+    const menuContent = !hideMenu && (
+        <div 
+            ref={menuRef}
+            style={{
+                position: "fixed", 
+                left: position.left, 
+                top: position.top, 
+                backgroundColor: "#444", 
+                color: "white",
+                display: "block", 
+                padding: "10px", 
+                zIndex: 9999,
+                borderRadius: "8px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                minWidth: "200px",
+                maxHeight: "300px",
+                overflowY: "auto"
+            }}
+        >
+            <h6 className="border-bottom pb-1 mb-2 text-info">Ajouter un groupe</h6>
+            {groupesSession?.filter((groupe:any) => {
+                const chargesGroupe = charges?.filter(charge => charge.groupe == groupe.id)
+                const sommeCharges = chargesGroupe?.reduce((somme, charge) => somme + (charge.nbSemaines ?? 0), 0)
+                const chargeExiste = charges?.find(charge => charge.enseignant == enseignant.id && charge.groupe == groupe.id)
+                return (sommeCharges ?? 0) < 15 && !chargeExiste
+            })?.toSorted((a:any, b:any) => {
+                const coursA = cours?.find(cour => cour.id == a.cours)
+                const coursB = cours?.find(cour => cour.id == b.cours)
+                return (coursA?.sigle ?? "").localeCompare(coursB?.sigle ?? "")
+            })?.map((groupe: any, index:number) => {
+                const cour = cours?.find(cour => cour.id == groupe.cours)
+                return <p key={index} className="mb-1">
+                    <button className="btn btn-sm btn-outline-light w-100 text-start" onClick={() => startNewSelectionGroupe(groupe)}>
+                        {cour?.sigle} - {cour?.nom} ({groupe.nbEtudiants})
+                    </button>
+                </p>
+            })}
+            {groupesSession?.length === 0 && <p className="small text-muted mb-0">Aucun groupe disponible</p>}
+        </div>
+    )
+
     return <>
-        <td onContextMenu={openMenu} onMouseLeave={ev => {setHideMenu(true); ev.currentTarget.style.boxShadow = "inset 0 0 0 0"}} key={enseignant.id} data-dropzone="charge" data-enseignant-id={enseignant.id} onDrop={dropHandlerGroupe} onDragOver={dragOverHandlerGroupe} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px"}}>
+        <td onContextMenu={openMenu} key={enseignant.id} data-dropzone="charge" data-enseignant-id={enseignant.id} onDrop={dropHandlerGroupe} onDragOver={dragOverHandlerGroupe} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px", position: "relative"}}>
             {chargesEnseignant?.filter(charge => {
                 const groupe = groupes?.find(groupe => charge.groupe == groupe.id)
                 return groupe?.session == session
             })?.map((charge: any) => {
                 const groupe = groupes?.find(groupe => charge.groupe == groupe.id)
                 const cour = cours?.find(cour => groupe?.cours == cour.id)
-                return <Charge key={groupe?.id} session={session} charge={charge} groupe={groupe} cours={cour} enseignantId={enseignant.id} onRemove={removeHandlerGroupe}/>
+                return <Charge key={groupe?.id} session={session} charge={charge} groupe={groupe} cours={cour} charges={charges} enseignantId={enseignant.id} onRemove={removeHandlerGroupe}/>
             })}
-            <div style={{position: "absolute", left: position.left, top: position.top, backgroundColor: "darkgrey", display: "block", padding: "5px"}} hidden={hideMenu}>
-                {groupesSession?.filter((groupe:any) => {
-                    const chargesGroupe = charges?.filter(charge => charge.groupe == groupe.id)
-                    const sommeCharges = chargesGroupe?.reduce((somme, charge) => somme + charge.nbSemaines, 0)
-                    const chargeExiste = charges?.find(charge => charge.enseignant == enseignant.id && charge.groupe == groupe.id)
-                    return sommeCharges! < 15 && !chargeExiste
-                })?.toSorted((a:any, b:any) => {
-                    const coursA = cours?.find(cour => cour.id == a.cours)
-                    const coursB = cours?.find(cour => cour.id == b.cours)
-                    return (coursA?.sigle ?? "").localeCompare(coursB?.sigle ?? "")
-                })?.map((groupe: any, index:number) => {
-                    const cour = cours?.find(cour => cour.id == groupe.cours)
-                    return <p key={index}>
-                        <button  data-groupe-id={groupe.id} data-enseignant-id={enseignant.id} onClick={newSelectionGroupe}>
-                            {cour?.sigle} - {cour?.nom} ({groupe.nbEtudiants})
-                        </button>
-                    </p>
-                })}
-            </div>
+            
+            {mounted && menuContent && createPortal(menuContent, document.body)}
+
+            <InputModal 
+                isOpen={modalOpen}
+                onClose={() => { setModalOpen(false); setSelectedGroupe(null); }}
+                onConfirm={handleAddChargeConfirm}
+                title="Ajouter une charge"
+                label={`Nombre de semaines pour ${selectedGroupe ? cours?.find(c => c.id === selectedGroupe.cours)?.sigle : ''} :`}
+                defaultValue={currentGroupeMax}
+                max={currentGroupeMax}
+            />
         </td>
     </>
 }

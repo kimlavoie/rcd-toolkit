@@ -5,12 +5,14 @@
   "scripts": {
     "dev": "next dev --port 3456",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "gemini": "npx @google/gemini-cli"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
     "dexie": "^4.4.2",
     "dexie-react-hooks": "^4.4.0",
+    "firebase": "^12.13.0",
     "next": "16.2.2",
     "react": "19.2.4",
     "react-dom": "19.2.4"

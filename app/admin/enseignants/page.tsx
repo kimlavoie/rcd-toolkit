@@ -1,17 +1,39 @@
 'use client'
 
-import { useLiveQuery } from "dexie-react-hooks"
-import { db } from "@/app/db/db"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useAuth } from "@/app/utilities/auth"
+import type { Enseignant } from "@/app/db/db"
+import { useTableSort } from "@/app/utilities/sorting"
 
 export default function(){
-    const enseignants = useLiveQuery(() => db.enseignants.toArray())
+    const { user, loading } = useAuth()
+    const enseignants = useFirestoreCollection<Enseignant>("enseignants")
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const highlightId = searchParams.get("highlight")
     
-    const [editingId, setEditingId] = useState<number | null>(null)
+    const { sortedData, toggleSort, getSortIcon } = useTableSort(enseignants, "nom")
+
+    useEffect(() => {
+        if (highlightId) {
+            const element = document.getElementById(`row-${highlightId}`)
+            if (element) {
+                element.scrollIntoView({ behavior: "smooth", block: "center" })
+            }
+        }
+    }, [highlightId, sortedData])
+
+    const [editingId, setEditingId] = useState<string | null>(null)
     const [editData, setEditData] = useState<any>({})
     const [newData, setNewData] = useState({ numeroEmploye: "", prenom: "", nom: "", courriel: "" })
+
+    if (loading) return <div className="container mt-5">Chargement...</div>
+    if (!user) {
+        router.push("/login")
+        return null
+    }
 
     function startEdit(enseignant: any) {
         setEditingId(enseignant.id)
@@ -20,35 +42,36 @@ export default function(){
 
     async function saveEdit() {
         if (editingId) {
-            await db.enseignants.update(editingId, editData)
+            await firebaseDb.enseignants.update(editingId, editData)
             setEditingId(null)
         }
     }
 
     async function addNew() {
         if (newData.numeroEmploye && newData.nom) {
-            await db.enseignants.add(newData)
+            await firebaseDb.enseignants.add(newData)
             setNewData({ numeroEmploye: "", prenom: "", nom: "", courriel: "" })
         } else {
             alert("Le numéro d'employé et le nom sont requis.")
         }
     }
 
-    return <>
-        <button type="button" className="btn btn-primary rounded-pill mb-3" onClick={() => router.push(".")}>←</button>  
+    return <div className="container mt-3">
+        <button type="button" className="btn btn-outline-primary rounded-pill mb-4 w-25" onClick={() => router.push(".")}>← Retour</button>  
         <table className="table table-striped align-middle">
             <thead>
                 <tr>
-                    <th>No d'employé</th>
-                    <th>Prénom</th>
-                    <th>Nom</th>
-                    <th>Courriel</th>
+                    <th onClick={() => toggleSort("numeroEmploye")} style={{cursor: "pointer"}}>No d'employé {getSortIcon("numeroEmploye")}</th>
+                    <th onClick={() => toggleSort("prenom")} style={{cursor: "pointer"}}>Prénom {getSortIcon("prenom")}</th>
+                    <th onClick={() => toggleSort("nom")} style={{cursor: "pointer"}}>Nom {getSortIcon("nom")}</th>
+                    <th onClick={() => toggleSort("courriel")} style={{cursor: "pointer"}}>Courriel {getSortIcon("courriel")}</th>
                     <th style={{width: "150px"}}>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {(enseignants ?? []).map((enseignant) => (
-                    <tr key={enseignant.id}>
+                {sortedData.map((enseignant) => {
+                    const isHighlighted = highlightId === enseignant.id
+                    return <tr key={enseignant.id} id={`row-${enseignant.id}`} className={isHighlighted ? "table-warning border border-warning" : ""}>
                         {editingId === enseignant.id ? (
                             <>
                                 <td><input className="form-control" value={editData.numeroEmploye} onChange={e => setEditData({...editData, numeroEmploye: e.target.value})} /></td>
@@ -68,12 +91,12 @@ export default function(){
                                 <td>{enseignant.courriel}</td>
                                 <td>
                                     <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(enseignant)}>✏️</button>
-                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => db.enseignants.delete(enseignant.id)}>🗑️</button>
+                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => firebaseDb.enseignants.delete(enseignant.id)}>🗑️</button>
                                 </td>
                             </>
                         )}
                     </tr>
-                ))}
+                })}
                 <tr className="table-info">
                     <td><input className="form-control" placeholder="Nouveau..." value={newData.numeroEmploye} onChange={e => setNewData({...newData, numeroEmploye: e.target.value})} /></td>
                     <td><input className="form-control" placeholder="Prénom" value={newData.prenom} onChange={e => setNewData({...newData, prenom: e.target.value})} /></td>
@@ -85,5 +108,5 @@ export default function(){
                 </tr>
             </tbody>
         </table>
-    </>
+    </div>
 }
