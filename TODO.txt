@@ -1,5 +1,4 @@
 - Demander à Gemini de rendre la manipulation des données plus agréables dans le tableau des tâches (principalement le scroll horizontal)
-- Permettre de manuellement fermer les notifications, en plus de la fermeture chronométrée
 - Créer un bouton d'aide discret qui permet de lister les fonctionnalités de l'application de gestion des tâches (drag and drop, clic droit, etc.)
     - Autrement dit, un manuel d'utilisation simple
 
