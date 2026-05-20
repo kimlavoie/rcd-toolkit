@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import calculerCI from "../calculerCI"
 
-export default function({enseignant, session, enseignantWidth}: any){
+export default function({enseignant, session, enseignantWidth, trigger}: any){
     const [CI, setCI] = useState(0)
 
     useEffect(() => {
@@ -15,7 +15,7 @@ export default function({enseignant, session, enseignantWidth}: any){
                     setCI(0);
                 });
         }
-    }, [session, enseignant])
+    }, [session, enseignant, trigger])
     
     const couleur = CI < 30 ? "black" : CI < 40 ? "darkkhaki" : CI < 45 ? "green" : CI < 55 ? "orange" : "red" 
 

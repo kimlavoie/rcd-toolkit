@@ -193,7 +193,7 @@ export default function({cache, session, tri, firstColWidth, enseignantWidth}:an
             .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
             .filter(enseignant => !cache.includes(enseignant.id))
             .map(enseignant => {
-                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth}/>
+                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} trigger={{charges, liberations, groupes}}/>
             })}
         </tr>
     </>

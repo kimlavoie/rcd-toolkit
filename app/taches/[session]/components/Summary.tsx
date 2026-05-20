@@ -37,9 +37,6 @@ export default function({cache, sessions, tri, saison, firstColWidth, enseignant
 
                         // Helper to calculate CI for a specific session
                         const getSessionCI = (sessionCode: string) => {
-                            const CIReelleExistante = (CIReelles ?? []).find(ci => String(ci.enseignant) === enseignantId && ci.session === sessionCode);
-                            if (CIReelleExistante) return Number(CIReelleExistante.CI ?? 0);
-
                             const chargesEnseignant = (charges ?? []).filter(charge => String(charge.enseignant) === enseignantId)
                             const groupesSession = (groupes ?? []).filter(groupe => groupe.session === sessionCode)
                             const chargesSession = chargesEnseignant.filter(charge => groupesSession.find(groupe => groupe.id === charge.groupe))
@@ -70,7 +67,9 @@ export default function({cache, sessions, tri, saison, firstColWidth, enseignant
                             return calculateur(chargesInfos, liberationsInfos, stagiaires, ETCparStagiaire).total;
                         };
 
-                        const CIA = getSessionCI(sessions[0]);
+                        const CIReelleExistante = (CIReelles ?? []).find(ci => String(ci.enseignant) === enseignantId && ci.session === sessions[0]);
+
+                        const CIA = saison === "Hiver" ? CIReelleExistante?.CI ?? 0 : getSessionCI(sessions[0]);
                         const CIH = getSessionCI(sessions[1]);
                         const CI = CIA + CIH;
                         
