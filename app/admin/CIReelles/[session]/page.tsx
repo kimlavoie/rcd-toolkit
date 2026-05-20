@@ -9,6 +9,7 @@ import { useAuth } from "@/app/utilities/auth"
 import type { CIReelle, Enseignant } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
 import { useMemo } from "react"
+import { toast } from "react-hot-toast"
 
 export default function(){
     const { user, loading } = useAuth()
@@ -59,7 +60,7 @@ export default function(){
             await firebaseDb.CIReelles.add({ ...newData, session })
             setNewData({ enseignant: "", CI: 0 })
         } else {
-            alert("L'enseignant est requis.")
+            toast.error("L'enseignant est requis.")
         }
     }
 

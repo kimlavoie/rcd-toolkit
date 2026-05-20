@@ -6,6 +6,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useAuth } from "@/app/utilities/auth"
 import type { Enseignant } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
+import { toast } from "react-hot-toast"
 
 function EnseignantsPageContent(){
     const { user, loading } = useAuth()
@@ -52,7 +53,7 @@ function EnseignantsPageContent(){
             await firebaseDb.enseignants.add(newData)
             setNewData({ numeroEmploye: "", prenom: "", nom: "", courriel: "" })
         } else {
-            alert("Le numéro d'employé et le nom sont requis.")
+            toast.error("Le numéro d'employé et le nom sont requis.")
         }
     }
 

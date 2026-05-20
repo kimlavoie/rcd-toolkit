@@ -10,8 +10,6 @@ export default function({session, liberation, allocation, liberations, enseignan
     const [mounted, setMounted] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
 
-    const bgColor = "#ffeeff"
-
     useEffect(() => {
         setMounted(true)
         const handleClickOutside = (event: MouseEvent) => {
@@ -85,9 +83,44 @@ export default function({session, liberation, allocation, liberations, enseignan
         </div>
     )
 
-    return <div onContextMenu={openMenu} onMouseLeave={ev => {ev.currentTarget.style.boxShadow = "inset 0 0 0 0"}} onMouseEnter={ev => ev.currentTarget.style.boxShadow = "inset 0 0 0 2px red"} style={{border: "1px solid black", backgroundColor: bgColor, padding: `5px`, marginBottom: "4px"}} draggable="true" onDragStart={dragStartHandler}>      
-        <p style={{fontWeight: "bold"}}>{allocation.code} - {allocation.description}</p>
-        <p>({liberation.quantite}/{allocation.quantite})</p>
+    return <div 
+        onContextMenu={openMenu} 
+        style={{
+            border: `1px solid #ddd`, 
+            backgroundColor: "#fcf9ff", 
+            borderLeft: `6px solid #6f42c1`,
+            padding: `8px`, 
+            marginBottom: "6px",
+            borderRadius: "4px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+            cursor: "grab",
+            fontSize: "0.9rem",
+            position: "relative",
+            transition: "all 0.2s"
+        }} 
+        onMouseEnter={ev => {
+            ev.currentTarget.style.boxShadow = "0 3px 6px rgba(0,0,0,0.12)";
+            ev.currentTarget.style.borderTopColor = "#ccc";
+            ev.currentTarget.style.borderRightColor = "#ccc";
+            ev.currentTarget.style.borderBottomColor = "#ccc";
+        }}
+        onMouseLeave={ev => {
+            ev.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.08)";
+            ev.currentTarget.style.borderTopColor = "#ddd";
+            ev.currentTarget.style.borderRightColor = "#ddd";
+            ev.currentTarget.style.borderBottomColor = "#ddd";
+        }}
+        draggable="true" 
+        onDragStart={dragStartHandler}
+    >      
+        <div style={{fontWeight: "bold", color: "#444", marginBottom: "4px"}}>{allocation.code}</div>
+        <div style={{color: "#666", fontSize: "0.85rem", lineHeight: "1.2", marginBottom: "8px"}}>{allocation.description}</div>
+        
+        <div className="d-flex justify-content-end">
+            <span className="badge rounded-pill bg-primary" style={{fontSize: "0.7rem", opacity: 0.85}}>
+                {liberation.quantite} / {allocation.quantite} ETC
+            </span>
+        </div>
         
         {mounted && menuContent && createPortal(menuContent, document.body)}
 

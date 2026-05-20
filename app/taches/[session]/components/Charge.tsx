@@ -80,10 +80,47 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
         </div>
     )
 
-    return <div onContextMenu={openMenu} onMouseLeave={ev => {ev.currentTarget.style.boxShadow = "inset 0 0 0 0"}} onMouseEnter={ev => ev.currentTarget.style.boxShadow = "inset 0 0 0 2px red"} style={{border: `1px solid black`, backgroundColor: cours.couleur, padding: `5px`, marginBottom: "4px"}} draggable="true" onDragStart={dragStartHandler}>      
-        <p style={{fontWeight: "bold"}}>{cours.sigle}</p>
-        <p><span style={{fontWeight: "bold"}}>{cours.nom}</span> ({groupe.nbEtudiants})</p>
-        {charge.nbSemaines < 15 && <p>Semaines: [{charge.nbSemaines}/15]</p> }
+    return <div 
+        onContextMenu={openMenu} 
+        style={{
+            border: `1px solid #ddd`, 
+            backgroundColor: "white", 
+            borderLeft: `6px solid ${cours.couleur}`,
+            padding: `8px`, 
+            marginBottom: "6px",
+            borderRadius: "4px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            cursor: "grab",
+            fontSize: "0.9rem",
+            position: "relative",
+            transition: "all 0.2s"
+        }} 
+        onMouseEnter={ev => {
+            ev.currentTarget.style.boxShadow = "0 3px 6px rgba(0,0,0,0.15)";
+            ev.currentTarget.style.borderTopColor = "#bbb";
+            ev.currentTarget.style.borderRightColor = "#bbb";
+            ev.currentTarget.style.borderBottomColor = "#bbb";
+        }}
+        onMouseLeave={ev => {
+            ev.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            ev.currentTarget.style.borderTopColor = "#ddd";
+            ev.currentTarget.style.borderRightColor = "#ddd";
+            ev.currentTarget.style.borderBottomColor = "#ddd";
+        }}
+        draggable="true" 
+        onDragStart={dragStartHandler}
+    >      
+        <div className="d-flex justify-content-between align-items-start mb-1">
+            <span style={{fontWeight: "bold", color: "#333"}}>{cours.sigle}</span>
+            <span className="badge bg-light text-dark border" style={{fontSize: "0.7rem"}}>Gr. {groupe.nbEtudiants} étud.</span>
+        </div>
+        <div style={{color: "#555", fontSize: "0.85rem", lineHeight: "1.2", marginBottom: "4px"}}>{cours.nom}</div>
+        
+        {charge.nbSemaines < 15 && (
+            <div className="mt-2 text-muted" style={{fontSize: "0.75rem"}}>
+                <span className="badge bg-warning text-dark">Partiel: {charge.nbSemaines}/15 sem.</span>
+            </div>
+        )}
         
         {mounted && menuContent && createPortal(menuContent, document.body)}
 

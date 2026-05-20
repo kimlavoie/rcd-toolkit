@@ -1,2 +1,5 @@
+- Il y a un bogue dans le calcul des CI
+
 - Améliorer la navigation dans l'application
 - Faire du refactoring pour améliorer la maintenabilité du code
+

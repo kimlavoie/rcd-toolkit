@@ -5,8 +5,9 @@ import ListeCharges from "./ListeCharges"
 import ListeLiberations from "./ListeLiberations"
 import CI from "./CI"
 import type { Enseignant, Groupe, Charge, Allocation, Liberation, Stage, Supervision } from "@/app/db/db"
+import { toast } from "react-hot-toast"
 
-export default function({cache, session, tri, firstColWidth}:any){
+export default function({cache, session, tri, firstColWidth, enseignantWidth}:any){
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
     const groupes = useFirestoreCollection<Groupe>("groupes")
     const charges = useFirestoreCollection<Charge>("charges")
@@ -58,7 +59,7 @@ export default function({cache, session, tri, firstColWidth}:any){
         const stage = stages?.find(stage => stage.id == stageId)
 
         if((sommeSupervisions ?? 0) + nouvelleValeur > (stage?.nbStagiaires ?? 0)){
-            alert("La quantité de stagiaires est trop grande pour ce stage. Veuillez choisir une autre quantité")
+            toast.error("La quantité de stagiaires est trop grande pour ce stage. Veuillez choisir une autre quantité")
             return
         }
 
@@ -138,7 +139,7 @@ export default function({cache, session, tri, firstColWidth}:any){
             .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
             .filter(enseignant => !cache.includes(enseignant.id))
             .map(enseignant => {
-                return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session}/>
+                return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth}/>
             })}
         </tr>
         <tr>
@@ -155,7 +156,7 @@ export default function({cache, session, tri, firstColWidth}:any){
             .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
             .filter(enseignant => !cache.includes(enseignant.id))
             .map(enseignant => {
-                return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session}/>
+                return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth}/>
             })}
         </tr>
         <tr>
@@ -177,13 +178,13 @@ export default function({cache, session, tri, firstColWidth}:any){
                 const supervision = supervisions?.find(supervision => supervision.stage == stage?.id && supervision.enseignant == enseignant.id)
                 const value = supervision ? supervision.nbStagiaires : 0
                 return stage 
-                    ?<td key={enseignant.id} className="text-center">
+                    ?<td key={enseignant.id} className="text-center" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
                         <div className="input-group input-group-sm">
                             <input className="form-control text-center" type="number" min="0" step="1" value={value} data-enseignant-id={enseignant.id} data-stage-id={stage.id} onChange={stagiairesHandler}/>
                             <span className="input-group-text">/{stage.nbStagiaires}</span>
                         </div>
                     </td>
-                    :<td key={enseignant.id} className="text-muted text-center small">Aucun stage</td>
+                    :<td key={enseignant.id} className="text-muted text-center small" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>Aucun stage</td>
             })}
         </tr>
         <tr>
@@ -192,7 +193,7 @@ export default function({cache, session, tri, firstColWidth}:any){
             .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
             .filter(enseignant => !cache.includes(enseignant.id))
             .map(enseignant => {
-                return <CI key={enseignant.id} enseignant={enseignant} session={session}/>
+                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth}/>
             })}
         </tr>
     </>

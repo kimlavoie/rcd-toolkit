@@ -3,8 +3,9 @@ import { useState, useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import Liberation from "./Liberation"
 import type { Liberation as LiberationType, Allocation } from "@/app/db/db"
+import { toast } from "react-hot-toast"
 
-export default function({enseignant, session}: any){
+export default function({enseignant, session, enseignantWidth}: any){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)
@@ -53,12 +54,12 @@ export default function({enseignant, session}: any){
         const quantite = Number(prompt("Entrez la quantité de libération en ETC (max: " + qteRestante + ")", qteRestante))
 
         if(isNaN(quantite)){
-            alert("Erreur lors de l'entrée du nombre")
+            toast.error("Erreur lors de l'entrée du nombre")
             return
         }
 
         if((sommeLiberations ?? 0) + quantite > (qteAllocation ?? 0)){
-            alert("La quantité de libération est trop grande pour l'allocation. Veuillez choisir une autre quantité")
+            toast.error("La quantité de libération est trop grande pour l'allocation. Veuillez choisir une autre quantité")
             return
         }
         
@@ -77,7 +78,8 @@ export default function({enseignant, session}: any){
     }
 
     async function dropHandlerLiberation(ev:any){
-        ev.currentTarget.style.boxShadow = "inset 0 0 0 0"
+        ev.currentTarget.style.boxShadow = ""
+        ev.currentTarget.style.backgroundColor = ""
         const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
 
         if(!idNouveauEnseignant){
@@ -92,7 +94,7 @@ export default function({enseignant, session}: any){
         const liberationExiste = liberations?.find(liberation => liberation.enseignant == idNouveauEnseignant && liberation.allocation == ancienneLiberation?.allocation)
         
         if(liberationExiste){
-            alert("Cet enseignant a deja cette liberation")
+            toast.error("Cet enseignant a deja cette liberation")
             return
         }
 
@@ -113,14 +115,17 @@ export default function({enseignant, session}: any){
     }
 
     function dragEnter(ev:any){
+        ev.preventDefault()
         if(ev.currentTarget.dataset.dropzone == "liberation" && ev.dataTransfer.types.includes("liberationid")){
-            ev.currentTarget.style.boxShadow = "inset 0 0 0 2px red"
+            ev.currentTarget.style.boxShadow = "inset 0 0 0 2px #6f42c1"
+            ev.currentTarget.style.backgroundColor = "rgba(111, 66, 193, 0.05)"
         }
     }
     
     function dragLeave(ev:any){
         if(!ev.currentTarget.contains(ev.relatedTarget)){
-            ev.currentTarget.style.boxShadow = "inset 0 0 0 0"
+            ev.currentTarget.style.boxShadow = ""
+            ev.currentTarget.style.backgroundColor = ""
         }
     }
 
@@ -166,7 +171,7 @@ export default function({enseignant, session}: any){
         </div>
     )
 
-    return <td onContextMenu={openMenu} key={enseignant.id} data-enseignant-id={enseignant.id} data-dropzone="liberation" onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px", position: "relative"}}>
+    return <td onContextMenu={openMenu} key={enseignant.id} data-enseignant-id={enseignant.id} data-dropzone="liberation" onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px", position: "relative", transition: "background-color 0.2s", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
         {liberationsEnseignant?.filter(liberation => {
             const allocation:any = allocations?.find(allocation => liberation.allocation == allocation.id)
             return allocation?.session == session

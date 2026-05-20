@@ -6,6 +6,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useAuth } from "@/app/utilities/auth"
 import type { Cours } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
+import { toast } from "react-hot-toast"
 
 function CoursPageContent(){
     const { user, loading } = useAuth()
@@ -52,7 +53,7 @@ function CoursPageContent(){
             await firebaseDb.cours.add(newData)
             setNewData({ sigle: "", nom: "", saison: "Automne", couleur: "#000000", heuresTheorie: 0, heuresPratique: 0, heuresMaison: 0 })
         } else {
-            alert("Le sigle et le nom sont requis.")
+            toast.error("Le sigle et le nom sont requis.")
         }
     }
 

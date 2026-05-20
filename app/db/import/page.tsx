@@ -5,6 +5,7 @@ import { useRef, useState } from "react"
 import { useAuth } from "../../utilities/auth"
 import { firestore } from "../../utilities/firebase"
 import { collection, getDocs, doc, setDoc, deleteDoc, writeBatch } from "firebase/firestore"
+import { toast } from "react-hot-toast"
 
 const COLLECTIONS = [
     "enseignants",
@@ -35,7 +36,7 @@ export default function(){
         try {
             const file = ref.current?.files?.[0]
             if (!file) {
-                alert("Veuillez sélectionner un fichier")
+                toast.error("Veuillez sélectionner un fichier")
                 return
             }
 
@@ -74,11 +75,11 @@ export default function(){
                 }
             }
 
-            alert("Données importées avec succès !")
+            toast.success("Données importées avec succès !")
             router.push("/db")
         } catch (error: any) {
             console.error("Import error:", error)
-            alert("Erreur lors de l'importation : " + (error instanceof Error ? error.message : "Erreur inconnue"))
+            toast.error("Erreur lors de l'importation : " + (error instanceof Error ? error.message : "Erreur inconnue"))
         } finally {
             setImporting(false)
             setProgress("")
@@ -130,4 +131,5 @@ export default function(){
             </div>
         </div>
     </div>
+}/div>
 }

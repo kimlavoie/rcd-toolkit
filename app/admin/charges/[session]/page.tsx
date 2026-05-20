@@ -10,6 +10,7 @@ import { useAuth } from "@/app/utilities/auth"
 import type { Charge, Enseignant, Groupe, Cours } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
 import { useMemo } from "react"
+import { toast } from "react-hot-toast"
 
 export default function(){
     const { user, loading } = useAuth()
@@ -68,7 +69,7 @@ export default function(){
             await firebaseDb.charges.add(newData)
             setNewData({ ...newData, enseignant: "", groupe: "" })
         } else {
-            alert("L'enseignant et le groupe sont requis.")
+            toast.error("L'enseignant et le groupe sont requis.")
         }
     }
 

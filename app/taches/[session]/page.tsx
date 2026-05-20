@@ -10,6 +10,7 @@ import CIReelle from "./components/CIReelle"
 import Link from "next/link"
 import { useAuth } from "@/app/utilities/auth"
 import type { Enseignant as EnseignantType } from "@/app/db/db"
+import { toast } from "react-hot-toast"
 
 export default function(){
     const { user, loading: authLoading } = useAuth()
@@ -34,6 +35,7 @@ export default function(){
     const [cache, setCache] = useState<any[]>([])
     const [tri, setTri] = useState("nom")
     const [showOptions, setShowOptions] = useState(false)
+    const [enseignantWidth, setEnseignantWidth] = useState(200)
 
     const enseignants = useFirestoreCollection<EnseignantType>("enseignants")
     const groupes = useFirestoreCollection<any>("groupes")
@@ -81,7 +83,7 @@ export default function(){
 
     const valider = async () => {
         if (!groupes || !charges || !allocations || !liberations || !stages || !supervisions || !cours) {
-            alert("Données en cours de chargement...")
+            toast.error("Données en cours de chargement...")
             return
         }
 
@@ -135,9 +137,9 @@ export default function(){
         })
 
         if (reports.length === 0) {
-            alert("Toutes les tâches sont validées pour toutes les sessions affichées ! Tout est en ordre.")
+            toast.success("Toutes les tâches sont validées pour toutes les sessions affichées ! Tout est en ordre.")
         } else {
-            alert("Rapport de validation :\n\n" + reports.join("\n\n---\n\n"))
+            toast("Rapport de validation :\n\n" + reports.join("\n\n---\n\n"))
         }
     }
 
@@ -174,6 +176,14 @@ export default function(){
                                     <option value="nom">Nom</option>
                                     <option value="numeroEmploye">No d'employé</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label className="form-label small text-muted mb-1">Largeur colonnes :</label>
+                                <div className="d-flex gap-2">
+                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => setEnseignantWidth(100)}>Min</button>
+                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => setEnseignantWidth(200)}>Std</button>
+                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => setEnseignantWidth(300)}>Max</button>
+                                </div>
                             </div>
                             <div className="flex-grow-1">
                                 <label className="form-label small text-muted mb-1">Visibilité :</label>
@@ -241,23 +251,23 @@ export default function(){
                             .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
                             .filter(enseignant => !cache.includes(enseignant.id))
                             .map(enseignant => (
-                                <Enseignant key={enseignant.id} enseignant={enseignant} onCache={() => setCache([...cache, enseignant.id])}/>
+                                <Enseignant key={enseignant.id} enseignant={enseignant} globalWidth={enseignantWidth} onCache={() => setCache([...cache, enseignant.id])}/>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
                         {saison === "Automne" ? (
                             <>
-                                <Tache session={sessionsAnnuelle[0]} cache={cache} tri={tri} firstColWidth={firstColWidth}/>
-                                <Tache session={sessionsAnnuelle[1]} cache={cache} tri={tri} firstColWidth={firstColWidth}/>
+                                <Tache session={sessionsAnnuelle[0]} cache={cache} tri={tri} firstColWidth={enseignantWidth}/>
+                                <Tache session={sessionsAnnuelle[1]} cache={cache} tri={tri} firstColWidth={enseignantWidth}/>
                             </>
                         ) : (
                             <>
-                                <CIReelle session={sessionsAnnuelle[0]} cache={cache} tri={tri} firstColWidth={firstColWidth}/>
-                                <Tache session={sessionsAnnuelle[1]} cache={cache} tri={tri} firstColWidth={firstColWidth}/>
+                                <CIReelle session={sessionsAnnuelle[0]} cache={cache} tri={tri} firstColWidth={enseignantWidth}/>
+                                <Tache session={sessionsAnnuelle[1]} cache={cache} tri={tri} firstColWidth={enseignantWidth}/>
                             </>
                         )}
-                        <Summary session={session} sessions={sessionsAnnuelle} cache={cache} tri={tri} saison={saison} firstColWidth={firstColWidth}/>
+                        <Summary session={session} sessions={sessionsAnnuelle} cache={cache} tri={tri} saison={saison} firstColWidth={enseignantWidth}/>
                     </tbody>
                 </table>
             </div>

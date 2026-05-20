@@ -9,6 +9,7 @@ import { useAuth } from "@/app/utilities/auth"
 import type { Groupe, Cours } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
 import { useMemo } from "react"
+import { toast } from "react-hot-toast"
 
 function GroupesPageContent(){
     const { user, loading } = useAuth()
@@ -71,7 +72,7 @@ function GroupesPageContent(){
             await firebaseDb.groupes.add({ ...newData, session })
             setNewData({ cours: "", nbEtudiants: 0 })
         } else {
-            alert("Le cours est requis.")
+            toast.error("Le cours est requis.")
         }
     }
 

@@ -66,7 +66,7 @@ export default function(){
             await firebaseDb.liberations.add(newData)
             setNewData({ ...newData, enseignant: "", quantite: 0 })
         } else {
-            alert("L'enseignant et l'allocation sont requis.")
+            toast.error("L'enseignant et l'allocation sont requis.")
         }
     }
 

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useAuth } from "../../utilities/auth"
 import { firestore } from "../../utilities/firebase"
 import { collection, getDocs, addDoc, doc, deleteDoc, query, where } from "firebase/firestore"
+import { toast } from "react-hot-toast"
 
 export default function(){
     const { user, loading: authLoading } = useAuth()
@@ -28,7 +29,7 @@ export default function(){
             const sessionArrivee = makeSessionCode(extractSessionInfos(sessionDepart).saison, String(annee))
 
             if(sessionDepart == sessionArrivee){
-                alert("Les deux sessions doivent être différentes")
+                toast.error("Les deux sessions doivent être différentes")
                 return
             }
 
@@ -115,11 +116,11 @@ export default function(){
                 }
             }
 
-            alert("Copie effectuée avec succès !")
+            toast.success("Copie effectuée avec succès !")
             router.push("/db")
         } catch (error) {
             console.error("Copy error:", error)
-            alert("Erreur lors de la copie")
+            toast.error("Erreur lors de la copie")
         } finally {
             setCopying(false)
             setProgress("")

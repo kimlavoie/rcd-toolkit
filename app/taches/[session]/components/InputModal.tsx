@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
+import { toast } from "react-hot-toast"
 
 interface InputModalProps {
     isOpen: boolean
@@ -38,11 +39,11 @@ export default function InputModal({
 
     const handleConfirm = () => {
         if (isNaN(value) || value < 0) {
-            alert("Veuillez entrer un nombre valide")
+            toast.error("Veuillez entrer un nombre valide")
             return
         }
         if (value > max + 0.0001) {
-            alert(`La valeur maximale autorisée est ${max}`)
+            toast.error(`La valeur maximale autorisée est ${max}`)
             return
         }
         onConfirm(value)

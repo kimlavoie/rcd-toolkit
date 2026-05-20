@@ -5,6 +5,7 @@ import { useAuth } from "../../utilities/auth"
 import { firestore } from "../../utilities/firebase"
 import { collection, getDocs } from "firebase/firestore"
 import { useState } from "react"
+import { toast } from "react-hot-toast"
 
 const COLLECTIONS = [
     "enseignants",
@@ -52,10 +53,10 @@ export default function(){
             link.click()
 
             URL.revokeObjectURL(url)
-            alert("Exportation réussie !")
+            toast.success("Exportation réussie !")
         } catch (error) {
             console.error("Export error:", error)
-            alert("Erreur lors de l'exportation")
+            toast.error("Erreur lors de l'exportation")
         } finally {
             setExporting(false)
         }

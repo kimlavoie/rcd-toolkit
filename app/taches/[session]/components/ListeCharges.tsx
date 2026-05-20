@@ -4,8 +4,9 @@ import { createPortal } from "react-dom";
 import Charge from "./Charge";
 import InputModal from "./InputModal"
 import type { Groupe, Charge as ChargeType, Cours } from "@/app/db/db"
+import { toast } from "react-hot-toast"
 
-export default function({enseignant, session}: any){
+export default function({enseignant, session, enseignantWidth}: any){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)
@@ -71,7 +72,8 @@ export default function({enseignant, session}: any){
     }
 
     async function dropHandlerGroupe(ev:any){
-        ev.currentTarget.style.boxShadow = "inset 0 0 0 0"
+        ev.currentTarget.style.boxShadow = ""
+        ev.currentTarget.style.backgroundColor = ""
         const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
 
         if(!idNouveauEnseignant){
@@ -86,7 +88,7 @@ export default function({enseignant, session}: any){
         const chargeExiste = charges?.find(charge => charge.enseignant == idNouveauEnseignant && charge.groupe == idGroupe)
         
         if(chargeExiste){
-            alert("Cet enseignant a deja cette charge")
+            toast.error("Cet enseignant a deja cette charge")
             return
         }
 
@@ -114,14 +116,17 @@ export default function({enseignant, session}: any){
     }
 
     function dragEnter(ev:any){
+        ev.preventDefault()
         if(ev.currentTarget.dataset.dropzone == "charge" && ev.dataTransfer.types.includes("groupeid")){
-            ev.currentTarget.style.boxShadow = "inset 0 0 0 2px red"
+            ev.currentTarget.style.boxShadow = "inset 0 0 0 2px #0d6efd"
+            ev.currentTarget.style.backgroundColor = "rgba(13, 110, 253, 0.05)"
         }
     }
     
     function dragLeave(ev:any){
         if(!ev.currentTarget.contains(ev.relatedTarget)){
-            ev.currentTarget.style.boxShadow = "inset 0 0 0 0"
+            ev.currentTarget.style.boxShadow = ""
+            ev.currentTarget.style.backgroundColor = ""
         }
     }
 
@@ -167,7 +172,7 @@ export default function({enseignant, session}: any){
     )
 
     return <>
-        <td onContextMenu={openMenu} key={enseignant.id} data-dropzone="charge" data-enseignant-id={enseignant.id} onDrop={dropHandlerGroupe} onDragOver={dragOverHandlerGroupe} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px", position: "relative"}}>
+        <td onContextMenu={openMenu} key={enseignant.id} data-dropzone="charge" data-enseignant-id={enseignant.id} onDrop={dropHandlerGroupe} onDragOver={dragOverHandlerGroupe} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px", position: "relative", transition: "all 0.2s", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
             {chargesEnseignant?.filter(charge => {
                 const groupe = groupes?.find(groupe => charge.groupe == groupe.id)
                 return groupe?.session == session

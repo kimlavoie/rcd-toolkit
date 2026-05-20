@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import calculerCI from "../calculerCI"
 
-export default function({enseignant, session}: any){
+export default function({enseignant, session, enseignantWidth}: any){
     const [CI, setCI] = useState(0)
 
     useEffect(() => {
@@ -19,7 +19,7 @@ export default function({enseignant, session}: any){
     
     const couleur = CI < 30 ? "black" : CI < 40 ? "darkkhaki" : CI < 45 ? "green" : CI < 55 ? "orange" : "red" 
 
-    return <th key={enseignant.id} style={{color: couleur}}>
+    return <th key={enseignant.id} style={{color: couleur, minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, textAlign: "center"}}>
         {CI ? CI.toFixed(2) : "0.00"}
     </th>
 }

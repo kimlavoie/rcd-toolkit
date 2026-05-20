@@ -2,7 +2,7 @@ import calculateur from "@/app/calculateur/calculateur"
 import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import type { Enseignant, Liberation, Allocation, Groupe, Charge, Cours, Supervision, Stage, CIReelle } from "@/app/db/db"
 
-export default function({cache, sessions, tri, saison, firstColWidth}:any){
+export default function({cache, sessions, tri, saison, firstColWidth, enseignantWidth}:any){
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
     const liberations = useFirestoreCollection<Liberation>("liberations")
     const allocations = useFirestoreCollection<Allocation>("allocations")
@@ -76,7 +76,7 @@ export default function({cache, sessions, tri, saison, firstColWidth}:any){
                         
                         const couleur = CI < 70 ? "#fff" : CI < 80 ? "darkkhaki" : CI < 85 ? "#0f0" : "#f00"
                         
-                        return <td key={enseignant.id} style={{color: couleur, fontWeight: "bold", backgroundColor: "#212529", textAlign: "center"}}>
+                        return <td key={enseignant.id} style={{color: couleur, fontWeight: "bold", backgroundColor: "#212529", textAlign: "center", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
                             {CI.toFixed(2)}
                         </td>
                     })}

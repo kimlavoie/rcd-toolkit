@@ -9,6 +9,7 @@ import SelectStage from "../components/inputs/SelectStage"
 import { useAuth } from "@/app/utilities/auth"
 import type { Supervision, Enseignant, Stage } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
+import { toast } from "react-hot-toast"
 
 export default function(){
     const { user, loading } = useAuth()
@@ -67,7 +68,7 @@ export default function(){
             await firebaseDb.supervisions.add(newData)
             setNewData({ ...newData, nbStagiaires: 0 })
         } else {
-            alert("L'enseignant et le stage sont requis.")
+            toast.error("L'enseignant et le stage sont requis.")
         }
     }
 

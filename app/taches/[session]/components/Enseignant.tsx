@@ -4,14 +4,20 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { Enseignant as EnseignantType } from "@/app/db/db"
 
-export default function Enseignant({enseignant, onCache}: {enseignant: EnseignantType, onCache: () => void}){
+export default function Enseignant({enseignant, onCache, globalWidth}: {enseignant: EnseignantType, onCache: () => void, globalWidth?: number}){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)
     const [mounted, setMounted] = useState(false)
 
-    const [width, setWidth] = useState(200)
+    const [width, setWidth] = useState(globalWidth || 200)
     const isResizing = useRef(false)
+
+    useEffect(() => {
+        if (globalWidth) {
+            setWidth(globalWidth)
+        }
+    }, [globalWidth])
 
     const startResizing = (e: React.MouseEvent) => {
         e.stopPropagation()

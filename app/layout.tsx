@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "bootstrap/dist/css/bootstrap.css"
 import "./globals.css"
 
@@ -25,7 +26,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <Toaster position="top-right" />
+        {children}
+      </body>
     </html>
   );
 }

@@ -7,6 +7,7 @@ import { extractSessionInfos } from "@/app/utilities/sessions"
 import { useAuth } from "@/app/utilities/auth"
 import type { Allocation } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
+import { toast } from "react-hot-toast"
 
 function AllocationsPageContent(){
     const { user, loading } = useAuth()
@@ -58,7 +59,7 @@ function AllocationsPageContent(){
             await firebaseDb.allocations.add({ ...newData, session })
             setNewData({ code: "", description: "", quantite: 0 })
         } else {
-            alert("Le code et la description sont requis.")
+            toast.error("Le code et la description sont requis.")
         }
     }
 

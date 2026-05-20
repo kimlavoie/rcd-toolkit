@@ -43,7 +43,7 @@ export default function(){
             await firebaseDb.stages.add(newData)
             setNewData({ ...newData, nbStagiaires: 0 })
         } else {
-            alert("La session est requise.")
+            toast.error("La session est requise.")
         }
     }
 
