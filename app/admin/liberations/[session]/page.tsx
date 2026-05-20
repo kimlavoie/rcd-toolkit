@@ -10,6 +10,7 @@ import { useAuth } from "@/app/utilities/auth"
 import type { Liberation, Enseignant, Allocation } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
 import { useMemo } from "react"
+import toast from "react-hot-toast"
 
 export default function(){
     const { user, loading } = useAuth()
