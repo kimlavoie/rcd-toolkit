@@ -2,13 +2,13 @@
 
 import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import { useAuth } from "@/app/utilities/auth"
 import type { Allocation } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
 
-export default function(){
+function AllocationsPageContent(){
     const { user, loading } = useAuth()
     const allocations = useFirestoreCollection<Allocation>("allocations")
     const params = useParams()
@@ -112,4 +112,12 @@ export default function(){
             </tbody>
         </table>
     </div>
+}
+
+export default function AllocationsPage() {
+    return (
+        <Suspense fallback={<div className="container mt-5">Chargement...</div>}>
+            <AllocationsPageContent />
+        </Suspense>
+    )
 }

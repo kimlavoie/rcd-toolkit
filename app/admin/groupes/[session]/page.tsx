@@ -2,7 +2,7 @@
 
 import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import SelectCours from "../../components/inputs/SelectCours"
 import { useAuth } from "@/app/utilities/auth"
@@ -10,7 +10,7 @@ import type { Groupe, Cours } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
 import { useMemo } from "react"
 
-export default function(){
+function GroupesPageContent(){
     const { user, loading } = useAuth()
     const groupes = useFirestoreCollection<Groupe>("groupes")
     const cours = useFirestoreCollection<Cours>("cours")
@@ -131,4 +131,12 @@ export default function(){
             </tbody>
         </table>
     </div>
+}
+
+export default function GroupesPage() {
+    return (
+        <Suspense fallback={<div className="container mt-5">Chargement...</div>}>
+            <GroupesPageContent />
+        </Suspense>
+    )
 }

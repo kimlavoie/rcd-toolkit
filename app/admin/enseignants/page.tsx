@@ -2,12 +2,12 @@
 
 import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useAuth } from "@/app/utilities/auth"
 import type { Enseignant } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
 
-export default function(){
+function EnseignantsPageContent(){
     const { user, loading } = useAuth()
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
     const router = useRouter()
@@ -109,4 +109,12 @@ export default function(){
             </tbody>
         </table>
     </div>
+}
+
+export default function EnseignantsPage() {
+    return (
+        <Suspense fallback={<div className="container mt-5">Chargement...</div>}>
+            <EnseignantsPageContent />
+        </Suspense>
+    )
 }
