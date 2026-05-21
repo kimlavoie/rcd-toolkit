@@ -26,11 +26,16 @@ export default function(){
     const ref = useRef<HTMLInputElement>(null)
     const [importing, setImporting] = useState(false)
     const [progress, setProgress] = useState("")
+    const [fileSelected, setFileSelected] = useState(false)
 
     if (authLoading) return <div className="container mt-5 text-center">Chargement...</div>
     if (!user) {
         router.push("/login")
         return null
+    }
+
+    function handleFileChange() {
+        setFileSelected(!!ref.current?.files?.[0])
     }
 
     async function upload(){
@@ -55,6 +60,10 @@ export default function(){
                 throw new Error("Format de fichier invalide : le contenu doit être un objet.")
             }
 
+            // Map to store oldId -> newId for relational integrity
+            const idMap: Record<string, Record<string, string>> = {}
+            for (const coll of COLLECTIONS) idMap[coll] = {}
+
             // Validation and Import
             for (const collectionName of COLLECTIONS) {
                 setProgress(`Traitement de la collection : ${collectionName}...`)
@@ -69,21 +78,43 @@ export default function(){
                 const dataToImport = fileContent[collectionName]
                 if (dataToImport && Array.isArray(dataToImport)) {
                     const importPromises = dataToImport.map(async (item: any) => {
-                        const { id, ...data } = item
-                        const dataWithUser = { ...data, userId: user!.uid }
+                        const { id: oldId, userId, ...data } = item
                         
-                        if (id) {
-                            const docRef = doc(firestore, collectionName, id)
-                            // Check if document exists and belongs to someone else
-                            const existing = await getDocs(query(collection(firestore, collectionName), where("__name__", "==", id)))
-                            if (!existing.empty && existing.docs[0].data().userId !== user!.uid) {
-                                console.warn(`Skipping document ${id} as it belongs to another user.`)
-                                return
-                            }
-                            return setDoc(docRef, dataWithUser)
-                        } else {
-                            const newDocRef = doc(collection(firestore, collectionName))
-                            return setDoc(newDocRef, dataWithUser)
+                        // Update references based on previous mappings
+                        const dataWithReferences = { ...data }
+                        
+                        if (collectionName === "groupes" && data.cours) {
+                            dataWithReferences.cours = idMap["cours"][data.cours] || data.cours
+                        }
+                        if (collectionName === "allocations" && data.session) {
+                            // session is usually a string code like "A24", not a ref
+                        }
+                        if (collectionName === "liberations") {
+                            if (data.enseignant) dataWithReferences.enseignant = idMap["enseignants"][data.enseignant] || data.enseignant
+                            if (data.allocation) dataWithReferences.allocation = idMap["allocations"][data.allocation] || data.allocation
+                            if (data.scenario && data.scenario !== "production") dataWithReferences.scenario = idMap["scenarios"][data.scenario] || data.scenario
+                        }
+                        if (collectionName === "supervisions") {
+                            if (data.enseignant) dataWithReferences.enseignant = idMap["enseignants"][data.enseignant] || data.enseignant
+                            if (data.stage) dataWithReferences.stage = idMap["stages"][data.stage] || data.stage
+                            if (data.scenario && data.scenario !== "production") dataWithReferences.scenario = idMap["scenarios"][data.scenario] || data.scenario
+                        }
+                        if (collectionName === "charges") {
+                            if (data.enseignant) dataWithReferences.enseignant = idMap["enseignants"][data.enseignant] || data.enseignant
+                            if (data.groupe) dataWithReferences.groupe = idMap["groupes"][data.groupe] || data.groupe
+                            if (data.scenario && data.scenario !== "production") dataWithReferences.scenario = idMap["scenarios"][data.scenario] || data.scenario
+                        }
+                        if (collectionName === "CIReelles") {
+                            if (data.enseignant) dataWithReferences.enseignant = idMap["enseignants"][data.enseignant] || data.enseignant
+                        }
+
+                        const dataWithUser = { ...dataWithReferences, userId: user!.uid }
+                        
+                        const newDocRef = doc(collection(firestore, collectionName))
+                        await setDoc(newDocRef, dataWithUser)
+                        
+                        if (oldId) {
+                            idMap[collectionName][oldId] = newDocRef.id
                         }
                     })
                     await Promise.all(importPromises)
@@ -122,6 +153,7 @@ export default function(){
                         ref={ref}
                         disabled={importing}
                         accept=".json"
+                        onChange={handleFileChange}
                     />
                 </div>
 
@@ -129,7 +161,7 @@ export default function(){
                     <button 
                         className="btn btn-primary btn-lg px-5 rounded-pill shadow-sm w-100" 
                         onClick={upload}
-                        disabled={importing}
+                        disabled={importing || !fileSelected}
                     >
                         {importing ? (
                             <>
