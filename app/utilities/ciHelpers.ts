@@ -3,13 +3,13 @@ import calculateur from "@/app/calculateur/calculateur"
 import type { Charge, Liberation, Groupe, Cours, Supervision, Stage, Allocation } from "@/app/db/db"
 
 export interface CIEntries {
-    charges: Charge[]
-    liberations: Liberation[]
-    supervisions: Supervision[]
-    groupes: Groupe[]
-    cours: Cours[]
-    stages: Stage[]
-    allocations: Allocation[]
+    charges: Charge[] | undefined
+    liberations: Liberation[] | undefined
+    supervisions: Supervision[] | undefined
+    groupes: Groupe[] | undefined
+    cours: Cours[] | undefined
+    stages: Stage[] | undefined
+    allocations: Allocation[] | undefined
 }
 
 export function calculateSessionCI(
