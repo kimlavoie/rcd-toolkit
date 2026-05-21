@@ -147,7 +147,7 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                 const cour = cours?.find(c => c.id == groupe.cours)
                 return <p key={groupe.id} className="mb-1">
                     <button className="btn btn-outline-light btn-sm w-100 text-start" onClick={() => {setSelectedGroupe(groupe); setModalOpen(true)}}>
-                        {cour?.sigle} (Gr. {groupe.id.substring(0,4)})
+                        {cour?.sigle} - {cour?.nom} ({groupe.nbEtudiants} étud.)
                     </button>
                 </p>
             })}

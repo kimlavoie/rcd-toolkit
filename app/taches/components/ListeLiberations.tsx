@@ -142,7 +142,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
             }).map(allocation => (
                 <p key={allocation.id} className="mb-1">
                     <button className="btn btn-outline-light btn-sm w-100 text-start" onClick={() => {setSelectedAllocation(allocation); setModalOpen(true)}}>
-                        {allocation.code}
+                        {allocation.code} - {allocation.description}
                     </button>
                 </p>
             ))}
