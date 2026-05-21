@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { useRef, useState } from "react"
 import { useAuth } from "../../utilities/auth"
 import { firestore } from "../../utilities/firebase"
-import { collection, getDocs, doc, setDoc, deleteDoc, writeBatch } from "firebase/firestore"
+import { collection, getDocs, doc, setDoc, deleteDoc, query, where } from "firebase/firestore"
 import { toast } from "react-hot-toast"
 
 const COLLECTIONS = [
@@ -16,7 +16,8 @@ const COLLECTIONS = [
     "stages",
     "supervisions",
     "charges",
-    "CIReelles"
+    "CIReelles",
+    "scenarios"
 ]
 
 export default function(){
@@ -40,7 +41,7 @@ export default function(){
                 return
             }
 
-            if (!confirm("ATTENTION : Cette opération supprimera TOUTES les données actuelles de Firestore pour les remplacer par le contenu du fichier. Continuer ?")) {
+            if (!confirm("ATTENTION : Cette opération supprimera VOS données actuelles pour les remplacer par le contenu du fichier. Continuer ?")) {
                 return
             }
 
@@ -58,18 +59,32 @@ export default function(){
             for (const collectionName of COLLECTIONS) {
                 setProgress(`Traitement de la collection : ${collectionName}...`)
                 
-                // 1. Clear existing
-                const snapshot = await getDocs(collection(firestore, collectionName))
+                // 1. Clear existing data FOR THIS USER ONLY
+                const q = query(collection(firestore, collectionName), where("userId", "==", user!.uid))
+                const snapshot = await getDocs(q)
                 const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref))
                 await Promise.all(deletePromises)
 
-                // 2. Import new
+                // 2. Import new data and tag with current userId
                 const dataToImport = fileContent[collectionName]
                 if (dataToImport && Array.isArray(dataToImport)) {
-                    const importPromises = dataToImport.map((item: any) => {
+                    const importPromises = dataToImport.map(async (item: any) => {
                         const { id, ...data } = item
-                        if (!id) return Promise.resolve() // Skip if no ID
-                        return setDoc(doc(firestore, collectionName, id), data)
+                        const dataWithUser = { ...data, userId: user!.uid }
+                        
+                        if (id) {
+                            const docRef = doc(firestore, collectionName, id)
+                            // Check if document exists and belongs to someone else
+                            const existing = await getDocs(query(collection(firestore, collectionName), where("__name__", "==", id)))
+                            if (!existing.empty && existing.docs[0].data().userId !== user!.uid) {
+                                console.warn(`Skipping document ${id} as it belongs to another user.`)
+                                return
+                            }
+                            return setDoc(docRef, dataWithUser)
+                        } else {
+                            const newDocRef = doc(collection(firestore, collectionName))
+                            return setDoc(newDocRef, dataWithUser)
+                        }
                     })
                     await Promise.all(importPromises)
                 }

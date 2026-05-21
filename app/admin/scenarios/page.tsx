@@ -78,7 +78,11 @@ export default function ScenariosPage() {
 
             // 2. Helper to copy sub-collections
             const copyCollection = async (collectionName: string) => {
-                const q = query(collection(firestore, collectionName), where("scenario", "==", scenario.id))
+                const q = query(
+                    collection(firestore, collectionName), 
+                    where("scenario", "==", scenario.id),
+                    where("userId", "==", user!.uid)
+                )
                 const snapshot = await getDocs(q)
                 
                 for (const docSnap of snapshot.docs) {

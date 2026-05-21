@@ -1,29 +1,25 @@
 import calculateur from "@/app/calculateur/calculateur"
-import { collection, getDocs } from "firebase/firestore"
-import { firestore } from "../utilities/firebase"
+import { collection, getDocs, query, where } from "firebase/firestore"
+import { firestore, auth } from "../utilities/firebase"
 
 export default async function calculerCI(session: string, enseignant: any){
-    // In Firestore, we need to fetch the data
-    const chargesSnap = await getDocs(collection(firestore, "charges"))
-    const charges = chargesSnap.docs.map(doc => ({id: doc.id, ...doc.data()})) as any[]
+    const userId = auth.currentUser?.uid;
+    if (!userId) throw new Error("User must be logged in to calculate CI");
 
-    const liberationsSnap = await getDocs(collection(firestore, "liberations"))
-    const liberations = liberationsSnap.docs.map(doc => ({id: doc.id, ...doc.data()})) as any[]
+    // Helper to fetch filtered collection
+    const fetchFiltered = async (collectionName: string) => {
+        const q = query(collection(firestore, collectionName), where("userId", "==", userId));
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({id: doc.id, ...doc.data()})) as any[];
+    };
 
-    const groupesSnap = await getDocs(collection(firestore, "groupes"))
-    const groupes = groupesSnap.docs.map(doc => ({id: doc.id, ...doc.data()})) as any[]
-
-    const coursSnap = await getDocs(collection(firestore, "cours"))
-    const cours = coursSnap.docs.map(doc => ({id: doc.id, ...doc.data()})) as any[]
-
-    const allocationsSnap = await getDocs(collection(firestore, "allocations"))
-    const allocations = allocationsSnap.docs.map(doc => ({id: doc.id, ...doc.data()})) as any[]
-
-    const supervisionsSnap = await getDocs(collection(firestore, "supervisions"))
-    const supervisions = supervisionsSnap.docs.map(doc => ({id: doc.id, ...doc.data()})) as any[]
-
-    const stagesSnap = await getDocs(collection(firestore, "stages"))
-    const stages = stagesSnap.docs.map(doc => ({id: doc.id, ...doc.data()})) as any[]
+    const charges = await fetchFiltered("charges");
+    const liberations = await fetchFiltered("liberations");
+    const groupes = await fetchFiltered("groupes");
+    const cours = await fetchFiltered("cours");
+    const allocations = await fetchFiltered("allocations");
+    const supervisions = await fetchFiltered("supervisions");
+    const stages = await fetchFiltered("stages");
 
     const enseignantId = String(enseignant.id);
 

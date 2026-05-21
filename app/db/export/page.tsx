@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { useAuth } from "../../utilities/auth"
 import { firestore } from "../../utilities/firebase"
-import { collection, getDocs } from "firebase/firestore"
+import { collection, getDocs, query, where } from "firebase/firestore"
 import { useState } from "react"
 import { toast } from "react-hot-toast"
 
@@ -16,7 +16,8 @@ const COLLECTIONS = [
     "stages",
     "supervisions",
     "charges",
-    "CIReelles"
+    "CIReelles",
+    "scenarios"
 ]
 
 export default function(){    
@@ -36,7 +37,8 @@ export default function(){
             const allData: any = {};
             
             for (const collectionName of COLLECTIONS) {
-                const snapshot = await getDocs(collection(firestore, collectionName))
+                const q = query(collection(firestore, collectionName), where("userId", "==", user!.uid))
+                const snapshot = await getDocs(q)
                 allData[collectionName] = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()

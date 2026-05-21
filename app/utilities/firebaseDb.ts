@@ -5,7 +5,9 @@ import {
     updateDoc, 
     deleteDoc, 
     doc, 
-    query 
+    query,
+    where,
+    getDoc
 } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { firestore, auth } from "./firebase";
@@ -18,7 +20,12 @@ export function useFirestoreCollection<T>(collectionName: string) {
         // Wait for auth to be initialized and user to be logged in
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             if (user) {
-                const q = query(collection(firestore, collectionName));
+                // Filter by userId to ensure data isolation
+                const q = query(
+                    collection(firestore, collectionName),
+                    where("userId", "==", user.uid)
+                );
+                
                 const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
                     const items = snapshot.docs.map(doc => ({
                         id: doc.id,
@@ -61,8 +68,15 @@ function createFirebaseTable(collectionName: string) {
         },
         add: async (data: any) => {
             try {
+                const userId = auth.currentUser?.uid;
+                if (!userId) throw new Error("User must be logged in to add data");
+                
                 const { id, ...rest } = data;
-                return await addDoc(collection(firestore, collectionName), rest);
+                // Automatically inject userId for isolation
+                return await addDoc(collection(firestore, collectionName), {
+                    ...rest,
+                    userId
+                });
             } catch (error) {
                 console.error(`Error adding to ${collectionName}:`, error);
                 throw error;
@@ -70,9 +84,22 @@ function createFirebaseTable(collectionName: string) {
         },
         update: async (id: string, data: any) => {
             try {
-                const { id: _, ...rest } = data;
+                const userId = auth.currentUser?.uid;
+                if (!userId) throw new Error("User must be logged in to update data");
+
                 const docRef = doc(firestore, collectionName, id);
-                return await updateDoc(docRef, rest);
+                
+                // Safety check: ensure the document belongs to the user
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists() && docSnap.data().userId !== userId) {
+                    throw new Error("Unauthorized: You do not own this document");
+                }
+
+                const { id: _, ...rest } = data;
+                return await updateDoc(docRef, {
+                    ...rest,
+                    userId // Ensure userId is preserved/updated
+                });
             } catch (error) {
                 console.error(`Error updating in ${collectionName}:`, error);
                 throw error;
@@ -80,7 +107,17 @@ function createFirebaseTable(collectionName: string) {
         },
         delete: async (id: string) => {
             try {
+                const userId = auth.currentUser?.uid;
+                if (!userId) throw new Error("User must be logged in to delete data");
+
                 const docRef = doc(firestore, collectionName, id);
+
+                // Safety check: ensure the document belongs to the user
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists() && docSnap.data().userId !== userId) {
+                    throw new Error("Unauthorized: You do not own this document");
+                }
+
                 return await deleteDoc(docRef);
             } catch (error) {
                 console.error(`Error deleting from ${collectionName}:`, error);
