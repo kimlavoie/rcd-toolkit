@@ -137,12 +137,13 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
 
     return <>
         <tr className="table-secondary">
-            <th colSpan={100} style={{fontSize: "0.85rem", backgroundColor: "#e9ecef", position: "sticky", left: 0, zIndex: 101, boxShadow: "2px 0 5px rgba(0,0,0,0.1)", padding: "4px 12px", whiteSpace: "nowrap", borderRight: "2px solid #dee2e6", borderBottom: "1px solid #dee2e6", backgroundClip: "padding-box"}}>
+            <th style={{...firstColStyle, backgroundColor: "#e9ecef", zIndex: 102}}>
                 <div className="d-flex justify-content-between align-items-center gap-4">
                     <span className="fw-bold">{saison} {annee}</span>
                     <button type="button" className="btn btn-xs btn-outline-danger py-0 px-2" style={{fontSize: "0.7rem"}} onClick={clearAll} title="Réinitialiser la session">Réinitialiser ⟲</button>
                 </div>
             </th>
+            <td colSpan={visibleEnseignants.length} style={{backgroundColor: "#e9ecef", borderBottom: "1px solid #dee2e6"}}></td>
         </tr>
         <tr>
             <th style={firstColStyle}>
