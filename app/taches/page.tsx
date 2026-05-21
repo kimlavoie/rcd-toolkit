@@ -1,6 +1,6 @@
 'use client'
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../utilities/auth";
 
 export default function(){
@@ -8,11 +8,14 @@ export default function(){
     const [annee, setAnnee] = useState(new Date().getFullYear())
     const router = useRouter()
 
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push("/login")
+        }
+    }, [user, loading, router])
+
     if (loading) return <div className="container mt-5">Chargement...</div>
-    if (!user) {
-        router.push("/login")
-        return null
-    }
+    if (!user) return null;
 
     return <div className="container mt-5">
         <div className="row justify-content-center">

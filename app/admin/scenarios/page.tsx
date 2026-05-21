@@ -2,7 +2,7 @@
 
 import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/app/utilities/auth"
 import type { Scenario } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
@@ -23,11 +23,14 @@ export default function ScenariosPage() {
     const [newData, setNewData] = useState({ nom: "", session: "A26", notes: "", isDefault: false })
     const [isCopying, setIsCopying] = useState<string | null>(null)
 
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push("/login")
+        }
+    }, [user, loading, router])
+
     if (loading) return <div className="container mt-5">Chargement...</div>
-    if (!user) {
-        router.push("/login")
-        return null
-    }
+    if (!user) return null;
 
     function startEdit(scenario: any) {
         setEditingId(scenario.id)

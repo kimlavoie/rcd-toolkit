@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "./utilities/auth";
 import { useRouter } from "next/navigation";
@@ -7,6 +8,12 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const { user, loading, logout } = useAuth()
   const router = useRouter()
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login")
+    }
+  }, [user, loading, router])
 
   if (loading) return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
@@ -17,10 +24,7 @@ export default function Home() {
     </div>
   )
   
-  if (!user) {
-    router.push("/login")
-    return null
-  }
+  if (!user) return null;
 
   const sections = [
     {

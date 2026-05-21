@@ -72,12 +72,15 @@ export default function(){
         })
         .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
 
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push("/login")
+        }
+    }, [user, authLoading, router])
+
     if (authLoading) return <div className="container mt-5 text-center">Chargement...</div>
 
-    if (!user) {
-        router.push("/login")
-        return null
-    }
+    if (!user) return null;
 
     if (!isValidYear) {
         return <div className="container mt-5 alert alert-danger">Année scolaire invalide: {year}</div>

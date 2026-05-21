@@ -17,16 +17,16 @@ export function useFirestoreCollection<T>(collectionName: string) {
     const [data, setData] = useState<T[] | undefined>(undefined);
 
     useEffect(() => {
-        // Wait for auth to be initialized and user to be logged in
+        let unsubscribeSnapshot: (() => void) | undefined;
+
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Filter by userId to ensure data isolation
                 const q = query(
                     collection(firestore, collectionName),
                     where("userId", "==", user.uid)
                 );
                 
-                const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+                unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
                     const items = snapshot.docs.map(doc => ({
                         id: doc.id,
                         ...doc.data()
@@ -35,14 +35,19 @@ export function useFirestoreCollection<T>(collectionName: string) {
                 }, (error) => {
                     console.error(`Snapshot error for ${collectionName}:`, error);
                 });
-
-                return () => unsubscribeSnapshot();
             } else {
+                if (unsubscribeSnapshot) {
+                    unsubscribeSnapshot();
+                    unsubscribeSnapshot = undefined;
+                }
                 setData(undefined);
             }
         });
 
-        return () => unsubscribeAuth();
+        return () => {
+            unsubscribeAuth();
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+        };
     }, [collectionName]);
 
     return data;
