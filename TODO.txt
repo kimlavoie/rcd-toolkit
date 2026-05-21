@@ -1,1 +1,5 @@
+- Mettre la CI sticky sous le nom des enseignants
+- La page d'admin des groupes n'a pas de défilement (vérifier pour les autres pages admin également)
+- Ramener les couleurs pour la CI
+
 - Faire du refactoring pour améliorer la maintenabilité du code
