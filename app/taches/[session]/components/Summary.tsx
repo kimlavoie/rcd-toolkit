@@ -2,7 +2,7 @@ import calculateur from "@/app/calculateur/calculateur"
 import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import type { Enseignant, Liberation, Allocation, Groupe, Charge, Cours, Supervision, Stage, CIReelle } from "@/app/db/db"
 
-export default function({cache, sessions, tri, saison, firstColWidth, enseignantWidth}:any){
+export default function({visibleEnseignants, sessions, saison, firstColWidth, enseignantWidth}:any){
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
     const liberations = useFirestoreCollection<Liberation>("liberations")
     const allocations = useFirestoreCollection<Allocation>("allocations")
@@ -23,16 +23,16 @@ export default function({cache, sessions, tri, saison, firstColWidth, enseignant
         left: 0, 
         zIndex: 101,
         minWidth: `${firstColWidth}px`,
-        width: `${firstColWidth}px`
+        width: `${firstColWidth}px`,
+        backgroundColor: "#212529",
+        boxShadow: "2px 0 5px rgba(0,0,0,0.2)",
+        borderRight: "1px solid #444"
     }
 
     return <>
                 <tr className="table-dark">
                     <th style={firstColStyle}>CI Annuelle (Total)</th>
-                    { (enseignants ?? [])
-                    .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
-                    .filter(enseignant => !cache.includes(enseignant.id))
-                    .map(enseignant => {
+                    { visibleEnseignants.map((enseignant: any) => {
                         const enseignantId = String(enseignant.id);
 
                         // Helper to calculate CI for a specific session

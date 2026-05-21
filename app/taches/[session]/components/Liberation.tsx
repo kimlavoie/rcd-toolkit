@@ -2,6 +2,8 @@ import { firebaseDb } from "@/app/utilities/firebaseDb"
 import { useState, useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import InputModal from "./InputModal"
+import TransferModal from "./TransferModal"
+import { toast } from "react-hot-toast"
 
 export default function({session, liberation, allocation, liberations, enseignantId, onRemove}: any){
     const [hideMenu, setHideMenu] = useState(true)
@@ -9,6 +11,7 @@ export default function({session, liberation, allocation, liberations, enseignan
     const menuRef = useRef<HTMLDivElement>(null)
     const [mounted, setMounted] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
+    const [transferModalOpen, setTransferModalOpen] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -56,6 +59,17 @@ export default function({session, liberation, allocation, liberations, enseignan
         await firebaseDb.liberations.update(liberation.id, nouvelleLiberation)
     }
 
+    async function handleTransferConfirm(targetEnseignantId: string){
+        const liberationExiste = liberations?.find((l: any) => l.enseignant == targetEnseignantId && l.allocation == allocation.id)
+        if(liberationExiste){
+            toast.error("Cet enseignant a deja cette liberation")
+            return
+        }
+
+        await firebaseDb.liberations.update(liberation.id, {enseignant: targetEnseignantId})
+        toast.success("Libération transférée avec succès")
+    }
+
     function modifierAllocation(ev: any){
         window.open("/admin/allocations/" + session + "?highlight=" + allocation.id, "_blank")
     }
@@ -78,6 +92,7 @@ export default function({session, liberation, allocation, liberations, enseignan
             }}
         >
             <p className="mb-2"><button className="btn btn-danger btn-sm w-100" onClick={supprimer}>Supprimer</button></p>
+            <p className="mb-2"><button className="btn btn-primary btn-sm w-100" onClick={() => { setTransferModalOpen(true); setHideMenu(true); }}>Transférer à...</button></p>
             <p className="mb-2"><button className="btn btn-outline-light btn-sm w-100" onClick={() => { setModalOpen(true); setHideMenu(true); }}>Changer la quantité</button></p>
             <p className="mb-0"><button className="btn btn-outline-light btn-sm w-100" onClick={modifierAllocation}>Modifier l'allocation</button></p>
         </div>
@@ -133,6 +148,14 @@ export default function({session, liberation, allocation, liberations, enseignan
             defaultValue={liberation.quantite}
             max={qteMax}
             step={0.001}
+        />
+
+        <TransferModal 
+            isOpen={transferModalOpen}
+            onClose={() => setTransferModalOpen(false)}
+            onConfirm={handleTransferConfirm}
+            title={`Transférer ${allocation.code}`}
+            currentEnseignantId={enseignantId}
         />
     </div>
 }

@@ -33,6 +33,7 @@ export default function(){
         : [`A${(currentYearShort - 1).toString().padStart(2, '0')}`, session];
 
     const [cache, setCache] = useState<any[]>([])
+    const [search, setSearch] = useState("")
     const [tri, setTri] = useState("nom")
     const [showOptions, setShowOptions] = useState(false)
     const [enseignantWidth, setEnseignantWidth] = useState(200)
@@ -69,6 +70,20 @@ export default function(){
         document.addEventListener("mousemove", onMouseMove)
         document.addEventListener("mouseup", onMouseUp)
     }
+
+    // Filter and Sort Enseignants
+    const visibleEnseignants = (enseignants ?? [])
+        .filter(e => !cache.includes(e.id))
+        .filter(e => {
+            if (!search) return true
+            const searchLower = search.toLowerCase()
+            return (
+                (e.nom ?? "").toLowerCase().includes(searchLower) || 
+                (e.prenom ?? "").toLowerCase().includes(searchLower) ||
+                (e.numeroEmploye ?? "").toLowerCase().includes(searchLower)
+            )
+        })
+        .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
 
     if (authLoading) return <div className="container mt-5">Chargement...</div>
 
@@ -143,21 +158,39 @@ export default function(){
         }
     }
 
-    return <div className="container-fluid mt-3">
-        <button type="button" className="btn btn-outline-primary rounded-pill mb-4 w-25" onClick={() => router.push("/taches")}>← Retour</button>  
-        <div className="card shadow-sm p-4">
-            <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
-                <h1 className="mb-0 text-primary">
-                    {saison === "Automne" ? `Année scolaire ${annee}-${parseInt(annee)+1}` : `${saison} ${annee}`}
-                </h1>
+    return <div className="container-fluid d-flex flex-column" style={{height: "100vh", padding: "1rem"}}>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+            <button type="button" className="btn btn-outline-primary rounded-pill w-auto px-4" onClick={() => router.push("/taches")}>← Retour</button>  
+            <div className="d-flex gap-2">
                 <button className="btn btn-success rounded-pill shadow-sm" onClick={valider}>
                     ✅ Valider les tâches
                 </button>
             </div>
+        </div>
+
+        <div className="card shadow-sm p-4 flex-grow-1 d-flex flex-column overflow-hidden">
+            <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                <h1 className="mb-0 text-primary h4">
+                    {saison === "Automne" ? `Année scolaire ${annee}-${parseInt(annee)+1}` : `${saison} ${annee}`}
+                </h1>
+            </div>
             
-            <div className="mb-4">
+            <div className="mb-3">
                 <div className="d-flex align-items-center gap-3 mb-2">
                     <h5 className="mb-0 text-muted small uppercase">Affichage</h5>
+                    <div className="input-group input-group-sm" style={{maxWidth: "300px"}}>
+                        <span className="input-group-text bg-white border-end-0 text-muted">🔍</span>
+                        <input 
+                            type="text" 
+                            className="form-control border-start-0 ps-0" 
+                            placeholder="Rechercher un enseignant..." 
+                            value={search} 
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                        {search && (
+                            <button className="btn btn-outline-secondary border-start-0" onClick={() => setSearch("")}>✕</button>
+                        )}
+                    </div>
                     <button 
                         className="btn btn-sm btn-outline-secondary rounded-pill px-3" 
                         onClick={() => setShowOptions(!showOptions)}
@@ -168,7 +201,7 @@ export default function(){
                 </div>
                 
                 {showOptions && (
-                    <div className="card bg-light border-0 p-3 animate-fade-in">
+                    <div className="card bg-light border-0 p-3 animate-fade-in mb-2">
                         <div className="d-flex gap-4 align-items-center flex-wrap">
                             <div>
                                 <label className="form-label small text-muted mb-1">Trier les enseignants :</label>
@@ -219,18 +252,19 @@ export default function(){
                 )}
             </div>
 
-            <div className="table-responsive" style={{maxHeight: "75vh"}}>
+            <div className="table-responsive flex-grow-1 overflow-auto border rounded" style={{maxHeight: "none"}}>
                 <table className="table table-bordered table-hover align-middle mb-0">
                     <thead className="table-light sticky-top" style={{zIndex: 105}}>
                         <tr>
                             <th 
-                                className="bg-light" 
+                                className="bg-light border-end" 
                                 style={{
                                     position: "sticky", 
                                     left: 0, 
                                     zIndex: 106, 
                                     minWidth: `${firstColWidth}px`,
-                                    width: `${firstColWidth}px`
+                                    width: `${firstColWidth}px`,
+                                    boxShadow: "2px 0 5px rgba(0,0,0,0.1)"
                                 }}
                             >
                                 Actions / Enseignants
@@ -247,10 +281,7 @@ export default function(){
                                     }}
                                 />
                             </th>
-                            {(enseignants ?? [])
-                            .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
-                            .filter(enseignant => !cache.includes(enseignant.id))
-                            .map(enseignant => (
+                            {visibleEnseignants.map(enseignant => (
                                 <Enseignant key={enseignant.id} enseignant={enseignant} globalWidth={enseignantWidth} onCache={() => setCache([...cache, enseignant.id])}/>
                             ))}
                         </tr>
@@ -258,21 +289,19 @@ export default function(){
                     <tbody>
                         {saison === "Automne" ? (
                             <>
-                                <Tache session={sessionsAnnuelle[0]} cache={cache} tri={tri} firstColWidth={enseignantWidth}/>
-                                <Tache session={sessionsAnnuelle[1]} cache={cache} tri={tri} firstColWidth={enseignantWidth}/>
+                                <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} firstColWidth={firstColWidth} enseignantWidth={enseignantWidth}/>
+                                <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} firstColWidth={firstColWidth} enseignantWidth={enseignantWidth}/>
                             </>
                         ) : (
                             <>
-                                <CIReelle session={sessionsAnnuelle[0]} cache={cache} tri={tri} firstColWidth={enseignantWidth}/>
-                                <Tache session={sessionsAnnuelle[1]} cache={cache} tri={tri} firstColWidth={enseignantWidth}/>
+                                <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} firstColWidth={firstColWidth} enseignantWidth={enseignantWidth}/>
+                                <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} firstColWidth={firstColWidth} enseignantWidth={enseignantWidth}/>
                             </>
                         )}
-                        <Summary session={session} sessions={sessionsAnnuelle} cache={cache} tri={tri} saison={saison} firstColWidth={enseignantWidth}/>
+                        <Summary session={session} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={saison} firstColWidth={firstColWidth} enseignantWidth={enseignantWidth}/>
                     </tbody>
                 </table>
             </div>
-
-
         </div>
     </div>
 }

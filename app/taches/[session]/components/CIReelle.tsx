@@ -2,7 +2,7 @@ import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import type { CIReelle, Enseignant } from "@/app/db/db"
 
-export default function({cache, session, tri, firstColWidth}:any){
+export default function({visibleEnseignants, session, firstColWidth, enseignantWidth}:any){
     const CIReelles = useFirestoreCollection<CIReelle>("CIReelles")
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
 
@@ -39,7 +39,9 @@ export default function({cache, session, tri, firstColWidth}:any){
         zIndex: 101, 
         backgroundColor: "#f8f9fa",
         minWidth: `${firstColWidth}px`,
-        width: `${firstColWidth}px`
+        width: `${firstColWidth}px`,
+        boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
+        borderRight: "1px solid #dee2e6"
     }
 
     return <>
@@ -50,13 +52,10 @@ export default function({cache, session, tri, firstColWidth}:any){
                         <button type="button" className="btn btn-link btn-sm text-danger p-0" onClick={clearAll} title="Réinitialiser">⟲</button>
                     </div>
                 </th>
-                { (enseignants ?? [])
-                .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
-                .filter(enseignant => !cache.includes(enseignant.id))
-                .map(enseignant => {
+                { visibleEnseignants.map((enseignant: any) => {
                     const CIReelle = CIReelles?.find(CIReelle => CIReelle.enseignant == enseignant.id && CIReelle.session == session)
                     const value = CIReelle ? CIReelle.CI : 0
-                    return <td key={enseignant.id} className="bg-light">
+                    return <td key={enseignant.id} className="bg-light" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
                             <input className="form-control form-control-sm text-center" type="number" min="0" step="0.01" value={value} data-enseignant-id={enseignant.id} onChange={CIHandler}/>
                         </td>
                 })}

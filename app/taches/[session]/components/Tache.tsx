@@ -6,8 +6,7 @@ import ListeLiberations from "./ListeLiberations"
 import CI from "./CI"
 import type { Enseignant, Groupe, Charge, Allocation, Liberation, Stage, Supervision } from "@/app/db/db"
 import { toast } from "react-hot-toast"
-
-export default function({cache, session, tri, firstColWidth, enseignantWidth}:any){
+export default function({visibleEnseignants, session, firstColWidth, enseignantWidth}:any){
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
     const groupes = useFirestoreCollection<Groupe>("groupes")
     const charges = useFirestoreCollection<Charge>("charges")
@@ -114,12 +113,14 @@ export default function({cache, session, tri, firstColWidth, enseignantWidth}:an
         zIndex: 101, 
         backgroundColor: "white",
         minWidth: `${firstColWidth}px`,
-        width: `${firstColWidth}px`
+        width: `${firstColWidth}px`,
+        boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
+        borderRight: "1px solid #dee2e6"
     }
 
     return <>
         <tr className="table-secondary">
-            <th colSpan={100} style={{fontSize: "1.2em", backgroundColor: "#e9ecef", position: "sticky", left: 0, zIndex: 101, minWidth: `${firstColWidth}px`}}>
+            <th colSpan={100} style={{fontSize: "1.2em", backgroundColor: "#e9ecef", position: "sticky", left: 0, zIndex: 101, minWidth: `${firstColWidth}px`, boxShadow: "2px 0 5px rgba(0,0,0,0.1)"}}>
                 <div className="d-flex justify-content-between align-items-center">
                     <span>{saison} {annee}</span>
                     <button type="button" className="btn btn-sm btn-outline-danger" onClick={clearAll}>Réinitialiser la session ⟲</button>
@@ -135,10 +136,7 @@ export default function({cache, session, tri, firstColWidth, enseignantWidth}:an
                     :<span className="badge bg-success">Complet</span>
                 }</p>
             </th>
-            { (enseignants ?? [])
-            .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
-            .filter(enseignant => !cache.includes(enseignant.id))
-            .map(enseignant => {
+            { visibleEnseignants.map((enseignant: any) => {
                 return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth}/>
             })}
         </tr>
@@ -152,10 +150,7 @@ export default function({cache, session, tri, firstColWidth, enseignantWidth}:an
                 }
                 </p>
             </th>
-            { (enseignants ?? [])
-            .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
-            .filter(enseignant => !cache.includes(enseignant.id))
-            .map(enseignant => {
+            { visibleEnseignants.map((enseignant: any) => {
                 return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth}/>
             })}
         </tr>
@@ -170,10 +165,7 @@ export default function({cache, session, tri, firstColWidth, enseignantWidth}:an
                 }
                 </p>
             </th>
-            { (enseignants ?? [])
-            .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
-            .filter(enseignant => !cache.includes(enseignant.id))
-            .map(enseignant => {
+            { visibleEnseignants.map((enseignant: any) => {
                 const stage = stages?.find(stage => stage.session == session)
                 const supervision = supervisions?.find(supervision => supervision.stage == stage?.id && supervision.enseignant == enseignant.id)
                 const value = supervision ? supervision.nbStagiaires : 0
@@ -189,10 +181,7 @@ export default function({cache, session, tri, firstColWidth, enseignantWidth}:an
         </tr>
         <tr>
             <th style={firstColStyle}>CI {saison}</th>
-            { (enseignants ?? [])
-            .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
-            .filter(enseignant => !cache.includes(enseignant.id))
-            .map(enseignant => {
+            { visibleEnseignants.map((enseignant: any) => {
                 return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} trigger={{charges, liberations, groupes}}/>
             })}
         </tr>

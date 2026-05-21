@@ -2,6 +2,8 @@ import { firebaseDb } from "@/app/utilities/firebaseDb"
 import { useState, useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import InputModal from "./InputModal"
+import TransferModal from "./TransferModal"
+import { toast } from "react-hot-toast"
 
 export default function({session, charge, groupe, cours, charges, enseignantId, onRemove}: any){
     const [hideMenu, setHideMenu] = useState(true)
@@ -9,6 +11,7 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
     const menuRef = useRef<HTMLDivElement>(null)
     const [mounted, setMounted] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
+    const [transferModalOpen, setTransferModalOpen] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -56,6 +59,17 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
         await firebaseDb.charges.update(charge.id, nouvelleCharge)
     }
 
+    async function handleTransferConfirm(targetEnseignantId: string){
+        const chargeExiste = charges?.find((c: any) => c.enseignant == targetEnseignantId && c.groupe == groupe.id)
+        if(chargeExiste){
+            toast.error("Cet enseignant a deja cette charge")
+            return
+        }
+
+        await firebaseDb.charges.update(charge.id, {enseignant: targetEnseignantId})
+        toast.success("Charge transférée avec succès")
+    }
+
     const menuContent = !hideMenu && (
         <div 
             ref={menuRef}
@@ -74,6 +88,7 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
             }}
         >
             <p className="mb-2"><button className="btn btn-danger btn-sm w-100" onClick={supprimer}>Supprimer</button></p>
+            <p className="mb-2"><button className="btn btn-primary btn-sm w-100" onClick={() => { setTransferModalOpen(true); setHideMenu(true); }}>Transférer à...</button></p>
             <p className="mb-2"><button className="btn btn-outline-light btn-sm w-100" onClick={() => { setModalOpen(true); setHideMenu(true); }}>Changer les semaines</button></p>
             <p className="mb-2"><button className="btn btn-outline-light btn-sm w-100" onClick={ev => window.open("/admin/cours?highlight=" + cours.id, "_blank")}>Modifier le cours</button></p>
             <p className="mb-0"><button className="btn btn-outline-light btn-sm w-100" onClick={ev => window.open("/admin/groupes/" + session + "?highlight=" + groupe.id, "_blank")}>Modifier le groupe</button></p>
@@ -132,6 +147,14 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
             label={`Nombre de semaines pour le cours ${cours.sigle} :`}
             defaultValue={charge.nbSemaines}
             max={semainesMax}
+        />
+
+        <TransferModal 
+            isOpen={transferModalOpen}
+            onClose={() => setTransferModalOpen(false)}
+            onConfirm={handleTransferConfirm}
+            title={`Transférer ${cours.sigle}`}
+            currentEnseignantId={enseignantId}
         />
     </div>
 }
