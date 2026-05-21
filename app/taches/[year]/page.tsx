@@ -301,25 +301,25 @@ export default function(){
                                     <div className="mb-4">
                                         <h6 className="fw-bold text-primary small"><span className="me-2">🖱️</span>Clic Droit (Menu Contextuel)</h6>
                                         <ul className="extra-small text-muted ps-3 mb-0" style={{fontSize: "0.8rem"}}>
-                                            <li>Sur un <strong>enseignant</strong> : Modifier son profil ou le cacher temporairement.</li>
-                                            <li>Sur une <strong>charge (cours)</strong> : Transférer à un collègue, modifier les semaines ou voir les détails.</li>
-                                            <li>Sur une <strong>libération</strong> : Transférer à un collègue ou modifier la quantité.</li>
+                                            <li><strong>Sur une case vide</strong> : Ajouter un cours ou une libération.</li>
+                                            <li><strong>Sur un bloc existant</strong> : Transférer à un collègue, modifier les quantités ou accéder aux détails.</li>
+                                            <li><strong>Sur un enseignant</strong> : Modifier son profil.</li>
                                         </ul>
                                     </div>
                                     <div className="mb-4">
-                                        <h6 className="fw-bold text-primary small"><span className="me-2">🖐️</span>Drag and Drop (Glisser-Déposer)</h6>
-                                        <p className="extra-small text-muted ps-3 mb-0" style={{fontSize: "0.8rem"}}>Faites glisser un bloc de cours ou de libération d'un enseignant vers un autre pour le réattribuer instantanément.</p>
+                                        <h6 className="fw-bold text-primary small"><span className="me-2">🎭</span>Scénarios et Simulations</h6>
+                                        <p className="extra-small text-muted ps-3 mb-0" style={{fontSize: "0.8rem"}}>Utilisez le menu <strong>Scénario</strong> en haut pour créer des simulations sans modifier la production. Vous pouvez copier la production actuelle vers un nouveau scénario dans la gestion des scénarios (⚙️).</p>
                                     </div>
                                     <div className="mb-4">
-                                        <h6 className="fw-bold text-primary small"><span className="me-2">🔍</span>Recherche et Organisation</h6>
-                                        <ul className="extra-small text-muted ps-3 mb-0" style={{fontSize: "0.8rem"}}>
-                                            <li>Utilisez la <strong>barre de recherche</strong> pour isoler quelques enseignants.</li>
-                                            <li>Redimensionnez la première colonne en tirant sur son bord droit.</li>
-                                            <li>Le tableau est <strong>auto-enregistré</strong> à chaque modification.</li>
-                                        </ul>
+                                        <h6 className="fw-bold text-primary small"><span className="me-2">🖐️</span>Glisser-Déposer</h6>
+                                        <p className="extra-small text-muted ps-3 mb-0" style={{fontSize: "0.8rem"}}>Réattribuez un cours ou une libération en le faisant glisser d'un enseignant vers un autre.</p>
+                                    </div>
+                                    <div className="mb-4">
+                                        <h6 className="fw-bold text-primary small"><span className="me-2">☁️</span>Synchronisation</h6>
+                                        <p className="extra-small text-muted ps-3 mb-0" style={{fontSize: "0.8rem"}}>Vos données sont <strong>personnelles et synchronisées</strong> en temps réel dans le cloud. Toutes vos modifications sont enregistrées automatiquement.</p>
                                     </div>
                                     <div className="text-center mt-2">
-                                        <button className="btn btn-sm btn-primary rounded-pill px-4" onClick={() => setShowHelp(false)}>J'auto-enregistre !</button>
+                                        <button className="btn btn-sm btn-primary rounded-pill px-4" onClick={() => setShowHelp(false)}>C'est compris !</button>
                                     </div>
                                 </div>
                             </div>
