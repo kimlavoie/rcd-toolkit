@@ -4,6 +4,19 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "../utilities/auth"
 
+interface AdminItem {
+    title: string;
+    icon: string;
+    href: string;
+    desc: string;
+    highlight?: boolean;
+}
+
+interface AdminSection {
+    group: string;
+    items: AdminItem[];
+}
+
 export default function AdminPage(){
     const { user, loading } = useAuth()
     const router = useRouter()
@@ -19,7 +32,7 @@ export default function AdminPage(){
         return null
     }
 
-    const adminSections = [
+    const adminSections: AdminSection[] = [
         {
             group: "Ressources Humaines",
             items: [
