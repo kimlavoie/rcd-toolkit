@@ -40,9 +40,10 @@ export default function(){
             setCopying(true)
             setProgress("Chargement des données sources...")
 
-            // 1. Fetch source data
+            // 1. Fetch source data FOR THIS USER ONLY
             const fetchCollection = async (name: string) => {
-                const snap = await getDocs(collection(firestore, name))
+                const q = query(collection(firestore, name), where("userId", "==", user!.uid))
+                const snap = await getDocs(q)
                 return snap.docs.map(d => ({id: d.id, ...d.data()}))
             }
 
@@ -55,7 +56,7 @@ export default function(){
 
             setProgress(`Suppression des données existantes de ${sessionArrivee}...`)
 
-            // 2. Clear target session
+            // 2. Clear target session (ONLY FOR THIS USER)
             const groupesArrivee = allGroupes.filter((g: any) => g.session === sessionArrivee)
             for (const g of groupesArrivee) {
                 const chargesArrivee = allCharges.filter((c: any) => String(c.groupe) === String(g.id))
@@ -79,16 +80,16 @@ export default function(){
 
             setProgress(`Copie vers ${sessionArrivee}...`)
 
-            // 3. Perform Copy
+            // 3. Perform Copy (AND TAG WITH userId)
             // Groupes & Charges
             const groupesSource = allGroupes.filter((g: any) => g.session === sessionDepart)
             for (const g of groupesSource) {
                 const { id: oldId, ...data } = g as any
-                const newRef = await addDoc(collection(firestore, "groupes"), { ...data, session: sessionArrivee })
+                const newRef = await addDoc(collection(firestore, "groupes"), { ...data, session: sessionArrivee, userId: user!.uid })
                 const chargesSource = allCharges.filter((c: any) => String(c.groupe) === String(oldId))
                 for (const c of chargesSource) {
                     const { id: _, ...cData } = c as any
-                    await addDoc(collection(firestore, "charges"), { ...cData, groupe: newRef.id })
+                    await addDoc(collection(firestore, "charges"), { ...cData, groupe: newRef.id, userId: user!.uid })
                 }
             }
 
@@ -96,11 +97,11 @@ export default function(){
             const allocationsSource = allAllocations.filter((a: any) => a.session === sessionDepart)
             for (const a of allocationsSource) {
                 const { id: oldId, ...data } = a as any
-                const newRef = await addDoc(collection(firestore, "allocations"), { ...data, session: sessionArrivee })
+                const newRef = await addDoc(collection(firestore, "allocations"), { ...data, session: sessionArrivee, userId: user!.uid })
                 const liberationsSource = allLiberations.filter((l: any) => String(l.allocation) === String(oldId))
                 for (const l of liberationsSource) {
                     const { id: _, ...lData } = l as any
-                    await addDoc(collection(firestore, "liberations"), { ...lData, allocation: newRef.id })
+                    await addDoc(collection(firestore, "liberations"), { ...lData, allocation: newRef.id, userId: user!.uid })
                 }
             }
 
@@ -108,11 +109,11 @@ export default function(){
             const stagesSource = allStages.filter((s: any) => s.session === sessionDepart)
             for (const s of stagesSource) {
                 const { id: oldId, ...data } = s as any
-                const newRef = await addDoc(collection(firestore, "stages"), { ...data, session: sessionArrivee })
+                const newRef = await addDoc(collection(firestore, "stages"), { ...data, session: sessionArrivee, userId: user!.uid })
                 const supervisionsSource = allSupervisions.filter((sup: any) => String(sup.stage) === String(oldId))
                 for (const sup of supervisionsSource) {
                     const { id: _, ...supData } = sup as any
-                    await addDoc(collection(firestore, "supervisions"), { ...supData, stage: newRef.id })
+                    await addDoc(collection(firestore, "supervisions"), { ...supData, stage: newRef.id, userId: user!.uid })
                 }
             }
 
