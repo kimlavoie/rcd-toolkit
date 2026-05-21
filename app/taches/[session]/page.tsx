@@ -36,6 +36,7 @@ export default function(){
     const [search, setSearch] = useState("")
     const [tri, setTri] = useState("nom")
     const [showOptions, setShowOptions] = useState(false)
+    const [showHelp, setShowHelp] = useState(false)
     const [enseignantWidth, setEnseignantWidth] = useState(200)
 
     const enseignants = useFirestoreCollection<EnseignantType>("enseignants")
@@ -198,7 +199,57 @@ export default function(){
                     >
                         {showOptions ? "Cacher les options ↑" : "Options d'affichage ⚙️"}
                     </button>
+                    <button 
+                        className="btn btn-sm btn-link text-muted p-0 ms-2" 
+                        onClick={() => setShowHelp(true)}
+                        title="Aide et astuces"
+                        style={{textDecoration: "none", fontSize: "1.2rem"}}
+                    >
+                        ❔
+                    </button>
                 </div>
+                
+                {showHelp && (
+                    <div 
+                        className="modal d-block" 
+                        style={{backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1060}}
+                        onClick={() => setShowHelp(false)}
+                    >
+                        <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
+                            <div className="modal-content shadow-lg border-0">
+                                <div className="modal-header bg-info text-white border-0">
+                                    <h5 className="modal-title">🚀 Astuces et Fonctionnalités</h5>
+                                    <button type="button" className="btn-close btn-close-white" onClick={() => setShowHelp(false)}></button>
+                                </div>
+                                <div className="modal-body p-4">
+                                    <div className="mb-4">
+                                        <h6 className="fw-bold text-primary"><span className="me-2">🖱️</span>Clic Droit (Menu Contextuel)</h6>
+                                        <ul className="small text-muted ps-3 mb-0">
+                                            <li>Sur un <strong>enseignant</strong> : Modifier son profil ou le cacher temporairement.</li>
+                                            <li>Sur une <strong>charge (cours)</strong> : Transférer à un collègue, modifier les semaines ou voir les détails.</li>
+                                            <li>Sur une <strong>libération</strong> : Transférer à un collègue ou modifier la quantité.</li>
+                                        </ul>
+                                    </div>
+                                    <div className="mb-4">
+                                        <h6 className="fw-bold text-primary"><span className="me-2">🖐️</span>Drag and Drop (Glisser-Déposer)</h6>
+                                        <p className="small text-muted ps-3 mb-0">Faites glisser un bloc de cours ou de libération d'un enseignant vers un autre pour le réattribuer instantanément.</p>
+                                    </div>
+                                    <div className="mb-4">
+                                        <h6 className="fw-bold text-primary"><span className="me-2">🔍</span>Recherche et Organisation</h6>
+                                        <ul className="small text-muted ps-3 mb-0">
+                                            <li>Utilisez la <strong>barre de recherche</strong> pour isoler quelques enseignants.</li>
+                                            <li>Redimensionnez la première colonne en tirant sur son bord droit.</li>
+                                            <li>Le tableau est <strong>auto-enregistré</strong> à chaque modification.</li>
+                                        </ul>
+                                    </div>
+                                    <div className="text-center mt-2">
+                                        <button className="btn btn-primary rounded-pill px-4" onClick={() => setShowHelp(false)}>J'ai compris !</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 
                 {showOptions && (
                     <div className="card bg-light border-0 p-3 animate-fade-in mb-2">
