@@ -12,6 +12,9 @@ import {
 import { useState, useEffect } from "react";
 import { firestore, auth } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { Schemas } from "@/app/db/schemas";
+import { toast } from "react-hot-toast";
+import { z } from "zod";
 
 export function useFirestoreCollection<T>(collectionName: string) {
     const [data, setData] = useState<T[] | undefined>(undefined);
@@ -67,6 +70,8 @@ export const firebaseDb = {
 };
 
 function createFirebaseTable(collectionName: string) {
+    const schema = Schemas[collectionName];
+
     return {
         toArray: () => {
              throw new Error("Use useFirestoreCollection hook for reactive data");
@@ -77,6 +82,17 @@ function createFirebaseTable(collectionName: string) {
                 if (!userId) throw new Error("User must be logged in to add data");
                 
                 const { id, ...rest } = data;
+
+                // Validation
+                if (schema) {
+                    const result = schema.safeParse(rest);
+                    if (!result.success) {
+                        const errorMsg = result.error.issues.map(e => e.message).join(", ");
+                        toast.error(`Erreur de validation: ${errorMsg}`);
+                        throw new Error(`Validation failed for ${collectionName}: ${errorMsg}`);
+                    }
+                }
+                
                 // Automatically inject userId for isolation
                 return await addDoc(collection(firestore, collectionName), {
                     ...rest,
@@ -100,7 +116,26 @@ function createFirebaseTable(collectionName: string) {
                     throw new Error("Unauthorized: You do not own this document");
                 }
 
-                const { id: _, ...rest } = data;
+                const { id: _, userId: __, ...rest } = data;
+
+                // Validation (Partial update support)
+                if (schema instanceof z.ZodObject) {
+                    const result = schema.partial().safeParse(rest);
+                    if (!result.success) {
+                        const errorMsg = result.error.issues.map(e => e.message).join(", ");
+                        toast.error(`Erreur de validation: ${errorMsg}`);
+                        throw new Error(`Validation failed for ${collectionName}: ${errorMsg}`);
+                    }
+                } else if (schema) {
+                    // Fallback for non-object schemas (less likely in this DB structure)
+                    const result = schema.safeParse(rest);
+                    if (!result.success) {
+                        const errorMsg = result.error.issues.map(e => e.message).join(", ");
+                        toast.error(`Erreur de validation: ${errorMsg}`);
+                        throw new Error(`Validation failed for ${collectionName}: ${errorMsg}`);
+                    }
+                }
+
                 return await updateDoc(docRef, {
                     ...rest,
                     userId // Ensure userId is preserved/updated
