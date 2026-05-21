@@ -27,16 +27,18 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, en
         position: "sticky" as const, 
         left: 0, 
         zIndex: 101,
-        minWidth: `${firstColWidth}px`,
-        width: `${firstColWidth}px`,
         backgroundColor: "#212529",
         boxShadow: "2px 0 5px rgba(0,0,0,0.2)",
-        borderRight: "1px solid #444"
+        borderRight: "1px solid #444",
+        padding: "4px 12px",
+        fontSize: "0.8rem",
+        whiteSpace: "nowrap" as const,
+        width: "1px"
     }
 
     return <>
                 <tr className="table-dark">
-                    <th style={firstColStyle}>CI Annuelle (Total)</th>
+                    <th style={firstColStyle} className="fw-bold">CI Annuelle (Total)</th>
                     { visibleEnseignants.map((enseignant: any) => {
                         const enseignantId = String(enseignant.id);
 
@@ -80,7 +82,7 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, en
                         
                         const couleur = CI < 70 ? "#fff" : CI < 80 ? "darkkhaki" : CI < 85 ? "#0f0" : "#f00"
                         
-                        return <td key={enseignant.id} style={{color: couleur, fontWeight: "bold", backgroundColor: "#212529", textAlign: "center", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
+                        return <td key={enseignant.id} style={{color: couleur, fontWeight: "bold", backgroundColor: "#212529", textAlign: "center", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, fontSize: "0.9rem"}}>
                             {CI.toFixed(2)}
                         </td>
                     })}

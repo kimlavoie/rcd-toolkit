@@ -60,30 +60,6 @@ export default function(){
         }
     }, [scenarios, session])
 
-    const [firstColWidth, setFirstColWidth] = useState(250)
-    const isResizing = useRef(false)
-
-    const startResizing = (e: React.MouseEvent) => {
-        isResizing.current = true
-        const startX = e.pageX
-        const startWidth = firstColWidth
-        
-        const onMouseMove = (moveEvent: MouseEvent) => {
-            if (!isResizing.current) return
-            const newWidth = startWidth + (moveEvent.pageX - startX)
-            setFirstColWidth(newWidth > 150 ? newWidth : 150)
-        }
-        
-        const onMouseUp = () => {
-            isResizing.current = false
-            document.removeEventListener("mousemove", onMouseMove)
-            document.removeEventListener("mouseup", onMouseUp)
-        }
-        
-        document.addEventListener("mousemove", onMouseMove)
-        document.addEventListener("mouseup", onMouseUp)
-    }
-
     // Filter and Sort Enseignants
     const visibleEnseignants = (enseignants ?? [])
         .filter(e => !cache.includes(e.id))
@@ -98,7 +74,7 @@ export default function(){
         })
         .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
 
-    if (authLoading) return <div className="container mt-5">Chargement...</div>
+    if (authLoading) return <div className="container mt-5 text-center">Chargement...</div>
 
     if (!user) {
         router.push("/login")
@@ -331,24 +307,14 @@ export default function(){
                                     position: "sticky", 
                                     left: 0, 
                                     zIndex: 106, 
-                                    minWidth: `${firstColWidth}px`,
-                                    width: `${firstColWidth}px`,
-                                    boxShadow: "2px 0 5px rgba(0,0,0,0.1)"
+                                    boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
+                                    fontSize: "0.8rem",
+                                    padding: "4px 12px",
+                                    whiteSpace: "nowrap",
+                                    width: "1px"
                                 }}
                             >
                                 Actions / Enseignants
-                                <div 
-                                    onMouseDown={startResizing}
-                                    style={{
-                                        position: 'absolute',
-                                        right: 0,
-                                        top: 0,
-                                        bottom: 0,
-                                        width: '5px',
-                                        cursor: 'col-resize',
-                                        zIndex: 1
-                                    }}
-                                />
                             </th>
                             {visibleEnseignants.map(enseignant => (
                                 <Enseignant key={enseignant.id} enseignant={enseignant} globalWidth={enseignantWidth} onCache={() => setCache([...cache, enseignant.id])}/>
@@ -358,16 +324,16 @@ export default function(){
                     <tbody>
                         {saison === "Automne" ? (
                             <>
-                                <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} firstColWidth={firstColWidth} enseignantWidth={enseignantWidth} scenario={selectedScenarioId}/>
-                                <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} firstColWidth={firstColWidth} enseignantWidth={enseignantWidth} scenario={selectedScenarioId}/>
+                                <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth}/>
+                                <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth}/>
                             </>
                         ) : (
                             <>
-                                <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} firstColWidth={firstColWidth} enseignantWidth={enseignantWidth}/>
-                                <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} firstColWidth={firstColWidth} enseignantWidth={enseignantWidth} scenario={selectedScenarioId}/>
+                                <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} enseignantWidth={enseignantWidth}/>
+                                <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth}/>
                             </>
                         )}
-                        <Summary session={session} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={saison} firstColWidth={firstColWidth} enseignantWidth={enseignantWidth} scenario={selectedScenarioId}/>
+                        <Summary session={session} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={saison} enseignantWidth={enseignantWidth} scenario={selectedScenarioId}/>
                     </tbody>
                 </table>
             </div>

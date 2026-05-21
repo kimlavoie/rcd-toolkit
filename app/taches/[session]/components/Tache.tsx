@@ -7,7 +7,7 @@ import CI from "./CI"
 import type { Enseignant, Groupe, Charge, Allocation, Liberation, Stage, Supervision } from "@/app/db/db"
 import { toast } from "react-hot-toast"
 
-export default function({visibleEnseignants, session, firstColWidth, enseignantWidth, scenario = "production"}:any){
+export default function({visibleEnseignants, session, enseignantWidth, scenario = "production"}:any){
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
     const groupes = useFirestoreCollection<Groupe>("groupes")
     const allCharges = useFirestoreCollection<Charge>("charges")
@@ -118,29 +118,29 @@ export default function({visibleEnseignants, session, firstColWidth, enseignantW
         left: 0, 
         zIndex: 101, 
         backgroundColor: "white",
-        minWidth: `${firstColWidth}px`,
-        width: `${firstColWidth}px`,
         boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
-        borderRight: "1px solid #dee2e6"
+        borderRight: "1px solid #dee2e6",
+        padding: "4px 12px",
+        fontSize: "0.8rem",
+        whiteSpace: "nowrap" as const,
+        width: "1px"
     }
 
     return <>
         <tr className="table-secondary">
-            <th colSpan={100} style={{fontSize: "1.2em", backgroundColor: "#e9ecef", position: "sticky", left: 0, zIndex: 101, minWidth: `${firstColWidth}px`, boxShadow: "2px 0 5px rgba(0,0,0,0.1)"}}>
-                <div className="d-flex justify-content-between align-items-center">
-                    <span>{saison} {annee}</span>
-                    <button type="button" className="btn btn-sm btn-outline-danger" onClick={clearAll}>Réinitialiser la session ⟲</button>
+            <th colSpan={100} style={{fontSize: "0.85rem", backgroundColor: "#e9ecef", position: "sticky", left: 0, zIndex: 101, boxShadow: "2px 0 5px rgba(0,0,0,0.1)", padding: "4px 12px", whiteSpace: "nowrap"}}>
+                <div className="d-flex justify-content-between align-items-center gap-4">
+                    <span className="fw-bold">{saison} {annee}</span>
+                    <button type="button" className="btn btn-xs btn-outline-danger py-0 px-2" style={{fontSize: "0.7rem"}} onClick={clearAll} title="Réinitialiser la session">Réinitialiser ⟲</button>
                 </div>
             </th>
         </tr>
         <tr>
             <th style={firstColStyle}>
-                <p className="mb-1">Cours Attribués</p>
-                <p className="small mb-0">{
-                    (chargesManquantes(session) ?? 0) > 0
-                    ?<span className="badge bg-danger">{(chargesManquantes(session) ?? 0)} restants</span>
-                    :<span className="badge bg-success">Complet</span>
-                }</p>
+                <div className="d-flex justify-content-between align-items-center gap-3">
+                    <span className="fw-bold">Cours attribués</span>
+                    { (chargesManquantes(session) ?? 0) > 0 && <span className="badge bg-danger p-1" style={{fontSize: "0.65rem"}} title={`${chargesManquantes(session)} restants`}>{chargesManquantes(session)}</span> }
+                </div>
             </th>
             { visibleEnseignants.map((enseignant: any) => {
                 return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario}/>
@@ -148,13 +148,10 @@ export default function({visibleEnseignants, session, firstColWidth, enseignantW
         </tr>
         <tr>
             <th style={firstColStyle}>
-                <p className="mb-1">Libérations</p>
-                <p className="small mb-0">{
-                    (liberationsManquantes(session) ?? 0) > 0
-                    ?<span className="badge bg-warning text-dark">{(liberationsManquantes(session) ?? 0)} restantes</span>
-                    :<span className="badge bg-success">Toutes attribuées</span>
-                }
-                </p>
+                <div className="d-flex justify-content-between align-items-center gap-3">
+                    <span className="fw-bold">Libérations</span>
+                    { (liberationsManquantes(session) ?? 0) > 0 && <span className="badge bg-warning text-dark p-1" style={{fontSize: "0.65rem"}} title={`${liberationsManquantes(session)} restantes`}>{liberationsManquantes(session)}</span> }
+                </div>
             </th>
             { visibleEnseignants.map((enseignant: any) => {
                 return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario}/>
@@ -162,14 +159,10 @@ export default function({visibleEnseignants, session, firstColWidth, enseignantW
         </tr>
         <tr>
             <th style={firstColStyle}>
-                <p className="mb-1">Stagiaires</p> 
-                <p className="small mb-0">{
-                    !isNaN(stagiairesRestants())
-                    && (stagiairesRestants() > 0
-                    ?<span className="badge bg-info text-dark">{stagiairesRestants()} à placer</span>
-                    :<span className="badge bg-success">Tous placés</span>)
-                }
-                </p>
+                <div className="d-flex justify-content-between align-items-center gap-3">
+                    <span className="fw-bold">Stagiaires</span>
+                    { !isNaN(stagiairesRestants()) && stagiairesRestants() > 0 && <span className="badge bg-info text-dark p-1" style={{fontSize: "0.65rem"}} title={`${stagiairesRestants()} à placer`}>{stagiairesRestants()}</span> }
+                </div>
             </th>
             { visibleEnseignants.map((enseignant: any) => {
                 const stage = stages?.find(stage => stage.session == session)
@@ -177,12 +170,12 @@ export default function({visibleEnseignants, session, firstColWidth, enseignantW
                 const value = supervision ? supervision.nbStagiaires : 0
                 return stage 
                     ?<td key={enseignant.id} className="text-center" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
-                        <div className="input-group input-group-sm">
-                            <input className="form-control text-center" type="number" min="0" step="1" value={value} data-enseignant-id={enseignant.id} data-stage-id={stage.id} onChange={stagiairesHandler}/>
-                            <span className="input-group-text">/{stage.nbStagiaires}</span>
+                        <div className="input-group input-group-sm mx-auto" style={{maxWidth: "70px"}}>
+                            <input className="form-control text-center p-0" type="number" min="0" step="1" value={value} data-enseignant-id={enseignant.id} data-stage-id={stage.id} onChange={stagiairesHandler} style={{fontSize: "0.8rem"}}/>
+                            <span className="input-group-text p-1" style={{fontSize: "0.7rem"}}>/{stage.nbStagiaires}</span>
                         </div>
                     </td>
-                    :<td key={enseignant.id} className="text-muted text-center small" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>Aucun stage</td>
+                    :<td key={enseignant.id} className="text-muted text-center extra-small" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, fontSize: "0.75rem"}}>--</td>
             })}
         </tr>
         <tr>
