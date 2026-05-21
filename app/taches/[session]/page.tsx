@@ -197,11 +197,23 @@ export default function(){
 
                     {/* Tri */}
                     <div className="d-flex align-items-center gap-1 bg-white px-2 rounded shadow-sm border" style={{height: "31px"}}>
-                        <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Tri</span>
-                        <select className="form-select form-select-sm border-0 p-0 fw-bold" style={{width: "auto", minWidth: "60px", outline: "none", boxShadow: "none", backgroundColor: "transparent", fontSize: "0.75rem", paddingRight: "25px"}} value={tri} onChange={ev => setTri(ev.target.value)}>
-                            <option value="nom">Nom</option>
-                            <option value="numeroEmploye">No</option>
-                        </select>
+                        <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Tri ⇅</span>
+                        <div className="btn-group btn-group-sm rounded overflow-hidden" style={{height: "24px"}}>
+                            <button 
+                                className={`btn btn-white py-0 border-0 ${tri === 'nom' ? 'bg-light fw-bold text-primary' : 'text-muted'}`} 
+                                style={{fontSize: "0.7rem", transition: "all 0.2s"}} 
+                                onClick={() => setTri('nom')}
+                            >
+                                Nom
+                            </button>
+                            <button 
+                                className={`btn btn-white py-0 border-0 ${tri === 'numeroEmploye' ? 'bg-light fw-bold text-primary' : 'text-muted'}`} 
+                                style={{fontSize: "0.7rem", transition: "all 0.2s"}} 
+                                onClick={() => setTri('numeroEmploye')}
+                            >
+                                No
+                            </button>
+                        </div>
                     </div>
 
                     {/* Largeur */}

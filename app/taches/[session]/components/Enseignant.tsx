@@ -83,8 +83,7 @@ export default function Enseignant({enseignant, onCache, globalWidth}: {enseigna
                 minWidth: "150px"
             }}
         >
-            <p className="mb-2"><button className="btn btn-outline-light btn-sm w-100" onClick={ev => window.open("/admin/enseignants?highlight=" + enseignant.id, "_blank")}>Modifier l'enseignant</button></p>
-            <button className="btn btn-danger btn-sm w-100" onClick={() => { onCache(); setHideMenu(true); }}>Cacher</button>
+            <p className="mb-0"><button className="btn btn-outline-light btn-sm w-100" onClick={ev => { window.open("/admin/enseignants?highlight=" + enseignant.id, "_blank"); setHideMenu(true); }}>Modifier l'enseignant</button></p>
         </div>
     )
 
@@ -98,12 +97,26 @@ export default function Enseignant({enseignant, onCache, globalWidth}: {enseigna
             backgroundColor: "lightgray",
             minWidth: `${width}px`,
             width: `${width}px`,
-            cursor: "context-menu"
+            cursor: "context-menu",
+            padding: "8px 12px"
         }} 
         key={enseignant.id}
+        className="group"
         title="Clic droit pour plus d'options"
     >
-        <p className="mb-0 pe-3" style={{ pointerEvents: "none" }}>{enseignant.prenom} {enseignant.nom}</p>
+        <div className="d-flex justify-content-between align-items-center gap-2">
+            <p className="mb-0 overflow-hidden text-nowrap" style={{ fontSize: "0.85rem", textOverflow: "ellipsis" }}>{enseignant.prenom} {enseignant.nom}</p>
+            <button 
+                className="btn btn-xs btn-link text-muted p-0 m-0 border-0" 
+                style={{ fontSize: "12px", opacity: 0.5, lineHeight: 1, textDecoration: "none" }}
+                onClick={(e) => { e.stopPropagation(); onCache(); }}
+                onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+                onMouseLeave={e => e.currentTarget.style.opacity = "0.5"}
+                title="Cacher cet enseignant"
+            >
+                ✕
+            </button>
+        </div>
         
         <div 
             onMouseDown={startResizing}
