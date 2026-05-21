@@ -52,7 +52,7 @@ export default function({visibleEnseignants, session, enseignantWidth}:any){
                 <th style={firstColStyle}>
                     <div className="d-flex justify-content-between align-items-center gap-2">
                         <span className="fw-bold">CI Réelle {saison}</span>
-                        <button type="button" className="btn btn-link btn-sm text-danger p-0 m-0" style={{lineHeight: 1}} onClick={clearAll} title="Réinitialiser">⟲</button>
+                        <button type="button" className="btn btn-link btn-sm text-danger p-0 m-0" style={{lineHeight: 1, textDecoration: "none"}} onClick={clearAll} title="Réinitialiser">⟲</button>
                     </div>
                 </th>
                 { visibleEnseignants.map((enseignant: any) => {

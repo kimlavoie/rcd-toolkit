@@ -140,7 +140,7 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
             <th style={{...firstColStyle, backgroundColor: "#e9ecef", zIndex: 102}}>
                 <div className="d-flex justify-content-between align-items-center gap-4">
                     <span className="fw-bold">{saison} {annee}</span>
-                    <button type="button" className="btn btn-xs btn-outline-danger py-0 px-2" style={{fontSize: "1rem"}} onClick={clearAll} title="Réinitialiser la session">⟲</button>
+                    <button type="button" className="btn btn-link btn-sm text-danger p-0 m-0" style={{lineHeight: 1, textDecoration: "none"}} onClick={clearAll} title="Réinitialiser la session">⟲</button>
                 </div>
             </th>
             <td colSpan={visibleEnseignants.length} style={{backgroundColor: "#e9ecef", borderBottom: "1px solid #dee2e6"}}></td>
