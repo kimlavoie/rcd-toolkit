@@ -2,22 +2,24 @@
 import { useParams, useRouter } from "next/navigation"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import { useState, useEffect } from "react"
-import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import Enseignant from "../components/Enseignant"
 import Tache from "../components/Tache"
 import Summary from "../components/Summary"
 import CIReelle from "../components/CIReelle"
-import Link from "next/link"
+import TachesToolbar from "../components/TachesToolbar"
+import { DataProvider, useData } from "../components/DataContext"
+import StickyHeader from "../components/ui/StickyHeader"
 import { useAuth } from "@/app/utilities/auth"
-import type { Enseignant as EnseignantType, Scenario } from "@/app/db/db"
 import { toast } from "react-hot-toast"
 
-export default function(){
+function TachesContent() {
     const { user, loading: authLoading } = useAuth()
     const router = useRouter()
     const params = useParams()
     const year = params.year as string
     
+    const { enseignants, groupes, charges, allocations, liberations, stages, supervisions, cours, scenarios, isLoading } = useData()
+
     // Safety check for year format (should be like 2024)
     const isValidYear = year && /^\d{4}$/.test(year);
     const anneeScolaireLabel = isValidYear ? `${year}-${parseInt(year)+1}` : "Inconnue";
@@ -34,16 +36,6 @@ export default function(){
     const [showHelp, setShowHelp] = useState(false)
     const [enseignantWidth, setEnseignantWidth] = useState(200)
     const [selectedScenarioId, setSelectedScenarioId] = useState<string>("production")
-
-    const enseignants = useFirestoreCollection<EnseignantType>("enseignants")
-    const groupes = useFirestoreCollection<any>("groupes")
-    const charges = useFirestoreCollection<any>("charges")
-    const allocations = useFirestoreCollection<any>("allocations")
-    const liberations = useFirestoreCollection<any>("liberations")
-    const stages = useFirestoreCollection<any>("stages")
-    const supervisions = useFirestoreCollection<any>("supervisions")
-    const cours = useFirestoreCollection<any>("cours")
-    const scenarios = useFirestoreCollection<Scenario>("scenarios")
 
     // Force non-scrollable body for this page only
     useEffect(() => {
@@ -88,7 +80,7 @@ export default function(){
         }
     }, [user, authLoading, router])
 
-    if (authLoading) return <div className="container mt-5 text-center">Chargement...</div>
+    if (authLoading || isLoading) return <div className="container mt-5 text-center">Chargement...</div>
 
     if (!user) return null;
 
@@ -158,125 +150,24 @@ export default function(){
         }
     }
 
-    return <div className="d-flex flex-column bg-light overflow-hidden" style={{ height: "calc(100vh - 60px)", padding: "0.5rem" }}>
-        <div className="card shadow-sm p-2 flex-grow-1 d-flex flex-column overflow-hidden">
-            <div className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2 px-2">
-                <div className="d-flex align-items-center gap-3">
-                    <h1 className="mb-0 text-primary h5 fw-bold">
-                        Année scolaire {anneeScolaireLabel}
-                    </h1>
-                    <div className="btn-group btn-group-sm shadow-sm rounded-pill overflow-hidden border" style={{height: "28px"}}>
-                        <button 
-                            className={`btn ${mode === 'Automne' ? 'btn-primary fw-bold' : 'btn-white text-muted border-0'}`} 
-                            style={{fontSize: "0.75rem", padding: "0 15px"}} 
-                            onClick={() => setMode('Automne')}
-                        >
-                            🍂 Mode Automne
-                        </button>
-                        <button 
-                            className={`btn ${mode === 'Hiver' ? 'btn-primary fw-bold' : 'btn-white text-muted border-0'}`} 
-                            style={{fontSize: "0.75rem", padding: "0 15px"}} 
-                            onClick={() => setMode('Hiver')}
-                        >
-                            ❄️ Mode Hiver
-                        </button>
-                    </div>
-                </div>
-                {selectedScenarioId !== "production" && (
-                    <span className="badge bg-warning text-dark animate-pulse" style={{fontSize: "0.7rem"}}>
-                        Mode Scénario : {currentSessionScenarios.find(s => s.id === selectedScenarioId)?.nom}
-                    </span>
-                )}
-            </div>
-            
-            <div className="mb-2 px-2">
-                <div className="d-flex align-items-center gap-3 flex-wrap">
-                    {/* Recherche */}
-                    <div className="input-group input-group-sm shadow-sm" style={{maxWidth: "180px"}}>
-                        <span className="input-group-text bg-white border-end-0 text-muted py-0">🔍</span>
-                        <input 
-                            type="text" 
-                            className="form-control border-start-0 ps-0 py-0" 
-                            placeholder="Chercher..." 
-                            value={search} 
-                            style={{fontSize: "0.8rem", height: "31px"}}
-                            onChange={e => setSearch(e.target.value)}
-                        />
-                        {search && (
-                            <button className="btn btn-outline-secondary border-start-0 py-0" onClick={() => setSearch("")}>✕</button>
-                        )}
-                    </div>
-
-                    {/* Scénario */}
-                    <div className="d-flex align-items-center gap-1 bg-white px-2 rounded shadow-sm border" style={{height: "31px"}}>
-                        <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Scénario 🎭</span>
-                        <select 
-                            className="form-select form-select-sm border-0 fw-bold text-primary p-0 ps-1" 
-                            style={{width: "auto", minWidth: "120px", outline: "none", boxShadow: "none", backgroundColor: "transparent", fontSize: "0.75rem", paddingRight: "25px"}}
-                            value={selectedScenarioId}
-                            onChange={e => setSelectedScenarioId(e.target.value)}
-                        >
-                            <option value="production">🚀 Production</option>
-                            {currentSessionScenarios.map(s => (
-                                <option key={s.id} value={s.id}>📁 {s.nom}</option>
-                            ))}
-                        </select>
-                        <Link href="/admin/scenarios" className="btn btn-sm btn-link text-muted p-0 ms-1" title="Gérer les scénarios" style={{fontSize: "0.75rem", textDecoration: "none"}}>⚙️</Link>
-                    </div>
-
-                    {/* Tri */}
-                    <div className="d-flex align-items-center gap-1 bg-white px-2 rounded shadow-sm border" style={{height: "31px"}}>
-                        <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Tri ⇅</span>
-                        <div className="btn-group btn-group-sm rounded overflow-hidden" style={{height: "24px"}}>
-                            <button 
-                                className={`btn btn-white py-0 border-0 ${tri === 'nom' ? 'bg-light fw-bold text-primary' : 'text-muted'}`} 
-                                style={{fontSize: "0.7rem", transition: "all 0.2s"}} 
-                                onClick={() => setTri('nom')}
-                            >
-                                Nom
-                            </button>
-                            <button 
-                                className={`btn btn-white py-0 border-0 ${tri === 'numeroEmploye' ? 'bg-light fw-bold text-primary' : 'text-muted'}`} 
-                                style={{fontSize: "0.7rem", transition: "all 0.2s"}} 
-                                onClick={() => setTri('numeroEmploye')}
-                            >
-                                No
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Largeur */}
-                    <div className="btn-group btn-group-sm shadow-sm border rounded overflow-hidden" style={{height: "31px"}}>
-                        <button className={`btn btn-white py-0 border-0 ${enseignantWidth === 100 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.65rem"}} onClick={() => setEnseignantWidth(100)}>Min</button>
-                        <button className={`btn btn-white py-0 border-0 ${enseignantWidth === 200 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.65rem"}} onClick={() => setEnseignantWidth(200)}>Std</button>
-                        <button className={`btn btn-white py-0 border-0 ${enseignantWidth === 300 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.65rem"}} onClick={() => setEnseignantWidth(300)}>Max</button>
-                    </div>
-
-                    {/* Visibilité */}
-                    <div className="d-flex gap-1">
-                        <button className="btn btn-sm btn-secondary py-0 shadow-sm border-0" style={{fontSize: "0.65rem", height: "31px", opacity: 0.8}} onClick={() => setCache(enseignants?.map(e => e.id) || [])}>Tout cacher</button>
-                        <button className="btn btn-sm btn-primary py-0 shadow-sm border-0" style={{fontSize: "0.65rem", height: "31px", opacity: 0.8}} onClick={() => setCache([])}>Tout afficher</button>
-                    </div>
-
-                    {/* Validation */}
-                    <button className="btn btn-sm btn-success rounded-pill shadow-sm px-3 fw-bold" style={{height: "31px", fontSize: "0.75rem"}} onClick={valider}>
-                        ✅ Valider
-                    </button>
-
-                    {/* Help */}
-                    <button 
-                        className="btn btn-sm btn-link text-muted p-0 ms-auto" 
-                        onClick={() => setShowHelp(true)}
-                        title="Aide et astuces"
-                        style={{textDecoration: "none", fontSize: "1rem"}}
-                    >
-                        ❔
-                    </button>
-                </div>
+    return (
+        <div className="d-flex flex-column bg-light overflow-hidden" style={{ height: "calc(100vh - 60px)", padding: "0.5rem" }}>
+            <div className="card shadow-sm p-2 flex-grow-1 d-flex flex-column overflow-hidden">
+                <TachesToolbar 
+                    mode={mode} setMode={setMode} anneeScolaireLabel={anneeScolaireLabel}
+                    search={search} setSearch={setSearch} tri={tri} setTri={setTri}
+                    enseignantWidth={enseignantWidth} setEnseignantWidth={setEnseignantWidth}
+                    selectedScenarioId={selectedScenarioId} setSelectedScenarioId={setSelectedScenarioId}
+                    currentSessionScenarios={currentSessionScenarios}
+                    onHideAll={() => setCache(enseignants?.map(e => e.id) || [])}
+                    onShowAll={() => setCache([])}
+                    onValidate={valider}
+                    setShowHelp={setShowHelp}
+                />
 
                 {/* Chips Enseignants cachés */}
                 {cache.length > 0 && (
-                    <div className="d-flex gap-1 flex-wrap align-items-center mt-2 animate-fade-in border-top pt-2">
+                    <div className="d-flex gap-1 flex-wrap align-items-center mb-2 px-2 animate-fade-in border-top pt-2">
                         <span className="extra-small text-muted fw-bold text-uppercase me-1" style={{fontSize: "0.6rem"}}>Cachés:</span>
                         {(enseignants ?? [])
                             .filter(e => cache.includes(e.id))
@@ -305,7 +196,7 @@ export default function(){
                             <div className="modal-content shadow-lg border-0">
                                 <div className="modal-header bg-info text-white border-0 py-2">
                                     <h6 className="modal-title">🚀 Astuces et Fonctionnalités</h6>
-                                    <button type="button" className="btn-close btn-close-white" onClick={() => setShowHelp(false)}></button>
+                                    <button type="button" className="btn btn-close btn-close-white" onClick={() => setShowHelp(false)}></button>
                                 </div>
                                 <div className="modal-body p-4">
                                     <div className="mb-4">
@@ -336,51 +227,53 @@ export default function(){
                         </div>
                     </div>
                 )}
-            </div>
 
-            <div className="table-responsive flex-grow-1 overflow-auto border rounded shadow-inner bg-white" style={{maxHeight: "none"}}>
-                <table className="table table-hover align-middle mb-0" style={{fontSize: "0.85rem", borderCollapse: "separate", borderSpacing: 0}}>
-                    <thead className="table-light sticky-top" style={{zIndex: 105}}>
-                        <tr>
-                            <th 
-                                style={{
-                                    position: "sticky", 
-                                    left: 0, 
-                                    zIndex: 106, 
-                                    boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
-                                    fontSize: "0.8rem",
-                                    padding: "4px 12px",
-                                    whiteSpace: "nowrap",
-                                    width: "1px",
-                                    backgroundColor: "#f8f9fa",
-                                    borderRight: "2px solid #dee2e6",
-                                    borderBottom: "1px solid #dee2e6",
-                                    backgroundClip: "padding-box"
-                                }}
-                            >
-                                Actions / Enseignants
-                            </th>
-                            {visibleEnseignants.map(enseignant => (
-                                <Enseignant key={enseignant.id} enseignant={enseignant} globalWidth={enseignantWidth} onCache={() => setCache([...cache, enseignant.id])}/>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {mode === "Automne" ? (
-                            <>
-                                <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth} ciTop="37px"/>
-                                <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth} ciBottom="31px"/>
-                            </>
-                        ) : (
-                            <>
-                                <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} enseignantWidth={enseignantWidth} ciTop="37px"/>
-                                <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth} ciBottom="31px"/>
-                            </>
-                        )}
-                        <Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={mode} enseignantWidth={enseignantWidth} scenario={selectedScenarioId}/>
-                    </tbody>
-                </table>
+                <div className="table-responsive flex-grow-1 overflow-auto border rounded shadow-inner bg-white" style={{maxHeight: "none"}}>
+                    <table className="table table-hover align-middle mb-0" style={{fontSize: "0.85rem", borderCollapse: "separate", borderSpacing: 0}}>
+                        <thead style={{position: "sticky", top: 0, zIndex: 110}}>
+                            <tr className="table-light">
+                                <StickyHeader 
+                                    isFirstCol 
+                                    top="0" 
+                                    zIndex={115} 
+                                    style={{
+                                        backgroundColor: "#f8f9fa",
+                                        borderRight: "2px solid #dee2e6",
+                                        borderBottom: "1px solid #dee2e6",
+                                        padding: "4px 12px",
+                                        fontSize: "0.8rem",
+                                        width: "1px"
+                                    }}
+                                >
+                                    Actions / Enseignants
+                                </StickyHeader>
+                                {visibleEnseignants.map(enseignant => (
+                                    <Enseignant key={enseignant.id} enseignant={enseignant} globalWidth={enseignantWidth} onCache={() => setCache([...cache, enseignant.id])}/>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>{mode === "Automne" ? (
+                                <>
+                                    <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth} ciTop="37px"/>
+                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth} ciBottom="33px"/>
+                                </>
+                                ) : (
+                                <>
+                                    <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} enseignantWidth={enseignantWidth} ciTop="37px"/>
+                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth} ciBottom="33px"/>
+                                </>
+                                )}<Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={mode} enseignantWidth={enseignantWidth} scenario={selectedScenarioId}/></tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
+    )
+}
+
+export default function() {
+    return (
+        <DataProvider>
+            <TachesContent />
+        </DataProvider>
+    )
 }

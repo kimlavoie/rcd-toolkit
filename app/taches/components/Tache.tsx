@@ -1,20 +1,15 @@
 'use client'
-import { useFirestoreCollection, firebaseDb } from "@/app/utilities/firebaseDb"
+import { firebaseDb } from "@/app/utilities/firebaseDb"
 import { extractSessionInfos } from "@/app/utilities/sessions"
+import { useData } from "./DataContext"
+import StickyHeader from "./ui/StickyHeader"
 import ListeCharges from "./ListeCharges"
 import ListeLiberations from "./ListeLiberations"
 import CI from "./CI"
-import type { Enseignant, Groupe, Charge, Allocation, Liberation, Stage, Supervision } from "@/app/db/db"
 import { toast } from "react-hot-toast"
 
 export default function({visibleEnseignants, session, enseignantWidth, scenario = "production", ciBottom, ciTop}:any){
-    const enseignants = useFirestoreCollection<Enseignant>("enseignants")
-    const groupes = useFirestoreCollection<Groupe>("groupes")
-    const allCharges = useFirestoreCollection<Charge>("charges")
-    const allocations = useFirestoreCollection<Allocation>("allocations")
-    const allLiberations = useFirestoreCollection<Liberation>("liberations")
-    const stages = useFirestoreCollection<Stage>("stages")
-    const allSupervisions = useFirestoreCollection<Supervision>("supervisions")
+    const { groupes, charges: allCharges, allocations, liberations: allLiberations, stages, supervisions: allSupervisions, cours } = useData()
 
     const {saison, annee} = extractSessionInfos(session)
 
@@ -113,21 +108,6 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
         }
     }
 
-    const firstColStyle = {
-        position: "sticky" as const, 
-        left: 0, 
-        zIndex: 101, 
-        backgroundColor: "white",
-        boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
-        borderRight: "2px solid #dee2e6",
-        borderBottom: "1px solid #dee2e6",
-        padding: "4px 12px",
-        fontSize: "0.8rem",
-        whiteSpace: "nowrap" as const,
-        width: "1px",
-        backgroundClip: "padding-box"
-    }
-
     const cellStyle = {
         borderRight: "1px solid #dee2e6",
         borderBottom: "1px solid #dee2e6",
@@ -135,56 +115,45 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
         width: `${enseignantWidth}px`
     }
 
-    const ciHeaderStyle = {
-        ...firstColStyle,
-        position: "sticky" as const,
-        bottom: ciBottom,
-        top: ciTop,
-        zIndex: 103,
-        backgroundColor: "#f8f9fa",
-        borderTop: ciBottom ? "1px solid #dee2e6" : "none",
-        borderBottom: ciTop ? "2px solid #dee2e6" : "1px solid #dee2e6"
-    }
-
     return <>
         <tr className="table-secondary">
-            <th style={{...firstColStyle, backgroundColor: "#e9ecef", zIndex: 102}}>
+            <StickyHeader isFirstCol style={{ backgroundColor: "#e9ecef", zIndex: 102 }}>
                 <div className="d-flex justify-content-between align-items-center gap-4">
                     <span className="fw-bold">{saison} {annee}</span>
                     <button type="button" className="btn btn-link btn-sm text-danger p-0 m-0" style={{lineHeight: 1, textDecoration: "none"}} onClick={clearAll} title="Réinitialiser la session">⟲</button>
                 </div>
-            </th>
+            </StickyHeader>
             <td colSpan={visibleEnseignants.length} style={{backgroundColor: "#e9ecef", borderBottom: "1px solid #dee2e6"}}></td>
         </tr>
         <tr>
-            <th style={firstColStyle}>
+            <StickyHeader isFirstCol>
                 <div className="d-flex justify-content-between align-items-center gap-3">
                     <span className="fw-bold">Cours attribués</span>
                     { (chargesManquantes(session) ?? 0) > 0 && <span className="badge bg-danger p-1" style={{fontSize: "0.65rem"}} title={`${chargesManquantes(session)} restants`}>{chargesManquantes(session)}</span> }
                 </div>
-            </th>
+            </StickyHeader>
             { visibleEnseignants.map((enseignant: any) => {
                 return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario} style={cellStyle}/>
             })}
         </tr>
         <tr>
-            <th style={firstColStyle}>
+            <StickyHeader isFirstCol>
                 <div className="d-flex justify-content-between align-items-center gap-3">
                     <span className="fw-bold">Libérations</span>
                     { (liberationsManquantes(session) ?? 0) > 0 && <span className="badge bg-warning text-dark p-1" style={{fontSize: "0.65rem"}} title={`${liberationsManquantes(session)} restantes`}>{liberationsManquantes(session)}</span> }
                 </div>
-            </th>
+            </StickyHeader>
             { visibleEnseignants.map((enseignant: any) => {
                 return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario} style={cellStyle}/>
             })}
         </tr>
         <tr>
-            <th style={firstColStyle}>
+            <StickyHeader isFirstCol>
                 <div className="d-flex justify-content-between align-items-center gap-3">
                     <span className="fw-bold">Stagiaires</span>
                     { !isNaN(stagiairesRestants()) && stagiairesRestants() > 0 && <span className="badge bg-info text-dark p-1" style={{fontSize: "0.65rem"}} title={`${stagiairesRestants()} à placer`}>{stagiairesRestants()}</span> }
                 </div>
-            </th>
+            </StickyHeader>
             { visibleEnseignants.map((enseignant: any) => {
                 const stage = stages?.find(stage => stage.session == session)
                 const supervision = supervisions?.find(supervision => supervision.enseignant == enseignant.id && supervision.stage == stage?.id)
@@ -200,7 +169,19 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
             })}
         </tr>
         <tr>
-            <th style={ciHeaderStyle}>CI {saison}</th>
+            <StickyHeader 
+                isFirstCol 
+                bottom={ciBottom} 
+                top={ciTop} 
+                zIndex={103} 
+                style={{ 
+                    backgroundColor: "#f8f9fa", 
+                    borderTop: ciBottom ? "1px solid #dee2e6" : "none",
+                    borderBottom: ciTop ? "2px solid #dee2e6" : "1px solid #dee2e6"
+                }}
+            >
+                CI {saison}
+            </StickyHeader>
             { visibleEnseignants.map((enseignant: any) => {
                 return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} trigger={{charges, liberations, groupes}} scenario={scenario} style={cellStyle} bottom={ciBottom} top={ciTop}/>
             })}

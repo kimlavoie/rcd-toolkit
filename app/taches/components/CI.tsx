@@ -1,66 +1,29 @@
 'use client'
-import calculateur from "@/app/calculateur/calculateur"
-import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
-import type { Enseignant, Charge, Liberation, Groupe, Cours, Supervision, Stage } from "@/app/db/db"
+import { calculateSessionCI } from "@/app/utilities/ciHelpers"
+import { getCIColor } from "@/app/constants/ciConfig"
+import { useData } from "./DataContext"
+import StickyCell from "./ui/StickyCell"
 
-export default function CI({enseignant, session, enseignantWidth, trigger, scenario = "production", style, bottom, top}: any){
-    const allCharges = useFirestoreCollection<Charge>("charges")
-    const allLiberations = useFirestoreCollection<Liberation>("liberations")
-    const allSupervisions = useFirestoreCollection<Supervision>("supervisions")
-    const allocations = useFirestoreCollection<any>("allocations")
-    const groupes = useFirestoreCollection<Groupe>("groupes")
-    const cours = useFirestoreCollection<Cours>("cours")
-    const stages = useFirestoreCollection<Stage>("stages")
+export default function CI({enseignant, session, scenario = "production", style, bottom, top}: any){
+    const data = useData()
 
-    // Filter by scenario
-    const charges = allCharges?.filter(c => (c.scenario || "production") === scenario)
-    const liberations = allLiberations?.filter(l => (l.scenario || "production") === scenario)
-    const supervisions = allSupervisions?.filter(s => (s.scenario || "production") === scenario)
+    const CI = calculateSessionCI(enseignant.id, session, data, scenario)
 
-    const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
-    const groupesSession = groupes?.filter(groupe => groupe.session == session)
-    const chargesSession = chargesEnseignant?.filter(charge => groupesSession?.find(groupe => groupe.id == charge.groupe))
-    
-    const chargesInfos = chargesSession?.map(charge => {
-        const groupe = groupes?.find(groupe => groupe.id == charge.groupe)
-        const cour = cours?.find(cour => String(groupe?.cours) === String(cour.id))
-        return {
-            sigle: cour?.sigle ?? "", 
-            etudiants: Number(groupe?.nbEtudiants ?? 0), 
-            heures: Number(cour?.heuresTheorie ?? 0) + Number(cour?.heuresPratique ?? 0), 
-            semaines: Number(charge.nbSemaines ?? 0)
-        }
-    })
+    const color = getCIColor(CI, 'session')
 
-    const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
-    const allocationsSession = allocations?.filter((allocation: any) => allocation.session == session)
-    const liberationsSession = liberationsEnseignant?.filter(liberation => allocationsSession?.find((allocation: any) => allocation.id == liberation.allocation))
-    const liberationsInfos = liberationsSession?.map(liberation => ({ qte: Number(liberation.quantite ?? 0) }))
-
-    const supervisionsEnseignant = supervisions?.filter(supervision => supervision.enseignant == enseignant.id)
-    const stagesSession = stages?.filter(stage => stage.session == session)
-    const supervisionsSession = supervisionsEnseignant?.find(supervision => stagesSession?.find(stage => stage.id == supervision.stage))
-    
-    const stagiaires = Number(supervisionsSession?.nbStagiaires ?? 0)
-    const ETCparStagiaire = Number(stagesSession?.[0]?.ETCparStagiaire ?? 0)
-    
-    const CI = calculateur(chargesInfos ?? [], liberationsInfos ?? [], stagiaires, ETCparStagiaire).total
-
-    const color = CI < 30 ? "inherit" : CI < 40 ? "darkkhaki" : CI < 55 ? "green" : "red"
-
-    const stickyStyle = {
-        ...style,
-        color,
-        position: "sticky" as const,
-        bottom: bottom ?? "auto",
-        top: top ?? "auto",
-        backgroundColor: "white",
-        zIndex: top ? 104 : 102,
-        boxShadow: top ? "0 2px 5px rgba(0,0,0,0.05)" : "0 -2px 5px rgba(0,0,0,0.05)",
-        borderBottom: top ? "2px solid #dee2e6" : style?.borderBottom
-    }
-
-    return <td key={enseignant.id} className="text-center font-weight-bold" style={stickyStyle}>
+    return <StickyCell 
+        className="text-center font-weight-bold" 
+        bottom={bottom} 
+        top={top} 
+        zIndex={top ? 104 : 102}
+        style={{
+            ...style,
+            color,
+            backgroundColor: "white",
+            boxShadow: top ? "0 2px 5px rgba(0,0,0,0.05)" : "0 -2px 5px rgba(0,0,0,0.05)",
+            borderBottom: top ? "2px solid #dee2e6" : style?.borderBottom
+        }}
+    >
         {CI.toFixed(2)}
-    </td>
+    </StickyCell>
 }

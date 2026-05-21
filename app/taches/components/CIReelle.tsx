@@ -1,10 +1,12 @@
-import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
+import { firebaseDb } from "@/app/utilities/firebaseDb"
 import { extractSessionInfos } from "@/app/utilities/sessions"
-import type { CIReelle, Enseignant } from "@/app/db/db"
+import { getCIColor } from "@/app/constants/ciConfig"
+import { useData } from "./DataContext"
+import StickyHeader from "./ui/StickyHeader"
+import StickyCell from "./ui/StickyCell"
 
 export default function({visibleEnseignants, session, enseignantWidth, ciBottom, ciTop}:any){
-    const CIReelles = useFirestoreCollection<CIReelle>("CIReelles")
-    const enseignants = useFirestoreCollection<Enseignant>("enseignants")
+    const { CIReelles } = useData()
 
     const {saison, annee} = extractSessionInfos(session)
 
@@ -33,37 +35,39 @@ export default function({visibleEnseignants, session, enseignantWidth, ciBottom,
         }
     }
 
-    const firstColStyle = {
-        position: "sticky" as const, 
-        left: 0, 
-        zIndex: 103, 
-        backgroundColor: "#f8f9fa",
-        boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
-        borderRight: "2px solid #dee2e6",
-        padding: "4px 12px",
-        fontSize: "0.8rem",
-        whiteSpace: "nowrap" as const,
-        width: "1px",
-        backgroundClip: "padding-box",
-        bottom: ciBottom ?? "auto",
-        top: ciTop ?? "auto"
-    }
-
     return <>
             <tr className="table-light">
-                <th style={firstColStyle}>
+                <StickyHeader 
+                    isFirstCol 
+                    zIndex={103} 
+                    bottom={ciBottom} 
+                    top={ciTop}
+                    style={{ backgroundColor: "#f8f9fa" }}
+                >
                     <div className="d-flex justify-content-between align-items-center gap-2">
                         <span className="fw-bold">CI Réelle {saison}</span>
                         <button type="button" className="btn btn-link btn-sm text-danger p-0 m-0" style={{lineHeight: 1, textDecoration: "none"}} onClick={clearAll} title="Réinitialiser">⟲</button>
                     </div>
-                </th>
+                </StickyHeader>
                 { visibleEnseignants.map((enseignant: any) => {
                     const CIReelle = CIReelles?.find(CIReelle => CIReelle.enseignant == enseignant.id && CIReelle.session == session)
                     const value = CIReelle ? CIReelle.CI : 0
-                    const color = value < 30 ? "inherit" : value < 40 ? "darkkhaki" : value < 55 ? "green" : "red"
-                    return <td key={enseignant.id} className="bg-light text-center" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, position: "sticky", bottom: ciBottom ?? "auto", top: ciTop ?? "auto", zIndex: ciTop ? 104 : 102, backgroundColor: "#f8f9fa", borderBottom: ciTop ? "2px solid #dee2e6" : "none"}}>
-                            <input className="form-control form-control-sm text-center mx-auto fw-bold" type="number" min="0" step="0.01" value={value} data-enseignant-id={enseignant.id} onChange={CIHandler} style={{maxWidth: "60px", fontSize: "0.8rem", padding: "2px", color}}/>
-                        </td>
+                    const color = getCIColor(value, 'session')
+                    return <StickyCell 
+                        key={enseignant.id} 
+                        className="bg-light text-center" 
+                        bottom={ciBottom} 
+                        top={ciTop} 
+                        zIndex={ciTop ? 104 : 102}
+                        style={{
+                            minWidth: `${enseignantWidth}px`, 
+                            width: `${enseignantWidth}px`, 
+                            backgroundColor: "#f8f9fa", 
+                            borderBottom: ciTop ? "2px solid #dee2e6" : "none"
+                        }}
+                    >
+                        <input className="form-control form-control-sm text-center mx-auto fw-bold" type="number" min="0" step="0.01" value={value} data-enseignant-id={enseignant.id} onChange={CIHandler} style={{maxWidth: "60px", fontSize: "0.8rem", padding: "2px", color}}/>
+                    </StickyCell>
                 })}
             </tr>
         </>
