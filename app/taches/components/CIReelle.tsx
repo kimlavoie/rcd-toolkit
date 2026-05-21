@@ -2,7 +2,7 @@ import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import type { CIReelle, Enseignant } from "@/app/db/db"
 
-export default function({visibleEnseignants, session, enseignantWidth}:any){
+export default function({visibleEnseignants, session, enseignantWidth, ciBottom, ciTop}:any){
     const CIReelles = useFirestoreCollection<CIReelle>("CIReelles")
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
 
@@ -36,7 +36,7 @@ export default function({visibleEnseignants, session, enseignantWidth}:any){
     const firstColStyle = {
         position: "sticky" as const, 
         left: 0, 
-        zIndex: 101, 
+        zIndex: 103, 
         backgroundColor: "#f8f9fa",
         boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
         borderRight: "2px solid #dee2e6",
@@ -44,7 +44,9 @@ export default function({visibleEnseignants, session, enseignantWidth}:any){
         fontSize: "0.8rem",
         whiteSpace: "nowrap" as const,
         width: "1px",
-        backgroundClip: "padding-box"
+        backgroundClip: "padding-box",
+        bottom: ciBottom ?? "auto",
+        top: ciTop ?? "auto"
     }
 
     return <>
@@ -59,7 +61,7 @@ export default function({visibleEnseignants, session, enseignantWidth}:any){
                     const CIReelle = CIReelles?.find(CIReelle => CIReelle.enseignant == enseignant.id && CIReelle.session == session)
                     const value = CIReelle ? CIReelle.CI : 0
                     const color = value < 30 ? "inherit" : value < 40 ? "darkkhaki" : value < 55 ? "green" : "red"
-                    return <td key={enseignant.id} className="bg-light text-center" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
+                    return <td key={enseignant.id} className="bg-light text-center" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, position: "sticky", bottom: ciBottom ?? "auto", top: ciTop ?? "auto", zIndex: ciTop ? 104 : 102, backgroundColor: "#f8f9fa", borderBottom: ciTop ? "2px solid #dee2e6" : "none"}}>
                             <input className="form-control form-control-sm text-center mx-auto fw-bold" type="number" min="0" step="0.01" value={value} data-enseignant-id={enseignant.id} onChange={CIHandler} style={{maxWidth: "60px", fontSize: "0.8rem", padding: "2px", color}}/>
                         </td>
                 })}

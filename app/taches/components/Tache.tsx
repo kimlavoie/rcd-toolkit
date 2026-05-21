@@ -7,7 +7,7 @@ import CI from "./CI"
 import type { Enseignant, Groupe, Charge, Allocation, Liberation, Stage, Supervision } from "@/app/db/db"
 import { toast } from "react-hot-toast"
 
-export default function({visibleEnseignants, session, enseignantWidth, scenario = "production"}:any){
+export default function({visibleEnseignants, session, enseignantWidth, scenario = "production", ciBottom, ciTop}:any){
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
     const groupes = useFirestoreCollection<Groupe>("groupes")
     const allCharges = useFirestoreCollection<Charge>("charges")
@@ -135,6 +135,17 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
         width: `${enseignantWidth}px`
     }
 
+    const ciHeaderStyle = {
+        ...firstColStyle,
+        position: "sticky" as const,
+        bottom: ciBottom,
+        top: ciTop,
+        zIndex: 103,
+        backgroundColor: "#f8f9fa",
+        borderTop: ciBottom ? "1px solid #dee2e6" : "none",
+        borderBottom: ciTop ? "2px solid #dee2e6" : "1px solid #dee2e6"
+    }
+
     return <>
         <tr className="table-secondary">
             <th style={{...firstColStyle, backgroundColor: "#e9ecef", zIndex: 102}}>
@@ -189,9 +200,9 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
             })}
         </tr>
         <tr>
-            <th style={firstColStyle}>CI {saison}</th>
+            <th style={ciHeaderStyle}>CI {saison}</th>
             { visibleEnseignants.map((enseignant: any) => {
-                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} trigger={{charges, liberations, groupes}} scenario={scenario} style={cellStyle}/>
+                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} trigger={{charges, liberations, groupes}} scenario={scenario} style={cellStyle} bottom={ciBottom} top={ciTop}/>
             })}
         </tr>
     </>

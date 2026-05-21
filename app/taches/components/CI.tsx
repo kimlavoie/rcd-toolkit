@@ -3,7 +3,7 @@ import calculateur from "@/app/calculateur/calculateur"
 import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import type { Enseignant, Charge, Liberation, Groupe, Cours, Supervision, Stage } from "@/app/db/db"
 
-export default function CI({enseignant, session, enseignantWidth, trigger, scenario = "production", style}: any){
+export default function CI({enseignant, session, enseignantWidth, trigger, scenario = "production", style, bottom, top}: any){
     const allCharges = useFirestoreCollection<Charge>("charges")
     const allLiberations = useFirestoreCollection<Liberation>("liberations")
     const allSupervisions = useFirestoreCollection<Supervision>("supervisions")
@@ -48,7 +48,19 @@ export default function CI({enseignant, session, enseignantWidth, trigger, scena
 
     const color = CI < 30 ? "inherit" : CI < 40 ? "darkkhaki" : CI < 55 ? "green" : "red"
 
-    return <td key={enseignant.id} className="text-center font-weight-bold" style={{...style, color}}>
+    const stickyStyle = {
+        ...style,
+        color,
+        position: "sticky" as const,
+        bottom: bottom ?? "auto",
+        top: top ?? "auto",
+        backgroundColor: "white",
+        zIndex: top ? 104 : 102,
+        boxShadow: top ? "0 2px 5px rgba(0,0,0,0.05)" : "0 -2px 5px rgba(0,0,0,0.05)",
+        borderBottom: top ? "2px solid #dee2e6" : style?.borderBottom
+    }
+
+    return <td key={enseignant.id} className="text-center font-weight-bold" style={stickyStyle}>
         {CI.toFixed(2)}
     </td>
 }

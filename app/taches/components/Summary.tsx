@@ -26,7 +26,7 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, en
     const firstColStyle = {
         position: "sticky" as const, 
         left: 0, 
-        zIndex: 101,
+        zIndex: 103,
         backgroundColor: "#212529",
         boxShadow: "2px 0 5px rgba(0,0,0,0.2)",
         borderRight: "2px solid #444",
@@ -34,7 +34,8 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, en
         fontSize: "0.8rem",
         whiteSpace: "nowrap" as const,
         width: "1px",
-        backgroundClip: "padding-box"
+        backgroundClip: "padding-box",
+        bottom: 0
     }
 
     return <>
@@ -83,7 +84,7 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, en
                         
                         const couleur = CI < 70 ? "inherit" : CI < 80 ? "darkkhaki" : CI < 85 ? "green" : "red"
                         
-                        return <td key={enseignant.id} style={{color: couleur, fontWeight: "bold", backgroundColor: "#212529", textAlign: "center", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, fontSize: "0.9rem"}}>
+                        return <td key={enseignant.id} style={{color: couleur, fontWeight: "bold", backgroundColor: "#212529", textAlign: "center", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, fontSize: "0.9rem", position: "sticky", bottom: 0, zIndex: 102}}>
                             {CI.toFixed(2)}
                         </td>
                     })}
