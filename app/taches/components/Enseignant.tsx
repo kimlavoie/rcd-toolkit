@@ -73,14 +73,15 @@ export default function Enseignant({enseignant, onCache, globalWidth}: {enseigna
                 position: "fixed", 
                 left: position.left, 
                 top: position.top, 
-                backgroundColor: "#444", 
+                backgroundColor: "#212529", 
                 color: "white",
                 display: "block", 
                 padding: "10px", 
                 zIndex: 9999,
                 borderRadius: "8px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                minWidth: "150px"
+                boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                minWidth: "150px",
+                border: "1px solid #444"
             }}
         >
             <p className="mb-0"><button className="btn btn-outline-light btn-sm w-100" onClick={ev => { window.open("/admin/enseignants?highlight=" + enseignant.id, "_blank"); setHideMenu(true); }}>Modifier l'enseignant</button></p>

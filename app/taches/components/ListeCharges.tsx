@@ -124,17 +124,18 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                 position: "fixed", 
                 left: position.left, 
                 top: position.top, 
-                backgroundColor: "#444", 
+                backgroundColor: "#212529", 
                 color: "white",
                 display: "block", 
                 padding: "10px", 
                 zIndex: 9999,
                 borderRadius: "8px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                minWidth: "200px"
+                boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                minWidth: "200px",
+                border: "1px solid #444"
             }}
         >
-            <p className="mb-2 small text-muted text-uppercase fw-bold border-bottom pb-1 border-secondary">Ajouter un cours</p>
+            <p className="mb-2 small text-white-50 text-uppercase fw-bold border-bottom pb-1 border-secondary">Ajouter un cours</p>
             {groupes?.filter(groupe => {
                 if(groupe.session != session) return false
                 const charge = charges?.find(charge => charge.groupe == groupe.id && charge.enseignant == enseignant.id)
