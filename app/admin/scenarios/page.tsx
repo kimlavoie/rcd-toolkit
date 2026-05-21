@@ -64,13 +64,13 @@ export default function ScenariosPage() {
     async function copyScenario(scenario: Scenario) {
         try {
             setIsCopying(scenario.id)
-            toast.loading("Copie du scénario en cours...", { id: "copy-scenario" })
+            toast.loading(`Copie du scénario "${scenario.nom}" en cours...`, { id: "copy-scenario" })
 
             // 1. Create the new scenario document
             const newScenarioData = {
                 nom: `Copie de ${scenario.nom}`,
                 session: scenario.session,
-                notes: (scenario.notes ? scenario.notes + "\n" : "") + `[Copié de : ${scenario.nom}]`,
+                notes: (scenario.notes ? scenario.notes + "\n" : "") + `[Copié de : ${scenario.nom} le ${new Date().toLocaleDateString()}]`,
                 isDefault: false
             }
             const newScenarioRef = await firebaseDb.scenarios.add(newScenarioData)
@@ -85,13 +85,14 @@ export default function ScenariosPage() {
                 )
                 const snapshot = await getDocs(q)
                 
-                for (const docSnap of snapshot.docs) {
-                    const data = docSnap.data()
-                    await firebaseDb[collectionName as keyof typeof firebaseDb].add({
+                const promises = snapshot.docs.map(docSnap => {
+                    const { userId, ...data } = docSnap.data()
+                    return firebaseDb[collectionName as keyof typeof firebaseDb].add({
                         ...data,
                         scenario: newScenarioId
                     })
-                }
+                })
+                await Promise.all(promises)
             }
 
             // Copy all related data
@@ -103,6 +104,71 @@ export default function ScenariosPage() {
         } catch (error) {
             console.error("Error copying scenario:", error)
             toast.error("Erreur lors de la copie du scénario", { id: "copy-scenario" })
+        } finally {
+            setIsCopying(null)
+        }
+    }
+
+    async function copyProduction(session: string) {
+        try {
+            const nom = newData.nom || `Copie Production ${session}`
+            setIsCopying("production-" + session)
+            toast.loading(`Copie de la production (${session}) en cours...`, { id: "copy-prod" })
+
+            // 1. Create the new scenario document
+            const newScenarioData = {
+                nom: nom,
+                session: session,
+                notes: (newData.notes ? newData.notes + "\n" : "") + `[Copié de la production le ${new Date().toLocaleDateString()}]`,
+                isDefault: newData.isDefault
+            }
+            const newScenarioRef = await firebaseDb.scenarios.add(newScenarioData)
+            const newScenarioId = newScenarioRef.id
+
+            // 2. Fetch dependencies to filter production data by session
+            // We need to find which items belong to the requested session
+            const [groupesSnap, allocationsSnap, stagesSnap] = await Promise.all([
+                getDocs(query(collection(firestore, "groupes"), where("session", "==", session), where("userId", "==", user!.uid))),
+                getDocs(query(collection(firestore, "allocations"), where("session", "==", session), where("userId", "==", user!.uid))),
+                getDocs(query(collection(firestore, "stages"), where("session", "==", session), where("userId", "==", user!.uid)))
+            ])
+
+            const groupeIds = new Set(groupesSnap.docs.map(d => d.id))
+            const allocationIds = new Set(allocationsSnap.docs.map(d => d.id))
+            const stageIds = new Set(stagesSnap.docs.map(d => d.id))
+
+            // 3. Helper to copy with filtering
+            const copyFiltered = async (collectionName: string, idField: string, validIds: Set<string>) => {
+                const q = query(
+                    collection(firestore, collectionName), 
+                    where("scenario", "==", "production"),
+                    where("userId", "==", user!.uid)
+                )
+                const snapshot = await getDocs(q)
+                
+                const promises = snapshot.docs
+                    .filter(docSnap => validIds.has(docSnap.data()[idField]))
+                    .map(docSnap => {
+                        const { userId, ...data } = docSnap.data()
+                        return firebaseDb[collectionName as keyof typeof firebaseDb].add({
+                            ...data,
+                            scenario: newScenarioId
+                        })
+                    })
+                await Promise.all(promises)
+            }
+
+            await Promise.all([
+                copyFiltered("charges", "groupe", groupeIds),
+                copyFiltered("liberations", "allocation", allocationIds),
+                copyFiltered("supervisions", "stage", stageIds)
+            ])
+
+            toast.success("Production copiée avec succès", { id: "copy-prod" })
+            setNewData({ nom: "", session: session, notes: "", isDefault: false })
+        } catch (error) {
+            console.error("Error copying production:", error)
+            toast.error("Erreur lors de la copie de la production", { id: "copy-prod" })
         } finally {
             setIsCopying(null)
         }
@@ -157,7 +223,7 @@ export default function ScenariosPage() {
                                             type="button" 
                                             className="btn btn-outline-info btn-sm me-1" 
                                             onClick={() => copyScenario(scenario)} 
-                                            disabled={isCopying === scenario.id}
+                                            disabled={isCopying !== null}
                                             title="Copier le scénario"
                                         >
                                             📋
@@ -176,7 +242,17 @@ export default function ScenariosPage() {
                             <input type="checkbox" checked={newData.isDefault} onChange={e => setNewData({...newData, isDefault: e.target.checked})} />
                         </td>
                         <td>
-                            <button className="btn btn-primary btn-sm w-100" onClick={addNew}>+</button>
+                            <div className="d-flex gap-1">
+                                <button className="btn btn-primary btn-sm flex-grow-1" onClick={addNew} title="Créer un nouveau scénario vide">+</button>
+                                <button 
+                                    className="btn btn-info btn-sm text-white" 
+                                    onClick={() => copyProduction(newData.session)}
+                                    disabled={isCopying !== null}
+                                    title="Créer à partir de la production"
+                                >
+                                    📋 Prod
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
