@@ -58,8 +58,9 @@ export default function({visibleEnseignants, session, enseignantWidth}:any){
                 { visibleEnseignants.map((enseignant: any) => {
                     const CIReelle = CIReelles?.find(CIReelle => CIReelle.enseignant == enseignant.id && CIReelle.session == session)
                     const value = CIReelle ? CIReelle.CI : 0
+                    const color = value < 30 ? "inherit" : value < 40 ? "darkkhaki" : value < 55 ? "green" : "red"
                     return <td key={enseignant.id} className="bg-light text-center" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
-                            <input className="form-control form-control-sm text-center mx-auto" type="number" min="0" step="0.01" value={value} data-enseignant-id={enseignant.id} onChange={CIHandler} style={{maxWidth: "60px", fontSize: "0.8rem", padding: "2px"}}/>
+                            <input className="form-control form-control-sm text-center mx-auto fw-bold" type="number" min="0" step="0.01" value={value} data-enseignant-id={enseignant.id} onChange={CIHandler} style={{maxWidth: "60px", fontSize: "0.8rem", padding: "2px", color}}/>
                         </td>
                 })}
             </tr>

@@ -46,7 +46,9 @@ export default function CI({enseignant, session, enseignantWidth, trigger, scena
     
     const CI = calculateur(chargesInfos ?? [], liberationsInfos ?? [], stagiaires, ETCparStagiaire).total
 
-    return <td key={enseignant.id} className="text-center font-weight-bold" style={style}>
+    const color = CI < 30 ? "inherit" : CI < 40 ? "darkkhaki" : CI < 55 ? "green" : "red"
+
+    return <td key={enseignant.id} className="text-center font-weight-bold" style={{...style, color}}>
         {CI.toFixed(2)}
     </td>
 }

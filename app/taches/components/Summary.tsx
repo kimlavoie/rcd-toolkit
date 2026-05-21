@@ -81,7 +81,7 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, en
                         const CIH = getSessionCI(sessions[1]);
                         const CI = CIA + CIH;
                         
-                        const couleur = CI < 70 ? "#fff" : CI < 80 ? "darkkhaki" : CI < 85 ? "#0f0" : "#f00"
+                        const couleur = CI < 70 ? "inherit" : CI < 80 ? "darkkhaki" : CI < 85 ? "green" : "red"
                         
                         return <td key={enseignant.id} style={{color: couleur, fontWeight: "bold", backgroundColor: "#212529", textAlign: "center", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, fontSize: "0.9rem"}}>
                             {CI.toFixed(2)}
