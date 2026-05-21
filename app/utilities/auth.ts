@@ -6,7 +6,10 @@ import {
     GoogleAuthProvider, 
     onAuthStateChanged, 
     signOut, 
-    User 
+    User,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    updateProfile
 } from "firebase/auth";
 import { auth } from "./firebase";
 
@@ -28,8 +31,30 @@ export function useAuth() {
             await signInWithPopup(auth, provider);
         } catch (error) {
             console.error("Login Error:", error);
+            throw error;
         }
     };
+
+    const registerWithEmail = async (email: string, pass: string, name: string) => {
+        try {
+            const res = await createUserWithEmailAndPassword(auth, email, pass);
+            await updateProfile(res.user, { displayName: name });
+            return res.user;
+        } catch (error) {
+            console.error("Registration Error:", error);
+            throw error;
+        }
+    }
+
+    const loginWithEmail = async (email: string, pass: string) => {
+        try {
+            const res = await signInWithEmailAndPassword(auth, email, pass);
+            return res.user;
+        } catch (error) {
+            console.error("Login Error:", error);
+            throw error;
+        }
+    }
 
     const logout = async () => {
         try {
@@ -39,5 +64,5 @@ export function useAuth() {
         }
     };
 
-    return { user, loading, signInWithGoogle, logout };
+    return { user, loading, signInWithGoogle, registerWithEmail, loginWithEmail, logout };
 }
