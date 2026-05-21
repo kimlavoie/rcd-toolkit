@@ -27,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} style={{ height: "100%", overflow: "hidden" }}>
+      <body style={{ height: "100%", overflow: "hidden", margin: 0 }}>
         <ToasterWrapper />
         <Breadcrumbs />
         {children}

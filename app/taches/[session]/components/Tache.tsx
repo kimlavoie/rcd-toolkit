@@ -6,16 +6,22 @@ import ListeLiberations from "./ListeLiberations"
 import CI from "./CI"
 import type { Enseignant, Groupe, Charge, Allocation, Liberation, Stage, Supervision } from "@/app/db/db"
 import { toast } from "react-hot-toast"
-export default function({visibleEnseignants, session, firstColWidth, enseignantWidth}:any){
+
+export default function({visibleEnseignants, session, firstColWidth, enseignantWidth, scenario = "production"}:any){
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
     const groupes = useFirestoreCollection<Groupe>("groupes")
-    const charges = useFirestoreCollection<Charge>("charges")
+    const allCharges = useFirestoreCollection<Charge>("charges")
     const allocations = useFirestoreCollection<Allocation>("allocations")
-    const liberations = useFirestoreCollection<Liberation>("liberations")
+    const allLiberations = useFirestoreCollection<Liberation>("liberations")
     const stages = useFirestoreCollection<Stage>("stages")
-    const supervisions = useFirestoreCollection<Supervision>("supervisions")
+    const allSupervisions = useFirestoreCollection<Supervision>("supervisions")
 
     const {saison, annee} = extractSessionInfos(session)
+
+    // Filter data by scenario
+    const charges = allCharges?.filter(c => (c.scenario || "production") === scenario)
+    const liberations = allLiberations?.filter(l => (l.scenario || "production") === scenario)
+    const supervisions = allSupervisions?.filter(s => (s.scenario || "production") === scenario)
 
     function chargesManquantes(session:string){
         const groupesSession = groupes?.filter(groupe => groupe.session == session)
@@ -65,7 +71,7 @@ export default function({visibleEnseignants, session, firstColWidth, enseignantW
         if(supervision){
             await firebaseDb.supervisions.update(supervision.id, {nbStagiaires: nouvelleValeur})
         } else {
-            await firebaseDb.supervisions.add({enseignant: enseignantId, stage: stageId, nbStagiaires: nouvelleValeur})
+            await firebaseDb.supervisions.add({enseignant: enseignantId, stage: stageId, nbStagiaires: nouvelleValeur, scenario})
         }
     }
 
@@ -100,7 +106,7 @@ export default function({visibleEnseignants, session, firstColWidth, enseignantW
     }
     
     async function clearAll(){
-        if (confirm(`Voulez-vous vraiment réinitialiser toutes les données pour la session ${saison} ${annee} ?`)) {
+        if (confirm(`Voulez-vous vraiment réinitialiser toutes les données pour la session ${saison} ${annee} (Scénario: ${scenario}) ?`)) {
             await clearStagiaires()
             await clearLiberations()
             await clearCharges()
@@ -137,7 +143,7 @@ export default function({visibleEnseignants, session, firstColWidth, enseignantW
                 }</p>
             </th>
             { visibleEnseignants.map((enseignant: any) => {
-                return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth}/>
+                return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario}/>
             })}
         </tr>
         <tr>
@@ -151,7 +157,7 @@ export default function({visibleEnseignants, session, firstColWidth, enseignantW
                 </p>
             </th>
             { visibleEnseignants.map((enseignant: any) => {
-                return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth}/>
+                return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario}/>
             })}
         </tr>
         <tr>
@@ -167,7 +173,7 @@ export default function({visibleEnseignants, session, firstColWidth, enseignantW
             </th>
             { visibleEnseignants.map((enseignant: any) => {
                 const stage = stages?.find(stage => stage.session == session)
-                const supervision = supervisions?.find(supervision => supervision.stage == stage?.id && supervision.enseignant == enseignant.id)
+                const supervision = supervisions?.find(supervision => supervision.enseignant == enseignant.id && supervision.stage == stage?.id)
                 const value = supervision ? supervision.nbStagiaires : 0
                 return stage 
                     ?<td key={enseignant.id} className="text-center" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
@@ -182,7 +188,7 @@ export default function({visibleEnseignants, session, firstColWidth, enseignantW
         <tr>
             <th style={firstColStyle}>CI {saison}</th>
             { visibleEnseignants.map((enseignant: any) => {
-                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} trigger={{charges, liberations, groupes}}/>
+                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} trigger={{charges, liberations, groupes}} scenario={scenario}/>
             })}
         </tr>
     </>

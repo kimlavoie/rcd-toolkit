@@ -1,25 +1,52 @@
 'use client'
+import calculateur from "@/app/calculateur/calculateur"
+import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
+import type { Enseignant, Charge, Liberation, Groupe, Cours, Supervision, Stage } from "@/app/db/db"
 
-import { useState, useEffect } from "react"
-import calculerCI from "../calculerCI"
+export default function CI({enseignant, session, enseignantWidth, trigger, scenario = "production"}: any){
+    const allCharges = useFirestoreCollection<Charge>("charges")
+    const allLiberations = useFirestoreCollection<Liberation>("liberations")
+    const allSupervisions = useFirestoreCollection<Supervision>("supervisions")
+    const allocations = useFirestoreCollection<any>("allocations")
+    const groupes = useFirestoreCollection<Groupe>("groupes")
+    const cours = useFirestoreCollection<Cours>("cours")
+    const stages = useFirestoreCollection<Stage>("stages")
 
-export default function({enseignant, session, enseignantWidth, trigger}: any){
-    const [CI, setCI] = useState(0)
+    // Filter by scenario
+    const charges = allCharges?.filter(c => (c.scenario || "production") === scenario)
+    const liberations = allLiberations?.filter(l => (l.scenario || "production") === scenario)
+    const supervisions = allSupervisions?.filter(s => (s.scenario || "production") === scenario)
 
-    useEffect(() => {
-        if (enseignant && session) {
-            calculerCI(session, enseignant)
-                .then(setCI)
-                .catch(err => {
-                    console.error("Erreur calcul CI:", err);
-                    setCI(0);
-                });
-        }
-    }, [session, enseignant, trigger])
+    const chargesEnseignant = charges?.filter(charge => charge.enseignant == enseignant.id)
+    const groupesSession = groupes?.filter(groupe => groupe.session == session)
+    const chargesSession = chargesEnseignant?.filter(charge => groupesSession?.find(groupe => groupe.id == charge.groupe))
     
-    const couleur = CI < 30 ? "black" : CI < 40 ? "darkkhaki" : CI < 45 ? "green" : CI < 55 ? "orange" : "red" 
+    const chargesInfos = chargesSession?.map(charge => {
+        const groupe = groupes?.find(groupe => groupe.id == charge.groupe)
+        const cour = cours?.find(cour => String(groupe?.cours) === String(cour.id))
+        return {
+            sigle: cour?.sigle ?? "", 
+            etudiants: Number(groupe?.nbEtudiants ?? 0), 
+            heures: Number(cour?.heuresTheorie ?? 0) + Number(cour?.heuresPratique ?? 0), 
+            semaines: Number(charge.nbSemaines ?? 0)
+        }
+    })
 
-    return <th key={enseignant.id} style={{color: couleur, minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, textAlign: "center"}}>
-        {CI ? CI.toFixed(2) : "0.00"}
-    </th>
+    const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
+    const allocationsSession = allocations?.filter((allocation: any) => allocation.session == session)
+    const liberationsSession = liberationsEnseignant?.filter(liberation => allocationsSession?.find((allocation: any) => allocation.id == liberation.allocation))
+    const liberationsInfos = liberationsSession?.map(liberation => ({ qte: Number(liberation.quantite ?? 0) }))
+
+    const supervisionsEnseignant = supervisions?.filter(supervision => supervision.enseignant == enseignant.id)
+    const stagesSession = stages?.filter(stage => stage.session == session)
+    const supervisionsSession = supervisionsEnseignant?.find(supervision => stagesSession?.find(stage => stage.id == supervision.stage))
+    
+    const stagiaires = Number(supervisionsSession?.nbStagiaires ?? 0)
+    const ETCparStagiaire = Number(stagesSession?.[0]?.ETCparStagiaire ?? 0)
+    
+    const CI = calculateur(chargesInfos ?? [], liberationsInfos ?? [], stagiaires, ETCparStagiaire).total
+
+    return <td key={enseignant.id} className="text-center font-weight-bold" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
+        {CI.toFixed(2)}
+    </td>
 }

@@ -32,24 +32,10 @@ export interface Allocation{
     session: string
 }
 
-export interface Liberation{
-    id: string
-    allocation: string
-    enseignant: string
-    quantite: number
-}
-
 export interface Stage{
     id: string
     session: string
     ETCparStagiaire: number
-    nbStagiaires: number
-}
-
-export interface Supervision{
-    id: string
-    enseignant: string
-    stage: string
     nbStagiaires: number
 }
 
@@ -58,6 +44,31 @@ export interface Charge{
     enseignant: string
     groupe: string
     nbSemaines: number
+    scenario?: string
+}
+
+export interface Liberation {
+    id: string
+    enseignant: string
+    allocation: string
+    quantite: number
+    scenario?: string
+}
+
+export interface Supervision {
+    id: string
+    enseignant: string
+    stage: string
+    nbStagiaires: number
+    scenario?: string
+}
+
+export interface Scenario {
+    id: string
+    nom: string
+    session: string
+    notes?: string
+    isDefault?: boolean
 }
 
 export interface CIReelle {

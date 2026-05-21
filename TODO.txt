@@ -1,4 +1,1 @@
-- Améliorer la navigation dans l'application
 - Faire du refactoring pour améliorer la maintenabilité du code
-
-- Pouvoir faire des scénarios de tâches

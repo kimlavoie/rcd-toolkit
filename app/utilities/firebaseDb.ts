@@ -51,6 +51,7 @@ export const firebaseDb = {
     supervisions: createFirebaseTable("supervisions"),
     charges: createFirebaseTable("charges"),
     CIReelles: createFirebaseTable("CIReelles"),
+    scenarios: createFirebaseTable("scenarios"),
 };
 
 function createFirebaseTable(collectionName: string) {

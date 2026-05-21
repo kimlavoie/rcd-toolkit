@@ -1,18 +1,24 @@
+'use client'
 import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useState, useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import Liberation from "./Liberation"
-import type { Liberation as LiberationType, Allocation } from "@/app/db/db"
-import { toast } from "react-hot-toast"
+import type { Allocation, Liberation as LiberationType, Enseignant } from "@/app/db/db"
+import InputModal from "./InputModal"
 
-export default function({enseignant, session, enseignantWidth}: any){
+export default function ListeLiberations({enseignant, session, enseignantWidth, scenario = "production"}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string}){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)
     const [mounted, setMounted] = useState(false)
+    const [modalOpen, setModalOpen] = useState(false)
+    const [selectedAllocation, setSelectedAllocation] = useState<Allocation | null>(null)
 
-    const liberations = useFirestoreCollection<LiberationType>("liberations")
     const allocations = useFirestoreCollection<Allocation>("allocations")
+    const allLiberations = useFirestoreCollection<LiberationType>("liberations")
+
+    // Filter by scenario
+    const liberations = allLiberations?.filter(l => (l.scenario || "production") === scenario)
 
     useEffect(() => {
         setMounted(true)
@@ -33,105 +39,28 @@ export default function({enseignant, session, enseignantWidth}: any){
         };
     }, [hideMenu]);
 
-    function openMenu(ev: any) {
+    function openMenu(ev: any){
         ev.preventDefault()
         setHideMenu(false)
         setPosition({left: ev.clientX, top: ev.clientY})
     }
 
-    async function newSelectionLiberation(ev: any){
-        const enseignantID = ev.target.dataset.enseignantId
-        const allocationID = ev.target.dataset.allocationId
-
-        const liberationsAllocation = liberations?.filter(liberation => liberation.allocation == allocationID)
-        const sommeLiberations = liberationsAllocation?.reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0)
-
-        const allocation = allocations?.find(allocation => allocation.id == allocationID)
-        const qteAllocation = allocation?.quantite
-
-        const qteRestante = String(((qteAllocation ?? 0) - (sommeLiberations ?? 0)).toFixed(2))
-
-        const quantite = Number(prompt("Entrez la quantité de libération en ETC (max: " + qteRestante + ")", qteRestante))
-
-        if(isNaN(quantite)){
-            toast.error("Erreur lors de l'entrée du nombre")
-            return
-        }
-
-        if((sommeLiberations ?? 0) + quantite > (qteAllocation ?? 0)){
-            toast.error("La quantité de libération est trop grande pour l'allocation. Veuillez choisir une autre quantité")
-            return
-        }
-        
-        const liberation = {
-            enseignant: enseignantID,
-            allocation: allocationID,
-            quantite: quantite
-        }
-        
-        await firebaseDb.liberations.add(liberation)
-        setHideMenu(true)
+    async function removeHandlerLiberation(liberationId: string, enseignantId: string){
+        await firebaseDb.liberations.delete(liberationId)
     }
 
-    function dragOverHandlerLiberation(ev:any){
-        ev.preventDefault()
-    }
-
-    async function dropHandlerLiberation(ev:any){
-        ev.currentTarget.style.boxShadow = ""
-        ev.currentTarget.style.backgroundColor = ""
-        const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
-
-        if(!idNouveauEnseignant){
-            return
-        }
-
-        const idLiberation = ev.dataTransfer.getData("liberationId")
-        const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
-
-        const ancienneLiberation = liberations?.find(liberation => liberation.enseignant == idAncienEnseignant && liberation.id == idLiberation)
-
-        const liberationExiste = liberations?.find(liberation => liberation.enseignant == idNouveauEnseignant && liberation.allocation == ancienneLiberation?.allocation)
-        
-        if(liberationExiste){
-            toast.error("Cet enseignant a deja cette liberation")
-            return
-        }
-
-        const nouvelleLiberation = {
-            enseignant: idNouveauEnseignant,
-            allocation: ancienneLiberation?.allocation ?? "",
-            quantite: ancienneLiberation?.quantite ?? 0
-        }
-
-        await firebaseDb.liberations.add(nouvelleLiberation)
-        if (ancienneLiberation) {
-            await firebaseDb.liberations.delete(ancienneLiberation.id)
+    async function addHandlerLiberation(quantite: number){
+        if(selectedAllocation){
+            await firebaseDb.liberations.add({allocation: selectedAllocation.id, enseignant: enseignant.id, quantite, scenario})
+            setModalOpen(false)
+            setHideMenu(true)
         }
     }
 
-    async function removeHandlerLiberation(liberationId:any, enseignantId:any){
-        await firebaseDb.liberations.delete(liberationId)        
-    }
+    const currentAllocationLiberations = liberations?.filter(liberation => liberation.allocation == selectedAllocation?.id)
+    const currentAllocationSomme = currentAllocationLiberations?.reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0)
+    const currentAllocationMax = Number(((selectedAllocation?.quantite ?? 0) - (currentAllocationSomme ?? 0)).toFixed(3))
 
-    function dragEnter(ev:any){
-        ev.preventDefault()
-        if(ev.currentTarget.dataset.dropzone == "liberation" && ev.dataTransfer.types.includes("liberationid")){
-            ev.currentTarget.style.boxShadow = "inset 0 0 0 2px #6f42c1"
-            ev.currentTarget.style.backgroundColor = "rgba(111, 66, 193, 0.05)"
-        }
-    }
-    
-    function dragLeave(ev:any){
-        if(!ev.currentTarget.contains(ev.relatedTarget)){
-            ev.currentTarget.style.boxShadow = ""
-            ev.currentTarget.style.backgroundColor = ""
-        }
-    }
-
-    const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
-    const allocationsSession = allocations?.filter((allocation: any) => allocation.session == session)
-                
     const menuContent = !hideMenu && (
         <div 
             ref={menuRef}
@@ -146,40 +75,49 @@ export default function({enseignant, session, enseignantWidth}: any){
                 zIndex: 9999,
                 borderRadius: "8px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                minWidth: "200px",
-                maxHeight: "300px",
-                overflowY: "auto"
+                minWidth: "200px"
             }}
         >
-            <h6 className="border-bottom pb-1 mb-2 text-info">Ajouter une libération</h6>
-            {allocationsSession?.filter((allocation:any) => {
-                const liberation = liberations?.filter(liberation => liberation.allocation == allocation.id)
-                const sommeLiberations = liberation?.reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0)
-                const liberationExiste = liberations?.find(liberation => liberation.enseignant == enseignant.id && liberation.allocation == allocation.id)
-
-                return ((allocation.quantite ?? 0) - (sommeLiberations ?? 0)) > 0.001  && !liberationExiste
-            })
-            ?.toSorted((a:any, b:any) => (a.description ?? "").localeCompare(b.description ?? ""))
-            ?.map((allocation: any, index:number) => {
-                return <p key={index} className="mb-1">
-                    <button className="btn btn-sm btn-outline-light w-100 text-start" data-allocation-id={allocation.id} data-enseignant-id={enseignant.id} onClick={newSelectionLiberation}>
-                        {allocation.code} - {allocation.description} ({allocation.quantite})
+            <p className="mb-2 small text-muted text-uppercase fw-bold border-bottom pb-1 border-secondary">Ajouter une libération</p>
+            {allocations?.filter(allocation => {
+                if(allocation.session != session) return false
+                const liberation = liberations?.find(liberation => liberation.allocation == allocation.id && liberation.enseignant == enseignant.id)
+                if(liberation) return false
+                const totalLiberations = liberations?.filter(liberation => liberation.allocation == allocation.id).reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0)
+                if((allocation.quantite ?? 0) - (totalLiberations ?? 0) < 0.001) return false
+                return true
+            }).map(allocation => (
+                <p key={allocation.id} className="mb-1">
+                    <button className="btn btn-outline-light btn-sm w-100 text-start" onClick={() => {setSelectedAllocation(allocation); setModalOpen(true)}}>
+                        {allocation.code}
                     </button>
                 </p>
-            })}
-            {allocationsSession?.length === 0 && <p className="small text-muted mb-0">Aucune allocation disponible</p>}
+            ))}
         </div>
     )
 
-    return <td onContextMenu={openMenu} key={enseignant.id} data-enseignant-id={enseignant.id} data-dropzone="liberation" onDrop={dropHandlerLiberation} onDragOver={dragOverHandlerLiberation} onDragEnter={dragEnter} onDragLeave={dragLeave} style={{paddingBottom: "50px", position: "relative", transition: "background-color 0.2s", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
-        {liberationsEnseignant?.filter(liberation => {
-            const allocation:any = allocations?.find(allocation => liberation.allocation == allocation.id)
-            return allocation?.session == session
-        })?.map((liberation: any) => {
-            const allocation:any = allocations?.find(allocation => liberation.allocation == allocation.id)
-            return <Liberation key={liberation?.id} session={session} liberation={liberation} allocation={allocation} liberations={liberations} enseignantId={enseignant.id} onRemove={removeHandlerLiberation}/>
+    const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
+    const allocationsSession = allocations?.filter(allocation => allocation.session == session)
+    const liberationsSession = liberationsEnseignant?.filter(liberation => allocationsSession?.find(allocation => allocation.id == liberation.allocation))
+
+    return <td key={enseignant.id} onContextMenu={openMenu} style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
+        {liberationsSession?.map(liberation => {
+            const allocation = allocations?.find(allocation => allocation.id == liberation.allocation)
+            if(!allocation) return null
+            return <Liberation key={liberation.id} session={session} liberation={liberation} allocation={allocation} liberations={liberations} enseignantId={enseignant.id} onRemove={removeHandlerLiberation} scenario={scenario}/>
         })}
         
         {mounted && menuContent && createPortal(menuContent, document.body)}
+
+        <InputModal 
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            onConfirm={addHandlerLiberation}
+            title="Ajouter une libération"
+            label={`Quantité de libération pour ${selectedAllocation?.code} (en ETC) :`}
+            defaultValue={currentAllocationMax}
+            max={currentAllocationMax}
+            step={0.001}
+        />
     </td>
 }

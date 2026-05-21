@@ -5,7 +5,7 @@ import InputModal from "./InputModal"
 import TransferModal from "./TransferModal"
 import { toast } from "react-hot-toast"
 
-export default function({session, liberation, allocation, liberations, enseignantId, onRemove}: any){
+export default function({session, liberation, allocation, liberations, enseignantId, onRemove, scenario = "production"}: any){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)

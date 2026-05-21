@@ -2,14 +2,14 @@ import calculateur from "@/app/calculateur/calculateur"
 import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import type { Enseignant, Liberation, Allocation, Groupe, Charge, Cours, Supervision, Stage, CIReelle } from "@/app/db/db"
 
-export default function({visibleEnseignants, sessions, saison, firstColWidth, enseignantWidth}:any){
+export default function({visibleEnseignants, sessions, saison, firstColWidth, enseignantWidth, scenario = "production"}:any){
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
-    const liberations = useFirestoreCollection<Liberation>("liberations")
+    const allLiberations = useFirestoreCollection<Liberation>("liberations")
     const allocations = useFirestoreCollection<Allocation>("allocations")
     const groupes = useFirestoreCollection<Groupe>("groupes")
-    const charges = useFirestoreCollection<Charge>("charges")
+    const allCharges = useFirestoreCollection<Charge>("charges")
     const cours = useFirestoreCollection<Cours>("cours")
-    const supervisions = useFirestoreCollection<Supervision>("supervisions")
+    const allSupervisions = useFirestoreCollection<Supervision>("supervisions")
     const stages = useFirestoreCollection<Stage>("stages")
     const CIReelles = useFirestoreCollection<CIReelle>("CIReelles")
 
@@ -17,6 +17,11 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, en
     if (!sessions || sessions.length < 2) {
         return null;
     }
+
+    // Filter by scenario
+    const charges = allCharges?.filter(c => (c.scenario || "production") === scenario)
+    const liberations = allLiberations?.filter(l => (l.scenario || "production") === scenario)
+    const supervisions = allSupervisions?.filter(s => (s.scenario || "production") === scenario)
 
     const firstColStyle = {
         position: "sticky" as const, 
