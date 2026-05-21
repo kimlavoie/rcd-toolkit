@@ -36,7 +36,13 @@ export default function Breadcrumbs() {
         {pathSegments.map((segment, index) => {
           const href = `/${pathSegments.slice(0, index + 1).join('/')}`
           const isLast = index === pathSegments.length - 1
-          const label = routeLabels[segment] || segment
+          
+          let label = routeLabels[segment] || segment
+          
+          // Handle academic year in breadcrumbs (e.g., /taches/2024)
+          if (/^\d{4}$/.test(segment)) {
+            label = `Année scolaire ${segment}-${parseInt(segment) + 1}`
+          }
 
           return (
             <li 

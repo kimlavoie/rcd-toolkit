@@ -8,6 +8,8 @@ import type { Scenario } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
 import { toast } from "react-hot-toast"
 import SelectSession from "../components/inputs/SelectSession"
+import { collection, query, where, getDocs } from "firebase/firestore"
+import { firestore } from "@/app/utilities/firebase"
 
 export default function ScenariosPage() {
     const { user, loading } = useAuth()
@@ -19,6 +21,7 @@ export default function ScenariosPage() {
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editData, setEditData] = useState<any>({})
     const [newData, setNewData] = useState({ nom: "", session: "A26", notes: "", isDefault: false })
+    const [isCopying, setIsCopying] = useState<string | null>(null)
 
     if (loading) return <div className="container mt-5">Chargement...</div>
     if (!user) {
@@ -58,6 +61,49 @@ export default function ScenariosPage() {
         await firebaseDb.scenarios.update(scenario.id, { isDefault: !scenario.isDefault })
     }
 
+    async function copyScenario(scenario: Scenario) {
+        try {
+            setIsCopying(scenario.id)
+            toast.loading("Copie du scénario en cours...", { id: "copy-scenario" })
+
+            // 1. Create the new scenario document
+            const newScenarioData = {
+                nom: `Copie de ${scenario.nom}`,
+                session: scenario.session,
+                notes: (scenario.notes ? scenario.notes + "\n" : "") + `[Copié de : ${scenario.nom}]`,
+                isDefault: false
+            }
+            const newScenarioRef = await firebaseDb.scenarios.add(newScenarioData)
+            const newScenarioId = newScenarioRef.id
+
+            // 2. Helper to copy sub-collections
+            const copyCollection = async (collectionName: string) => {
+                const q = query(collection(firestore, collectionName), where("scenario", "==", scenario.id))
+                const snapshot = await getDocs(q)
+                
+                for (const docSnap of snapshot.docs) {
+                    const data = docSnap.data()
+                    await firebaseDb[collectionName as keyof typeof firebaseDb].add({
+                        ...data,
+                        scenario: newScenarioId
+                    })
+                }
+            }
+
+            // Copy all related data
+            await copyCollection("charges")
+            await copyCollection("liberations")
+            await copyCollection("supervisions")
+
+            toast.success("Scénario copié avec succès", { id: "copy-scenario" })
+        } catch (error) {
+            console.error("Error copying scenario:", error)
+            toast.error("Erreur lors de la copie du scénario", { id: "copy-scenario" })
+        } finally {
+            setIsCopying(null)
+        }
+    }
+
     return <div className="container mt-3">
         <h2 className="mb-4 text-primary">Gestion des Scénarios</h2>
         <div className="card shadow-sm p-4">
@@ -68,7 +114,7 @@ export default function ScenariosPage() {
                         <th onClick={() => toggleSort("nom")} style={{cursor: "pointer"}}>Nom du scénario {getSortIcon("nom")}</th>
                         <th>Notes</th>
                         <th style={{width: "100px"}}>Défaut</th>
-                        <th style={{width: "150px"}}>Actions</th>
+                        <th style={{width: "180px"}}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -102,8 +148,17 @@ export default function ScenariosPage() {
                                         </button>
                                     </td>
                                     <td>
-                                        <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(scenario)}>✏️</button>
-                                        <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => firebaseDb.scenarios.delete(scenario.id)}>🗑️</button>
+                                        <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(scenario)} title="Modifier">✏️</button>
+                                        <button 
+                                            type="button" 
+                                            className="btn btn-outline-info btn-sm me-1" 
+                                            onClick={() => copyScenario(scenario)} 
+                                            disabled={isCopying === scenario.id}
+                                            title="Copier le scénario"
+                                        >
+                                            📋
+                                        </button>
+                                        <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => firebaseDb.scenarios.delete(scenario.id)} title="Supprimer">🗑️</button>
                                     </td>
                                 </>
                             )}

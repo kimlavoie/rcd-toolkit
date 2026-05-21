@@ -1,12 +1,12 @@
 'use client'
 import { useParams, useRouter } from "next/navigation"
-import { extractSessionInfos, makeSessionCode } from "@/app/utilities/sessions"
-import { useState, useRef, useEffect } from "react"
-import { useFirestoreCollection, firebaseDb } from "@/app/utilities/firebaseDb"
-import Enseignant from "./components/Enseignant"
-import Tache from "./components/Tache"
-import Summary from "./components/Summary"
-import CIReelle from "./components/CIReelle"
+import { extractSessionInfos } from "@/app/utilities/sessions"
+import { useState, useEffect } from "react"
+import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
+import Enseignant from "../components/Enseignant"
+import Tache from "../components/Tache"
+import Summary from "../components/Summary"
+import CIReelle from "../components/CIReelle"
 import Link from "next/link"
 import { useAuth } from "@/app/utilities/auth"
 import type { Enseignant as EnseignantType, Scenario } from "@/app/db/db"
@@ -16,22 +16,18 @@ export default function(){
     const { user, loading: authLoading } = useAuth()
     const router = useRouter()
     const params = useParams()
-    const session = params.session as string
+    const year = params.year as string
     
-    // Safety check for session code format (should be like A26 or H26)
-    const isValidSession = session && /^[AH]\d{2}$/.test(session);
-    
-    const sessionInfos = isValidSession ? extractSessionInfos(session) : { saison: "Inconnue", annee: "" };
-    const {saison, annee} = sessionInfos;
+    // Safety check for year format (should be like 2024)
+    const isValidYear = year && /^\d{4}$/.test(year);
+    const anneeScolaireLabel = isValidYear ? `${year}-${parseInt(year)+1}` : "Inconnue";
 
-    // To calculate CI Annuelle, we need the other session of the same academic year
-    // A24 -> sessions = [A24, H25]
-    // H25 -> sessions = [A24, H25]
-    const currentYearShort = parseInt(session.substring(1));
-    const sessionsAnnuelle = saison === "Automne" 
-        ? [session, `H${(currentYearShort + 1).toString().padStart(2, '0')}`]
-        : [`A${(currentYearShort - 1).toString().padStart(2, '0')}`, session];
+    // Sessions for this academic year
+    const sessionA = isValidYear ? `A${year.substring(2,4)}` : "";
+    const sessionH = isValidYear ? `H${(parseInt(year.substring(2,4)) + 1).toString().padStart(2, '0')}` : "";
+    const sessionsAnnuelle = [sessionA, sessionH];
 
+    const [mode, setMode] = useState<"Automne" | "Hiver">("Automne")
     const [cache, setCache] = useState<any[]>([])
     const [search, setSearch] = useState("")
     const [tri, setTri] = useState("nom")
@@ -49,7 +45,9 @@ export default function(){
     const cours = useFirestoreCollection<any>("cours")
     const scenarios = useFirestoreCollection<Scenario>("scenarios")
 
-    const currentSessionScenarios = scenarios?.filter(s => s.session === session) || []
+    // For scenarios, we might want to see scenarios from both sessions or just the one relevant to the mode
+    const currentSession = mode === "Automne" ? sessionA : sessionH;
+    const currentSessionScenarios = scenarios?.filter(s => s.session === currentSession) || []
 
     useEffect(() => {
         if (currentSessionScenarios.length > 0 && selectedScenarioId === "production") {
@@ -58,7 +56,7 @@ export default function(){
                 setSelectedScenarioId(defaultScenario.id)
             }
         }
-    }, [scenarios, session])
+    }, [scenarios, currentSession])
 
     // Filter and Sort Enseignants
     const visibleEnseignants = (enseignants ?? [])
@@ -81,8 +79,8 @@ export default function(){
         return null
     }
 
-    if (!isValidSession) {
-        return <div className="container mt-5 alert alert-danger">Code de session invalide: {session}</div>
+    if (!isValidYear) {
+        return <div className="container mt-5 alert alert-danger">Année scolaire invalide: {year}</div>
     }
 
     const valider = async () => {
@@ -99,40 +97,40 @@ export default function(){
             const sessionLabel = `${sSaison} ${sAnnee}`
 
             // 1. Cours restants (groupes non complets - 15 semaines)
-            const groupesSession = groupes.filter(g => g.session === sCode)
-            const groupesIncomplets = groupesSession.map(g => {
-                const chargesDuGroupe = charges.filter(c => String(c.groupe) === String(g.id) && (c.scenario || "production") === selectedScenarioId)
-                const totalSemaines = chargesDuGroupe.reduce((sum, c) => sum + Number(c.nbSemaines || 0), 0)
+            const groupesSession = groupes.filter((g: any) => g.session === sCode)
+            const groupesIncomplets = groupesSession.map((g: any) => {
+                const chargesDuGroupe = charges.filter((c: any) => String(c.groupe) === String(g.id) && (c.scenario || "production") === selectedScenarioId)
+                const totalSemaines = chargesDuGroupe.reduce((sum: number, c: any) => sum + Number(c.nbSemaines || 0), 0)
                 return { group: g, restant: 15 - totalSemaines }
-            }).filter(r => r.restant > 0.001)
+            }).filter((r: any) => r.restant > 0.001)
             
             if (groupesIncomplets.length > 0) {
-                sessionReports.push("Cours non complétés (moins de 15 sem.) :\n" + groupesIncomplets.map(r => {
-                    const c = cours.find(c => String(c.id) === String(r.group.cours))
+                sessionReports.push("Cours non complétés (moins de 15 sem.) :\n" + groupesIncomplets.map((r: any) => {
+                    const c = cours.find((c: any) => String(c.id) === String(r.group.cours))
                     return `- ${c?.sigle ?? 'Inconnu'} (Gr. ${r.group.id.substring(0,4)}) : ${r.restant.toFixed(1)} sem. restantes`
                 }).join("\n"))
             }
 
             // 2. Libérations restantes
-            const allocationsSession = allocations.filter(a => a.session === sCode)
-            const libRestantes = allocationsSession.map(a => {
-                const totalLibere = liberations.filter(l => String(l.allocation) === String(a.id) && (l.scenario || "production") === selectedScenarioId).reduce((sum, l) => sum + Number(l.quantite), 0)
+            const allocationsSession = allocations.filter((a: any) => a.session === sCode)
+            const libRestantes = allocationsSession.map((a: any) => {
+                const totalLibere = liberations.filter((l: any) => String(l.allocation) === String(a.id) && (l.scenario || "production") === selectedScenarioId).reduce((sum: number, l: any) => sum + Number(l.quantite), 0)
                 return { desc: a.description || a.code, restant: Number(a.quantite) - totalLibere }
-            }).filter(r => r.restant > 0.001)
+            }).filter((r: any) => r.restant > 0.001)
 
             if (libRestantes.length > 0) {
-                sessionReports.push("Libérations restantes :\n" + libRestantes.map(r => `- ${r.desc} : ${r.restant.toFixed(3)}`).join("\n"))
+                sessionReports.push("Libérations restantes :\n" + libRestantes.map((r: any) => `- ${r.desc} : ${r.restant.toFixed(3)}`).join("\n"))
             }
 
             // 3. Stagiaires à placer
-            const stagesSession = stages.filter(s => s.session === sCode)
-            const stagRestants = stagesSession.map(s => {
-                const totalPlaces = supervisions.filter(sup => String(sup.stage) === String(s.id) && (sup.scenario || "production") === selectedScenarioId).reduce((sum, sup) => sum + Number(sup.nbStagiaires), 0)
+            const stagesSession = stages.filter((s: any) => s.session === sCode)
+            const stagRestants = stagesSession.map((s: any) => {
+                const totalPlaces = supervisions.filter((sup: any) => String(sup.stage) === String(s.id) && (sup.scenario || "production") === selectedScenarioId).reduce((sum: number, sup: any) => sum + Number(sup.nbStagiaires), 0)
                 return { id: s.id, restant: Number(s.nbStagiaires) - totalPlaces }
-            }).filter(r => r.restant > 0.001)
+            }).filter((r: any) => r.restant > 0.001)
 
             if (stagRestants.length > 0) {
-                sessionReports.push("Stagiaires à placer :\n" + stagRestants.map(r => `- Stage ${r.id.substring(0,4)} : ${r.restant} stagiaire(s) restant(s)`).join("\n"))
+                sessionReports.push("Stagiaires à placer :\n" + stagRestants.map((r: any) => `- Stage ${r.id.substring(0,4)} : ${r.restant} stagiaire(s) restant(s)`).join("\n"))
             }
 
             if (sessionReports.length > 0) {
@@ -150,9 +148,27 @@ export default function(){
     return <div className="d-flex flex-column bg-light" style={{ position: "absolute", top: "50px", left: 0, right: 0, bottom: 0, overflow: "hidden", padding: "0.5rem" }}>
         <div className="card shadow-sm p-2 flex-grow-1 d-flex flex-column overflow-hidden">
             <div className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2 px-2">
-                <h1 className="mb-0 text-primary h5 fw-bold">
-                    {saison === "Automne" ? `Année scolaire ${annee}-${parseInt(annee)+1}` : `${saison} ${annee}`}
-                </h1>
+                <div className="d-flex align-items-center gap-3">
+                    <h1 className="mb-0 text-primary h5 fw-bold">
+                        Année scolaire {anneeScolaireLabel}
+                    </h1>
+                    <div className="btn-group btn-group-sm shadow-sm rounded-pill overflow-hidden border" style={{height: "28px"}}>
+                        <button 
+                            className={`btn ${mode === 'Automne' ? 'btn-primary fw-bold' : 'btn-white text-muted border-0'}`} 
+                            style={{fontSize: "0.75rem", padding: "0 15px"}} 
+                            onClick={() => setMode('Automne')}
+                        >
+                            🍂 Mode Automne
+                        </button>
+                        <button 
+                            className={`btn ${mode === 'Hiver' ? 'btn-primary fw-bold' : 'btn-white text-muted border-0'}`} 
+                            style={{fontSize: "0.75rem", padding: "0 15px"}} 
+                            onClick={() => setMode('Hiver')}
+                        >
+                            ❄️ Mode Hiver
+                        </button>
+                    </div>
+                </div>
                 {selectedScenarioId !== "production" && (
                     <span className="badge bg-warning text-dark animate-pulse" style={{fontSize: "0.7rem"}}>
                         Mode Scénario : {currentSessionScenarios.find(s => s.id === selectedScenarioId)?.nom}
@@ -337,7 +353,7 @@ export default function(){
                         </tr>
                     </thead>
                     <tbody>
-                        {saison === "Automne" ? (
+                        {mode === "Automne" ? (
                             <>
                                 <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth}/>
                                 <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth}/>
@@ -348,7 +364,7 @@ export default function(){
                                 <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth}/>
                             </>
                         )}
-                        <Summary session={session} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={saison} enseignantWidth={enseignantWidth} scenario={selectedScenarioId}/>
+                        <Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={mode} enseignantWidth={enseignantWidth} scenario={selectedScenarioId}/>
                     </tbody>
                 </table>
             </div>
