@@ -14,6 +14,16 @@ export default function(){
         }
     }, [user, loading, router])
 
+    // Force non-scrollable body for this page only
+    useEffect(() => {
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.documentElement.style.overflow = 'unset';
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
+
     if (loading) return <div className="container mt-5">Chargement...</div>
     if (!user) return null;
 

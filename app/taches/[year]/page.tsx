@@ -45,6 +45,16 @@ export default function(){
     const cours = useFirestoreCollection<any>("cours")
     const scenarios = useFirestoreCollection<Scenario>("scenarios")
 
+    // Force non-scrollable body for this page only
+    useEffect(() => {
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.documentElement.style.overflow = 'unset';
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
+
     // For scenarios, we might want to see scenarios from both sessions or just the one relevant to the mode
     const currentSession = mode === "Automne" ? sessionA : sessionH;
     const currentSessionScenarios = scenarios?.filter(s => s.session === currentSession) || []
@@ -148,7 +158,7 @@ export default function(){
         }
     }
 
-    return <div className="d-flex flex-column bg-light" style={{ position: "absolute", top: "50px", left: 0, right: 0, bottom: 0, overflow: "hidden", padding: "0.5rem" }}>
+    return <div className="d-flex flex-column bg-light overflow-hidden" style={{ height: "calc(100vh - 60px)", padding: "0.5rem" }}>
         <div className="card shadow-sm p-2 flex-grow-1 d-flex flex-column overflow-hidden">
             <div className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2 px-2">
                 <div className="d-flex align-items-center gap-3">
