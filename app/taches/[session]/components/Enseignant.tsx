@@ -97,11 +97,13 @@ export default function Enseignant({enseignant, onCache, globalWidth}: {enseigna
             color: "black", 
             backgroundColor: "lightgray",
             minWidth: `${width}px`,
-            width: `${width}px`
+            width: `${width}px`,
+            cursor: "context-menu"
         }} 
         key={enseignant.id}
+        title="Clic droit pour plus d'options"
     >
-        <p className="mb-0 pe-3">{enseignant.prenom} {enseignant.nom}</p>
+        <p className="mb-0 pe-3" style={{ pointerEvents: "none" }}>{enseignant.prenom} {enseignant.nom}</p>
         
         <div 
             onMouseDown={startResizing}

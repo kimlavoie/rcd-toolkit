@@ -4,6 +4,7 @@ import toast, { ToastBar, Toaster } from "react-hot-toast";
 import "bootstrap/dist/css/bootstrap.css"
 import "./globals.css"
 import ToasterWrapper from "./ToasterWrapper";
+import Breadcrumbs from "./Breadcrumbs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +30,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         <ToasterWrapper />
+        <Breadcrumbs />
         {children}
       </body>
     </html>

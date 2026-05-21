@@ -160,8 +160,7 @@ export default function(){
     }
 
     return <div className="container-fluid d-flex flex-column" style={{height: "100vh", padding: "1rem"}}>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-            <button type="button" className="btn btn-outline-primary rounded-pill w-auto px-4" onClick={() => router.push("/taches")}>← Retour</button>  
+        <div className="d-flex justify-content-end align-items-center mb-3">
             <div className="d-flex gap-2">
                 <button className="btn btn-success rounded-pill shadow-sm" onClick={valider}>
                     ✅ Valider les tâches

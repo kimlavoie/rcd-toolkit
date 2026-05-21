@@ -15,7 +15,6 @@ export default function(){
     }
 
     return <div className="container mt-3">
-        <button type="button" className="btn btn-outline-primary rounded-pill mb-4 w-25" onClick={() => router.push("/")}>← Retour</button>  
         <div className="list-group shadow-sm">
             <Link href="db/import" className="list-group-item list-group-item-action py-3">
                 <div className="d-flex w-100 justify-content-between align-items-center">

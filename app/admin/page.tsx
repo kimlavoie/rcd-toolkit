@@ -15,7 +15,6 @@ export default function(){
     }
 
     return <div className="container mt-3">
-        <button type="button" className="btn btn-outline-primary rounded-pill mb-4 w-25" onClick={() => router.push("/")}>← Retour</button>  
         <div className="list-group">
             <Link href="admin/enseignants" className="list-group-item list-group-item-action">Gestion des enseignants</Link>
             <Link href="admin/cours" className="list-group-item list-group-item-action">Gestion des cours</Link>
