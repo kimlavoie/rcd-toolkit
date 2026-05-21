@@ -16,7 +16,7 @@ export default function Home() {
 
   return (
     <div className="container mt-5">
-      <h1>RCD Toolkit</h1>
+      <h1>Gestion des tâches</h1>
       <p>Bienvenue, {user.displayName}</p>
       <hr />
       <div className="list-group mb-4">

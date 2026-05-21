@@ -192,7 +192,7 @@ export default function(){
                                 <option key={s.id} value={s.id}>📁 {s.nom}</option>
                             ))}
                         </select>
-                        <Link href="/admin/scenarios" className="btn btn-sm btn-link text-muted p-0 ms-1" title="Gérer les scénarios" style={{fontSize: "0.75rem"}}>⚙️</Link>
+                        <Link href="/admin/scenarios" className="btn btn-sm btn-link text-muted p-0 ms-1" title="Gérer les scénarios" style={{fontSize: "0.75rem", textDecoration: "none"}}>⚙️</Link>
                     </div>
 
                     {/* Tri */}
@@ -288,7 +288,7 @@ export default function(){
                                         </ul>
                                     </div>
                                     <div className="text-center mt-2">
-                                        <button className="btn btn-sm btn-primary rounded-pill px-4" onClick={() => setShowHelp(false)}>J'ai compris !</button>
+                                        <button className="btn btn-sm btn-primary rounded-pill px-4" onClick={() => setShowHelp(false)}>J'auto-enregistre !</button>
                                     </div>
                                 </div>
                             </div>
@@ -298,11 +298,10 @@ export default function(){
             </div>
 
             <div className="table-responsive flex-grow-1 overflow-auto border rounded shadow-inner bg-white" style={{maxHeight: "none"}}>
-                <table className="table table-bordered table-hover align-middle mb-0" style={{fontSize: "0.85rem"}}>
+                <table className="table table-hover align-middle mb-0" style={{fontSize: "0.85rem", borderCollapse: "separate", borderSpacing: 0}}>
                     <thead className="table-light sticky-top" style={{zIndex: 105}}>
                         <tr>
                             <th 
-                                className="bg-light border-end" 
                                 style={{
                                     position: "sticky", 
                                     left: 0, 
@@ -311,7 +310,11 @@ export default function(){
                                     fontSize: "0.8rem",
                                     padding: "4px 12px",
                                     whiteSpace: "nowrap",
-                                    width: "1px"
+                                    width: "1px",
+                                    backgroundColor: "#f8f9fa",
+                                    borderRight: "2px solid #dee2e6",
+                                    borderBottom: "1px solid #dee2e6",
+                                    backgroundClip: "padding-box"
                                 }}
                             >
                                 Actions / Enseignants

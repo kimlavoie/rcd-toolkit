@@ -3,7 +3,7 @@ import calculateur from "@/app/calculateur/calculateur"
 import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import type { Enseignant, Charge, Liberation, Groupe, Cours, Supervision, Stage } from "@/app/db/db"
 
-export default function CI({enseignant, session, enseignantWidth, trigger, scenario = "production"}: any){
+export default function CI({enseignant, session, enseignantWidth, trigger, scenario = "production", style}: any){
     const allCharges = useFirestoreCollection<Charge>("charges")
     const allLiberations = useFirestoreCollection<Liberation>("liberations")
     const allSupervisions = useFirestoreCollection<Supervision>("supervisions")
@@ -46,7 +46,7 @@ export default function CI({enseignant, session, enseignantWidth, trigger, scena
     
     const CI = calculateur(chargesInfos ?? [], liberationsInfos ?? [], stagiaires, ETCparStagiaire).total
 
-    return <td key={enseignant.id} className="text-center font-weight-bold" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
+    return <td key={enseignant.id} className="text-center font-weight-bold" style={style}>
         {CI.toFixed(2)}
     </td>
 }

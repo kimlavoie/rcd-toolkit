@@ -5,8 +5,9 @@ import { createPortal } from "react-dom"
 import Liberation from "./Liberation"
 import type { Allocation, Liberation as LiberationType, Enseignant } from "@/app/db/db"
 import InputModal from "./InputModal"
+import { toast } from "react-hot-toast"
 
-export default function ListeLiberations({enseignant, session, enseignantWidth, scenario = "production"}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string}){
+export default function ListeLiberations({enseignant, session, enseignantWidth, scenario = "production", style}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any}){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)
@@ -57,6 +58,57 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
         }
     }
 
+    function dragOverHandlerLiberation(ev: any) {
+        ev.preventDefault()
+    }
+
+    async function dropHandlerLiberation(ev: any) {
+        ev.currentTarget.style.boxShadow = ""
+        ev.currentTarget.style.backgroundColor = ""
+        const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
+
+        if (!idNouveauEnseignant) return
+
+        const idLiberation = ev.dataTransfer.getData("liberationId")
+        const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
+
+        const ancienneLiberation = liberations?.find(liberation => liberation.enseignant == idAncienEnseignant && liberation.id == idLiberation)
+        const liberationExiste = liberations?.find(liberation => liberation.enseignant == idNouveauEnseignant && liberation.allocation == ancienneLiberation?.allocation)
+
+        if (liberationExiste) {
+            toast.error("Cet enseignant a déjà cette libération")
+            return
+        }
+
+        const nouvelleLiberation = {
+            enseignant: idNouveauEnseignant,
+            allocation: ancienneLiberation?.allocation ?? "",
+            quantite: ancienneLiberation?.quantite ?? 0,
+            scenario
+        }
+
+        await firebaseDb.liberations.add(nouvelleLiberation)
+        if (ancienneLiberation) {
+            await firebaseDb.liberations.delete(ancienneLiberation.id)
+        }
+        toast.success("Libération déplacée")
+    }
+
+    function dragEnter(ev: any) {
+        ev.preventDefault()
+        if (ev.currentTarget.dataset.dropzone == "liberation" && ev.dataTransfer.types.includes("liberationid")) {
+            ev.currentTarget.style.boxShadow = "inset 0 0 0 2px #6f42c1"
+            ev.currentTarget.style.backgroundColor = "rgba(111, 66, 193, 0.05)"
+        }
+    }
+
+    function dragLeave(ev: any) {
+        if (!ev.currentTarget.contains(ev.relatedTarget)) {
+            ev.currentTarget.style.boxShadow = ""
+            ev.currentTarget.style.backgroundColor = ""
+        }
+    }
+
     const currentAllocationLiberations = liberations?.filter(liberation => liberation.allocation == selectedAllocation?.id)
     const currentAllocationSomme = currentAllocationLiberations?.reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0)
     const currentAllocationMax = Number(((selectedAllocation?.quantite ?? 0) - (currentAllocationSomme ?? 0)).toFixed(3))
@@ -100,7 +152,17 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     const allocationsSession = allocations?.filter(allocation => allocation.session == session)
     const liberationsSession = liberationsEnseignant?.filter(liberation => allocationsSession?.find(allocation => allocation.id == liberation.allocation))
 
-    return <td key={enseignant.id} onContextMenu={openMenu} style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
+    return <td 
+        key={enseignant.id} 
+        onContextMenu={openMenu} 
+        style={{...style, position: "relative", transition: "background-color 0.2s"}}
+        data-dropzone="liberation"
+        data-enseignant-id={enseignant.id}
+        onDrop={dropHandlerLiberation}
+        onDragOver={dragOverHandlerLiberation}
+        onDragEnter={dragEnter}
+        onDragLeave={dragLeave}
+    >
         {liberationsSession?.map(liberation => {
             const allocation = allocations?.find(allocation => allocation.id == liberation.allocation)
             if(!allocation) return null

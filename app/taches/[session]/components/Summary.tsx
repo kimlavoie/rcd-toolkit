@@ -29,11 +29,12 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, en
         zIndex: 101,
         backgroundColor: "#212529",
         boxShadow: "2px 0 5px rgba(0,0,0,0.2)",
-        borderRight: "1px solid #444",
+        borderRight: "2px solid #444",
         padding: "4px 12px",
         fontSize: "0.8rem",
         whiteSpace: "nowrap" as const,
-        width: "1px"
+        width: "1px",
+        backgroundClip: "padding-box"
     }
 
     return <>

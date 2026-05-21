@@ -5,8 +5,9 @@ import { createPortal } from "react-dom";
 import Charge from "./Charge";
 import InputModal from "./InputModal";
 import type { Groupe, Charge as ChargeType, Cours, Enseignant } from "@/app/db/db"
+import { toast } from "react-hot-toast"
 
-export default function ListeCharges({enseignant, session, enseignantWidth, scenario = "production"}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string}){
+export default function ListeCharges({enseignant, session, enseignantWidth, scenario = "production", style}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any}){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)
@@ -61,6 +62,57 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
         }
     }
 
+    function dragOverHandlerCharge(ev: any) {
+        ev.preventDefault()
+    }
+
+    async function dropHandlerCharge(ev: any) {
+        ev.currentTarget.style.boxShadow = ""
+        ev.currentTarget.style.backgroundColor = ""
+        const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
+
+        if (!idNouveauEnseignant) return
+
+        const idGroupe = ev.dataTransfer.getData("groupeId")
+        const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
+
+        const ancienneCharge = charges?.find(charge => charge.enseignant == idAncienEnseignant && charge.groupe == idGroupe)
+        const chargeExiste = charges?.find(charge => charge.enseignant == idNouveauEnseignant && charge.groupe == idGroupe)
+
+        if (chargeExiste) {
+            toast.error("Cet enseignant a déjà cette charge")
+            return
+        }
+
+        const nouvelleCharge = {
+            enseignant: idNouveauEnseignant,
+            groupe: idGroupe,
+            nbSemaines: ancienneCharge?.nbSemaines ?? 0,
+            scenario
+        }
+
+        await firebaseDb.charges.add(nouvelleCharge)
+        if (ancienneCharge) {
+            await firebaseDb.charges.delete(ancienneCharge.id)
+        }
+        toast.success("Charge déplacée")
+    }
+
+    function dragEnter(ev: any) {
+        ev.preventDefault()
+        if (ev.currentTarget.dataset.dropzone == "charge" && ev.dataTransfer.types.includes("groupeid")) {
+            ev.currentTarget.style.boxShadow = "inset 0 0 0 2px #0d6efd"
+            ev.currentTarget.style.backgroundColor = "rgba(13, 110, 253, 0.05)"
+        }
+    }
+
+    function dragLeave(ev: any) {
+        if (!ev.currentTarget.contains(ev.relatedTarget)) {
+            ev.currentTarget.style.boxShadow = ""
+            ev.currentTarget.style.backgroundColor = ""
+        }
+    }
+
     const currentGroupeCharges = charges?.filter(charge => charge.groupe == selectedGroupe?.id)
     const currentGroupeSomme = currentGroupeCharges?.reduce((somme, charge) => somme + (charge.nbSemaines ?? 0), 0)
     const currentGroupeMax = 15 - (currentGroupeSomme ?? 0)
@@ -105,26 +157,34 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
     const groupesSession = groupes?.filter(groupe => groupe.session == session)
     const chargesSession = chargesEnseignant?.filter(charge => groupesSession?.find(groupe => groupe.id == charge.groupe))
 
-    return <>
-        <td key={enseignant.id} onContextMenu={openMenu} style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
-            {chargesSession?.map(charge => {
-                const groupe = groupes?.find(groupe => groupe.id == charge.groupe)
-                const cour = cours?.find(c => c.id == groupe?.cours)
-                if(!groupe || !cour) return null
-                return <Charge key={charge.id} session={session} charge={charge} groupe={groupe} cours={cour} charges={charges} enseignantId={enseignant.id} onRemove={removeHandlerCharge} scenario={scenario}/>
-            })}
-            
-            {mounted && menuContent && createPortal(menuContent, document.body)}
+    return <td 
+        key={enseignant.id} 
+        onContextMenu={openMenu} 
+        style={{...style, position: "relative", transition: "all 0.2s"}}
+        data-dropzone="charge"
+        data-enseignant-id={enseignant.id}
+        onDrop={dropHandlerCharge}
+        onDragOver={dragOverHandlerCharge}
+        onDragEnter={dragEnter}
+        onDragLeave={dragLeave}
+    >
+        {chargesSession?.map(charge => {
+            const groupe = groupes?.find(groupe => groupe.id == charge.groupe)
+            const cour = cours?.find(c => c.id == groupe?.cours)
+            if(!groupe || !cour) return null
+            return <Charge key={charge.id} session={session} charge={charge} groupe={groupe} cours={cour} charges={charges} enseignantId={enseignant.id} onRemove={removeHandlerCharge} scenario={scenario}/>
+        })}
+        
+        {mounted && menuContent && createPortal(menuContent, document.body)}
 
-            <InputModal 
-                isOpen={modalOpen}
-                onClose={() => setModalOpen(false)}
-                onConfirm={addHandlerCharge}
-                title="Ajouter une charge"
-                label={`Nombre de semaines pour ${selectedGroupe ? cours?.find(c => c.id === selectedGroupe.cours)?.sigle : ''} :`}
-                defaultValue={currentGroupeMax}
-                max={currentGroupeMax}
-            />
-        </td>
-    </>
+        <InputModal 
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            onConfirm={addHandlerCharge}
+            title="Ajouter une charge"
+            label={`Nombre de semaines pour ${selectedGroupe ? cours?.find(c => c.id === selectedGroupe.cours)?.sigle : ''} :`}
+            defaultValue={currentGroupeMax}
+            max={currentGroupeMax}
+        />
+    </td>
 }

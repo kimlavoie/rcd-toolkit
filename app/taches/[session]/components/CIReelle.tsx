@@ -39,11 +39,12 @@ export default function({visibleEnseignants, session, enseignantWidth}:any){
         zIndex: 101, 
         backgroundColor: "#f8f9fa",
         boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
-        borderRight: "1px solid #dee2e6",
+        borderRight: "2px solid #dee2e6",
         padding: "4px 12px",
         fontSize: "0.8rem",
         whiteSpace: "nowrap" as const,
-        width: "1px"
+        width: "1px",
+        backgroundClip: "padding-box"
     }
 
     return <>

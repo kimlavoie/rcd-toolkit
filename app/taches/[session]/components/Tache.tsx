@@ -119,16 +119,25 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
         zIndex: 101, 
         backgroundColor: "white",
         boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
-        borderRight: "1px solid #dee2e6",
+        borderRight: "2px solid #dee2e6",
+        borderBottom: "1px solid #dee2e6",
         padding: "4px 12px",
         fontSize: "0.8rem",
         whiteSpace: "nowrap" as const,
-        width: "1px"
+        width: "1px",
+        backgroundClip: "padding-box"
+    }
+
+    const cellStyle = {
+        borderRight: "1px solid #dee2e6",
+        borderBottom: "1px solid #dee2e6",
+        minWidth: `${enseignantWidth}px`,
+        width: `${enseignantWidth}px`
     }
 
     return <>
         <tr className="table-secondary">
-            <th colSpan={100} style={{fontSize: "0.85rem", backgroundColor: "#e9ecef", position: "sticky", left: 0, zIndex: 101, boxShadow: "2px 0 5px rgba(0,0,0,0.1)", padding: "4px 12px", whiteSpace: "nowrap"}}>
+            <th colSpan={100} style={{fontSize: "0.85rem", backgroundColor: "#e9ecef", position: "sticky", left: 0, zIndex: 101, boxShadow: "2px 0 5px rgba(0,0,0,0.1)", padding: "4px 12px", whiteSpace: "nowrap", borderRight: "2px solid #dee2e6", borderBottom: "1px solid #dee2e6", backgroundClip: "padding-box"}}>
                 <div className="d-flex justify-content-between align-items-center gap-4">
                     <span className="fw-bold">{saison} {annee}</span>
                     <button type="button" className="btn btn-xs btn-outline-danger py-0 px-2" style={{fontSize: "0.7rem"}} onClick={clearAll} title="Réinitialiser la session">Réinitialiser ⟲</button>
@@ -143,7 +152,7 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
                 </div>
             </th>
             { visibleEnseignants.map((enseignant: any) => {
-                return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario}/>
+                return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario} style={cellStyle}/>
             })}
         </tr>
         <tr>
@@ -154,7 +163,7 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
                 </div>
             </th>
             { visibleEnseignants.map((enseignant: any) => {
-                return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario}/>
+                return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario} style={cellStyle}/>
             })}
         </tr>
         <tr>
@@ -169,19 +178,19 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
                 const supervision = supervisions?.find(supervision => supervision.enseignant == enseignant.id && supervision.stage == stage?.id)
                 const value = supervision ? supervision.nbStagiaires : 0
                 return stage 
-                    ?<td key={enseignant.id} className="text-center" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`}}>
+                    ?<td key={enseignant.id} className="text-center" style={cellStyle}>
                         <div className="input-group input-group-sm mx-auto" style={{maxWidth: "70px"}}>
                             <input className="form-control text-center p-0" type="number" min="0" step="1" value={value} data-enseignant-id={enseignant.id} data-stage-id={stage.id} onChange={stagiairesHandler} style={{fontSize: "0.8rem"}}/>
                             <span className="input-group-text p-1" style={{fontSize: "0.7rem"}}>/{stage.nbStagiaires}</span>
                         </div>
                     </td>
-                    :<td key={enseignant.id} className="text-muted text-center extra-small" style={{minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, fontSize: "0.75rem"}}>--</td>
+                    :<td key={enseignant.id} className="text-muted text-center extra-small" style={{...cellStyle, fontSize: "0.75rem"}}>--</td>
             })}
         </tr>
         <tr>
             <th style={firstColStyle}>CI {saison}</th>
             { visibleEnseignants.map((enseignant: any) => {
-                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} trigger={{charges, liberations, groupes}} scenario={scenario}/>
+                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} trigger={{charges, liberations, groupes}} scenario={scenario} style={cellStyle}/>
             })}
         </tr>
     </>
