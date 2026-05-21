@@ -122,7 +122,7 @@ export default function ScenariosPage() {
                         <tr key={scenario.id}>
                             {editingId === scenario.id ? (
                                 <>
-                                    <td><SelectSession code={editData.session} onChange={val => setEditData({...editData, session: val})} /></td>
+                                    <td><SelectSession code={editData.session} onChange={(val: any) => setEditData({...editData, session: val})} /></td>
                                     <td><input className="form-control" value={editData.nom} onChange={e => setEditData({...editData, nom: e.target.value})} /></td>
                                     <td><input className="form-control" value={editData.notes || ""} onChange={e => setEditData({...editData, notes: e.target.value})} /></td>
                                     <td className="text-center">
@@ -165,7 +165,7 @@ export default function ScenariosPage() {
                         </tr>
                     ))}
                     <tr className="table-info">
-                        <td><SelectSession code={newData.session} onChange={val => setNewData({...newData, session: val})} /></td>
+                        <td><SelectSession code={newData.session} onChange={(val: any) => setNewData({...newData, session: val})} /></td>
                         <td><input className="form-control" placeholder="Nom..." value={newData.nom} onChange={e => setNewData({...newData, nom: e.target.value})} /></td>
                         <td><input className="form-control" placeholder="Notes..." value={newData.notes} onChange={e => setNewData({...newData, notes: e.target.value})} /></td>
                         <td className="text-center">

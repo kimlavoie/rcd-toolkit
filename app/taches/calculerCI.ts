@@ -1,6 +1,6 @@
 import calculateur from "@/app/calculateur/calculateur"
 import { collection, getDocs } from "firebase/firestore"
-import { firestore } from "../../utilities/firebase"
+import { firestore } from "../utilities/firebase"
 
 export default async function calculerCI(session: string, enseignant: any){
     // In Firestore, we need to fetch the data
