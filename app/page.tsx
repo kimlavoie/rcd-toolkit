@@ -43,7 +43,7 @@ export default function Home() {
     },
     {
       title: "Données & Imports",
-      description: "Exportez vos données ou importez de nouvelles listes (Excel/CSV).",
+      description: "Sauvegardez, restaurez ou réinitialisez l'intégralité des données du système.",
       icon: "💾",
       href: "/db",
       color: "success"
@@ -99,7 +99,7 @@ export default function Home() {
             {/* Quick Stats / Info placeholder */}
             <div className="mt-5 p-4 bg-white rounded-4 shadow-sm text-center">
               <p className="text-muted mb-0 small">
-                Outil de gestion des ressources et charges départementales. Version Cloud (Firebase).
+                Outil de gestion des ressources et charges départementales.
               </p>
             </div>
           </div>
