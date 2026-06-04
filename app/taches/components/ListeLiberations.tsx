@@ -181,8 +181,8 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
                 if(allocation.session != session) return false
                 const liberation = liberations?.find(liberation => liberation.allocation == allocation.id && liberation.enseignant == enseignant.id)
                 if(liberation) return false
-                const totalLiberations = liberations?.filter(liberation => liberation.allocation == allocation.id).reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0)
-                const remaining = (allocation.quantite ?? 0) - (totalLiberations ?? 0)
+                const totalLiberations = liberations?.filter(liberation => liberation.allocation == allocation.id).reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0) ?? 0
+                const remaining = (allocation.quantite ?? 0) - totalLiberations
                 if(remaining < 0.001) return false
                 
                 if (menuSearch) {
@@ -193,8 +193,8 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
                 return true
             }).sort((a, b) => (a.code || "").localeCompare(b.code || ""))
             .map(allocation => {
-                const totalLiberations = liberations?.filter(l => l.allocation == allocation.id).reduce((somme, l) => somme + (l.quantite ?? 0), 0)
-                const remaining = Number(((allocation.quantite ?? 0) - (totalLiberations ?? 0)).toFixed(3))
+                const totalLiberations = liberations?.filter(l => l.allocation == allocation.id).reduce((somme, l) => somme + (l.quantite ?? 0), 0) ?? 0
+                const remaining = Number(((allocation.quantite ?? 0) - totalLiberations).toFixed(3))
                 const isPartial = totalLiberations > 0.001
 
                 return <div key={allocation.id} className="d-flex gap-1 mb-1 align-items-stretch">
