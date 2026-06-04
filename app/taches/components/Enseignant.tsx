@@ -66,6 +66,28 @@ export default function Enseignant({enseignant, onCache, globalWidth}: {enseigna
         setPosition({left: ev.clientX, top: ev.clientY})
     }
 
+    useEffect(() => {
+        if (!hideMenu && menuRef.current) {
+            const menu = menuRef.current;
+            const rect = menu.getBoundingClientRect();
+            const { innerWidth, innerHeight } = window;
+            
+            let newLeft = position.left;
+            let newTop = position.top;
+
+            if (position.left + rect.width > innerWidth) {
+                newLeft = Math.max(10, innerWidth - rect.width - 10);
+            }
+            if (position.top + rect.height > innerHeight) {
+                newTop = Math.max(10, innerHeight - rect.height - 10);
+            }
+
+            if (newLeft !== position.left || newTop !== position.top) {
+                setPosition({ left: newLeft, top: newTop });
+            }
+        }
+    }, [hideMenu, position.left, position.top]);
+
     const menuContent = !hideMenu && (
         <div 
             ref={menuRef}
@@ -81,7 +103,8 @@ export default function Enseignant({enseignant, onCache, globalWidth}: {enseigna
                 borderRadius: "8px",
                 boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
                 minWidth: "150px",
-                border: "1px solid #444"
+                border: "1px solid #444",
+                opacity: (position.left === 0 && position.top === 0) ? 0 : 1
             }}
         >
             <p className="mb-0"><button className="btn btn-outline-light btn-sm w-100" onClick={ev => { window.open("/admin/enseignants?highlight=" + enseignant.id, "_blank"); setHideMenu(true); }}>Modifier l'enseignant</button></p>

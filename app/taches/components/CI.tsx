@@ -21,7 +21,8 @@ export default function CI({enseignant, session, scenario = "production", style,
             color,
             backgroundColor: "white",
             boxShadow: top ? "0 2px 5px rgba(0,0,0,0.05)" : "0 -2px 5px rgba(0,0,0,0.05)",
-            borderBottom: top ? "2px solid #dee2e6" : style?.borderBottom
+            borderBottom: top ? "2px solid #dee2e6" : style?.borderBottom,
+            borderTop: bottom !== "auto" ? "1px solid #dee2e6" : "none"
         }}
     >
         {CI.toFixed(2)}

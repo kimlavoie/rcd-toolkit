@@ -74,6 +74,28 @@ export default function({session, liberation, allocation, liberations, enseignan
         window.open("/admin/allocations/" + session + "?highlight=" + allocation.id, "_blank")
     }
 
+    useEffect(() => {
+        if (!hideMenu && menuRef.current) {
+            const menu = menuRef.current;
+            const rect = menu.getBoundingClientRect();
+            const { innerWidth, innerHeight } = window;
+            
+            let newLeft = position.left;
+            let newTop = position.top;
+
+            if (position.left + rect.width > innerWidth) {
+                newLeft = Math.max(10, innerWidth - rect.width - 10);
+            }
+            if (position.top + rect.height > innerHeight) {
+                newTop = Math.max(10, innerHeight - rect.height - 10);
+            }
+
+            if (newLeft !== position.left || newTop !== position.top) {
+                setPosition({ left: newLeft, top: newTop });
+            }
+        }
+    }, [hideMenu, position.left, position.top]);
+
     const menuContent = !hideMenu && (
         <div 
             ref={menuRef}
@@ -89,7 +111,8 @@ export default function({session, liberation, allocation, liberations, enseignan
                 borderRadius: "8px",
                 boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
                 minWidth: "200px",
-                border: "1px solid #444"
+                border: "1px solid #444",
+                opacity: (position.left === 0 && position.top === 0) ? 0 : 1 // Hide until positioned
             }}
         >
             <p className="mb-2"><button className="btn btn-danger btn-sm w-100" onClick={supprimer}>Supprimer</button></p>
@@ -104,37 +127,34 @@ export default function({session, liberation, allocation, liberations, enseignan
         style={{
             border: `1px solid #ddd`, 
             backgroundColor: "#fcf9ff", 
-            borderLeft: `6px solid #6f42c1`,
-            padding: `8px`, 
-            marginBottom: "6px",
+            borderLeft: `4px solid #6f42c1`,
+            padding: `4px 8px`, 
+            marginBottom: "4px",
             borderRadius: "4px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
             cursor: "grab",
-            fontSize: "0.9rem",
+            fontSize: "0.8rem",
             position: "relative",
             transition: "all 0.2s"
         }} 
         onMouseEnter={ev => {
-            ev.currentTarget.style.boxShadow = "0 3px 6px rgba(0,0,0,0.12)";
-            ev.currentTarget.style.borderTopColor = "#ccc";
-            ev.currentTarget.style.borderRightColor = "#ccc";
-            ev.currentTarget.style.borderBottomColor = "#ccc";
+            ev.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+            ev.currentTarget.style.borderColor = "#bbb";
         }}
         onMouseLeave={ev => {
-            ev.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.08)";
-            ev.currentTarget.style.borderTopColor = "#ddd";
-            ev.currentTarget.style.borderRightColor = "#ddd";
-            ev.currentTarget.style.borderBottomColor = "#ddd";
+            ev.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
+            ev.currentTarget.style.borderColor = "#ddd";
         }}
         draggable="true" 
         onDragStart={dragStartHandler}
     >      
-        <div style={{fontWeight: "bold", color: "#444", marginBottom: "4px"}}>{allocation.code}</div>
-        <div style={{color: "#666", fontSize: "0.85rem", lineHeight: "1.2", marginBottom: "8px"}}>{allocation.description}</div>
-        
-        <div className="d-flex justify-content-end">
-            <span className="badge rounded-pill bg-primary" style={{fontSize: "0.7rem", opacity: 0.85}}>
-                {liberation.quantite} / {allocation.quantite} ETC
+        <div className="d-flex justify-content-between align-items-center gap-2">
+            <div className="text-truncate" title={allocation.description}>
+                <span style={{fontWeight: "bold", color: "#444"}}>{allocation.code}</span>
+                <span className="text-muted ms-2 d-none d-xl-inline" style={{fontSize: "0.75rem"}}>{allocation.description}</span>
+            </div>
+            <span className="badge rounded-pill bg-primary" style={{fontSize: "0.65rem", flexShrink: 0}}>
+                {liberation.quantite} ETC
             </span>
         </div>
         

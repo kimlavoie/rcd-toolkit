@@ -21,11 +21,14 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     // Filter by scenario
     const liberations = allLiberations?.filter(l => (l.scenario || "production") === scenario)
 
+    const [menuSearch, setMenuSearch] = useState("")
+
     useEffect(() => {
         setMounted(true)
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setHideMenu(true);
+                setMenuSearch("");
             }
         };
 
@@ -55,7 +58,14 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
             await firebaseDb.liberations.add({allocation: selectedAllocation.id, enseignant: enseignant.id, quantite, scenario})
             setModalOpen(false)
             setHideMenu(true)
+            setMenuSearch("");
         }
+    }
+
+    async function quickAddLiberation(allocation: Allocation, quantite: number){
+        await firebaseDb.liberations.add({allocation: allocation.id, enseignant: enseignant.id, quantite, scenario})
+        setHideMenu(true)
+        setMenuSearch("");
     }
 
     function dragOverHandlerLiberation(ev: any) {
@@ -113,6 +123,28 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     const currentAllocationSomme = currentAllocationLiberations?.reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0)
     const currentAllocationMax = Number(((selectedAllocation?.quantite ?? 0) - (currentAllocationSomme ?? 0)).toFixed(3))
 
+    useEffect(() => {
+        if (!hideMenu && menuRef.current) {
+            const menu = menuRef.current;
+            const rect = menu.getBoundingClientRect();
+            const { innerWidth, innerHeight } = window;
+            
+            let newLeft = position.left;
+            let newTop = position.top;
+
+            if (position.left + rect.width > innerWidth) {
+                newLeft = Math.max(10, innerWidth - rect.width - 10);
+            }
+            if (position.top + rect.height > innerHeight) {
+                newTop = Math.max(10, innerHeight - rect.height - 10);
+            }
+
+            if (newLeft !== position.left || newTop !== position.top) {
+                setPosition({ left: newLeft, top: newTop });
+            }
+        }
+    }, [hideMenu, position.left, position.top]);
+
     const menuContent = !hideMenu && (
         <div 
             ref={menuRef}
@@ -128,24 +160,66 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
                 borderRadius: "8px",
                 boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
                 minWidth: "200px",
-                border: "1px solid #444"
+                border: "1px solid #444",
+                maxHeight: "80vh",
+                overflowY: "auto",
+                opacity: (position.left === 0 && position.top === 0) ? 0 : 1
             }}
         >
             <p className="mb-2 small text-white-50 text-uppercase fw-bold border-bottom pb-1 border-secondary">Ajouter une libération</p>
+            <div className="mb-2">
+                <input 
+                    type="text" 
+                    className="form-control form-control-sm bg-dark text-white border-secondary" 
+                    placeholder="Rechercher..." 
+                    value={menuSearch} 
+                    onChange={e => setMenuSearch(e.target.value)}
+                    autoFocus
+                />
+            </div>
             {allocations?.filter(allocation => {
                 if(allocation.session != session) return false
                 const liberation = liberations?.find(liberation => liberation.allocation == allocation.id && liberation.enseignant == enseignant.id)
                 if(liberation) return false
                 const totalLiberations = liberations?.filter(liberation => liberation.allocation == allocation.id).reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0)
-                if((allocation.quantite ?? 0) - (totalLiberations ?? 0) < 0.001) return false
+                const remaining = (allocation.quantite ?? 0) - (totalLiberations ?? 0)
+                if(remaining < 0.001) return false
+                
+                if (menuSearch) {
+                    const searchLower = menuSearch.toLowerCase()
+                    return (allocation.code?.toLowerCase().includes(searchLower) || allocation.description?.toLowerCase().includes(searchLower))
+                }
+                
                 return true
-            }).map(allocation => (
-                <p key={allocation.id} className="mb-1">
-                    <button className="btn btn-outline-light btn-sm w-100 text-start" onClick={() => {setSelectedAllocation(allocation); setModalOpen(true)}}>
-                        {allocation.code} - {allocation.description}
+            }).sort((a, b) => (a.code || "").localeCompare(b.code || ""))
+            .map(allocation => {
+                const totalLiberations = liberations?.filter(l => l.allocation == allocation.id).reduce((somme, l) => somme + (l.quantite ?? 0), 0)
+                const remaining = Number(((allocation.quantite ?? 0) - (totalLiberations ?? 0)).toFixed(3))
+                const isPartial = totalLiberations > 0.001
+
+                return <div key={allocation.id} className="d-flex gap-1 mb-1 align-items-stretch">
+                    <button 
+                        className="btn btn-outline-light btn-sm flex-grow-1 text-start py-1 px-2 d-flex justify-content-between align-items-center" 
+                        style={{fontSize: '0.75rem'}}
+                        onClick={() => quickAddLiberation(allocation, remaining)}
+                        title={`Assigner le reste (${remaining.toFixed(3)} ETC)`}
+                    >
+                        <div style={{lineHeight: "1.2"}}>
+                            <span className="fw-bold text-info">{allocation.code}</span><br/>
+                            <span className="text-white-50 extra-small fw-normal">{allocation.description}</span>
+                        </div>
+                        {isPartial && <span className="badge bg-warning text-dark ms-2" style={{fontSize: '0.6rem'}}>{remaining.toFixed(3)}</span>}
                     </button>
-                </p>
-            ))}
+                    <button 
+                        className="btn btn-outline-secondary btn-sm px-2 py-1" 
+                        title="Assignation personnalisée (ETC)"
+                        style={{fontSize: '0.75rem', border: '1px solid rgba(255,255,255,0.1)'}}
+                        onClick={() => {setSelectedAllocation(allocation); setModalOpen(true);}}
+                    >
+                        ⚙️
+                    </button>
+                </div>
+            })}
         </div>
     )
 

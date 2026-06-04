@@ -176,8 +176,9 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
                 zIndex={103} 
                 style={{ 
                     backgroundColor: "#f8f9fa", 
-                    borderTop: ciBottom ? "1px solid #dee2e6" : "none",
-                    borderBottom: ciTop ? "2px solid #dee2e6" : "1px solid #dee2e6"
+                    borderTop: (ciBottom && ciBottom !== "auto") ? "1px solid #dee2e6" : "none",
+                    borderBottom: ciTop ? "2px solid #dee2e6" : "1px solid #dee2e6",
+                    boxShadow: (ciBottom && ciBottom !== "auto") ? "0 -2px 10px rgba(0,0,0,0.1)" : "none"
                 }}
             >
                 CI {saison}

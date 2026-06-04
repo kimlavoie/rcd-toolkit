@@ -3,7 +3,9 @@ import type { Allocation } from "@/app/db/db"
 
 export default function({value, onChange, session}: any){
     const allocations = useFirestoreCollection<Allocation>("allocations")
-    const filteredAllocations = (allocations ?? [])?.filter(a => !session || a.session === session)
+    const filteredAllocations = (allocations ?? [])
+        ?.filter(a => !session || a.session === session)
+        ?.sort((a, b) => (a.code || "").localeCompare(b.code || ""))
 
     return <select name="allocation" className="form-select" value={value} onChange={(ev) => onChange(ev.target.value)}>
         <option value="" hidden disabled>Choisissez une allocation</option>

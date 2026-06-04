@@ -70,6 +70,28 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
         toast.success("Charge transférée avec succès")
     }
 
+    useEffect(() => {
+        if (!hideMenu && menuRef.current) {
+            const menu = menuRef.current;
+            const rect = menu.getBoundingClientRect();
+            const { innerWidth, innerHeight } = window;
+            
+            let newLeft = position.left;
+            let newTop = position.top;
+
+            if (position.left + rect.width > innerWidth) {
+                newLeft = Math.max(10, innerWidth - rect.width - 10);
+            }
+            if (position.top + rect.height > innerHeight) {
+                newTop = Math.max(10, innerHeight - rect.height - 10);
+            }
+
+            if (newLeft !== position.left || newTop !== position.top) {
+                setPosition({ left: newLeft, top: newTop });
+            }
+        }
+    }, [hideMenu, position.left, position.top]);
+
     const menuContent = !hideMenu && (
         <div 
             ref={menuRef}
@@ -85,7 +107,8 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
                 borderRadius: "8px",
                 boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
                 minWidth: "200px",
-                border: "1px solid #444"
+                border: "1px solid #444",
+                opacity: (position.left === 0 && position.top === 0) ? 0 : 1 // Hide until positioned
             }}
         >
             <p className="mb-2"><button className="btn btn-danger btn-sm w-100" onClick={supprimer}>Supprimer</button></p>

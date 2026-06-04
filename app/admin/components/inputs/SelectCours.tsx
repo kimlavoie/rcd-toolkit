@@ -3,7 +3,9 @@ import type { Cours } from "@/app/db/db"
 
 export default function({value, onChange, saison}: any){
     const coursListe = useFirestoreCollection<Cours>("cours")
-    const filteredCours = coursListe?.filter(c => !saison || c.saison === saison)
+    const filteredCours = coursListe
+        ?.filter(c => !saison || c.saison === saison)
+        ?.sort((a, b) => (a.sigle || "").localeCompare(b.sigle || ""))
 
     return <select name="cours" className="form-select" value={value} onChange={(ev) => onChange(ev.target.value)}>
         <option value="" hidden disabled>Choisissez un cours</option>
