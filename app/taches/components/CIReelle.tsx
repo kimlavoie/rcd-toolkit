@@ -1,74 +1,85 @@
+'use client'
 import { firebaseDb } from "@/app/utilities/firebaseDb"
 import { extractSessionInfos } from "@/app/utilities/sessions"
-import { getCIColor } from "@/app/constants/ciConfig"
 import { useData } from "./DataContext"
 import StickyHeader from "./ui/StickyHeader"
-import StickyCell from "./ui/StickyCell"
+import ListeCharges from "./ListeCharges"
+import ListeLiberations from "./ListeLiberations"
+import CI from "./CI"
+import { toast } from "react-hot-toast"
 
-export default function({visibleEnseignants, session, enseignantWidth, ciBottom, ciTop}:any){
-    const { CIReelles } = useData()
+export default function CIReelle({visibleEnseignants, session, columnWidths, globalWidth, ciBottom, ciTop}: any){
+    const data = useData()
+    const { CIReelles, charges, liberations, groupes } = data
 
     const {saison, annee} = extractSessionInfos(session)
 
-    async function clearAll(){
-        if (confirm(`Voulez-vous vraiment réinitialiser toutes les CI Réelles pour la session ${saison} ${annee} ?`)) {
-            await clearCI()
+    const getCellStyle = (enseignantId: string) => {
+        const width = columnWidths?.[enseignantId] || globalWidth || 200
+        return {
+            borderRight: "1px solid #dee2e6",
+            borderBottom: "1px solid #dee2e6",
+            minWidth: `${width}px`,
+            width: `${width}px`,
+            maxWidth: `${width}px`,
+            overflow: "hidden"
         }
     }
 
-    async function clearCI(){
-        const CIReellesSession = CIReelles?.filter(CIReelle => CIReelle.session == session)
-        for (const CIReelle of (CIReellesSession ?? [])) {
-            await firebaseDb.CIReelles.delete(CIReelle.id)
-        }
-    }
-
-    async function CIHandler(ev:any){
+    async function handleCIChange(ev: any){
         const enseignantId = ev.target.dataset.enseignantId
-        const CIReelle = CIReelles?.find(CIReelle => CIReelle.enseignant == enseignantId && CIReelle.session == session)
-        const nouvelleValeur = Number(ev.target.value)
+        const value = Number(ev.target.value)
 
-        if(CIReelle){
-            await firebaseDb.CIReelles.update(CIReelle.id, {CI: nouvelleValeur})
+        const existing = (CIReelles ?? []).find(ci => ci.enseignant == enseignantId && ci.session == session)
+        if(existing){
+            await firebaseDb.CIReelles.update(existing.id, {CI: value})
         } else {
-            await firebaseDb.CIReelles.add({enseignant: enseignantId, CI: nouvelleValeur, session})
+            await firebaseDb.CIReelles.add({enseignant: enseignantId, session: session, CI: value})
         }
     }
 
     return <>
-            <tr className="table-light">
-                <StickyHeader 
-                    isFirstCol 
-                    zIndex={103} 
-                    bottom={ciBottom} 
-                    top={ciTop}
-                    style={{ backgroundColor: "#f8f9fa" }}
-                >
-                    <div className="d-flex justify-content-between align-items-center gap-2">
-                        <span className="fw-bold">CI Réelle {saison}</span>
-                        <button type="button" className="btn btn-link btn-sm text-danger p-0 m-0" style={{lineHeight: 1, textDecoration: "none"}} onClick={clearAll} title="Réinitialiser">⟲</button>
-                    </div>
-                </StickyHeader>
-                { visibleEnseignants.map((enseignant: any) => {
-                    const CIReelle = CIReelles?.find(CIReelle => CIReelle.enseignant == enseignant.id && CIReelle.session == session)
-                    const value = CIReelle ? CIReelle.CI : 0
-                    const color = getCIColor(value, 'session')
-                    return <StickyCell 
-                        key={enseignant.id} 
-                        className="bg-light text-center" 
-                        bottom={ciBottom} 
-                        top={ciTop} 
-                        zIndex={ciTop ? 104 : 102}
-                        style={{
-                            minWidth: `${enseignantWidth}px`, 
-                            width: `${enseignantWidth}px`, 
-                            backgroundColor: "#f8f9fa", 
-                            borderBottom: ciTop ? "2px solid #dee2e6" : "none"
-                        }}
-                    >
-                        <input className="form-control form-control-sm text-center mx-auto fw-bold" type="number" min="0" step="0.01" value={value} data-enseignant-id={enseignant.id} onChange={CIHandler} style={{maxWidth: "60px", fontSize: "0.8rem", padding: "2px", color}}/>
-                    </StickyCell>
-                })}
-            </tr>
-        </>
+        <tr className="table-secondary">
+            <StickyHeader isFirstCol style={{backgroundColor: "#e9ecef", zIndex: 102}}>
+                <span className="fw-bold">{saison} {annee} (Réelle)</span>
+            </StickyHeader>
+            <td colSpan={visibleEnseignants.length} style={{backgroundColor: "#e9ecef", borderBottom: "1px solid #dee2e6"}}></td>
+        </tr>
+        <tr>
+            <StickyHeader isFirstCol>CI Réelle (Saisie)</StickyHeader>
+            {visibleEnseignants.map((enseignant: any) => {
+                const ci = (CIReelles ?? []).find(ci => ci.enseignant == enseignant.id && ci.session == session)
+                return <td key={enseignant.id} style={getCellStyle(enseignant.id)}>
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        className="form-control form-control-sm text-center" 
+                        value={ci ? ci.CI : 0} 
+                        data-enseignant-id={enseignant.id}
+                        onChange={handleCIChange}
+                    />
+                </td>
+            })}
+        </tr>
+        <tr>
+            <StickyHeader 
+                isFirstCol 
+                bottom={ciBottom} 
+                top={ciTop} 
+                zIndex={103} 
+                style={{ 
+                    backgroundColor: "#f8f9fa", 
+                    borderTop: (ciBottom && ciBottom !== "auto") ? "1px solid #dee2e6" : "none",
+                    borderBottom: ciTop ? "2px solid #dee2e6" : "1px solid #dee2e6",
+                    boxShadow: (ciBottom && ciBottom !== "auto") ? "0 -2px 10px rgba(0,0,0,0.1)" : "none"
+                }}
+            >
+                CI {saison}
+            </StickyHeader>
+            {visibleEnseignants.map((enseignant: any) => {
+                const width = columnWidths?.[enseignant.id] || globalWidth || 200
+                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={width} trigger={{charges, liberations, groupes, CIReelles}} style={getCellStyle(enseignant.id)} bottom={ciBottom} top={ciTop}/>
+            })}
+        </tr>
+    </>
 }

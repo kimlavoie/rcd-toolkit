@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { Enseignant as EnseignantType } from "@/app/db/db"
 
-export default function Enseignant({enseignant, onCache, globalWidth}: {enseignant: EnseignantType, onCache: () => void, globalWidth?: number}){
+export default function Enseignant({enseignant, onCache, globalWidth, onWidthChange}: {enseignant: EnseignantType, onCache: () => void, globalWidth?: number, onWidthChange?: (width: number) => void}){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)
@@ -28,7 +28,9 @@ export default function Enseignant({enseignant, onCache, globalWidth}: {enseigna
         const onMouseMove = (moveEvent: MouseEvent) => {
             if (!isResizing.current) return
             const newWidth = startWidth + (moveEvent.pageX - startX)
-            setWidth(newWidth > 100 ? newWidth : 100)
+            const finalWidth = newWidth > 80 ? newWidth : 80
+            setWidth(finalWidth)
+            if (onWidthChange) onWidthChange(finalWidth)
         }
         
         const onMouseUp = () => {
@@ -121,8 +123,10 @@ export default function Enseignant({enseignant, onCache, globalWidth}: {enseigna
             backgroundColor: "lightgray",
             minWidth: `${width}px`,
             width: `${width}px`,
+            maxWidth: `${width}px`,
             cursor: "context-menu",
-            padding: "8px 12px"
+            padding: "8px 12px",
+            overflow: "hidden"
         }} 
         key={enseignant.id}
         className="group"

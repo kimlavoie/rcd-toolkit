@@ -35,7 +35,35 @@ function TachesContent() {
     const [tri, setTri] = useState("nom")
     const [showHelp, setShowHelp] = useState(false)
     const [enseignantWidth, setEnseignantWidth] = useState(200)
+    const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
     const [selectedScenarioId, setSelectedScenarioId] = useState<string>("production")
+
+    const getWidth = (id: string) => columnWidths[id] || enseignantWidth
+
+    const handleWidthChange = (id: string, newWidth: number) => {
+        setColumnWidths(prev => ({ ...prev, [id]: newWidth }))
+    }
+
+    const fitToScreen = () => {
+        if (visibleEnseignants.length === 0) return
+        
+        // On récupère la largeur du conteneur du tableau (ou de la fenêtre)
+        const container = document.querySelector('.table-responsive')
+        if (!container) return
+        
+        const containerWidth = container.clientWidth
+        const firstColWidth = 200 // Largeur fixe de la colonne d'actions
+        const availableWidth = containerWidth - firstColWidth - 20 // -20 pour les marges/scroll
+        
+        if (availableWidth <= 0) return
+        
+        const idealWidth = Math.floor(availableWidth / visibleEnseignants.length)
+        const finalWidth = Math.max(100, idealWidth) // Minimum 100px par colonne
+        
+        setEnseignantWidth(finalWidth)
+        setColumnWidths({}) // Réinitialise les ajustements individuels
+        toast.success(`Colonnes ajustées à ${finalWidth}px`)
+    }
 
     // Force non-scrollable body for this page only
     useEffect(() => {
@@ -156,12 +184,13 @@ function TachesContent() {
                 <TachesToolbar 
                     mode={mode} setMode={setMode} anneeScolaireLabel={anneeScolaireLabel}
                     search={search} setSearch={setSearch} tri={tri} setTri={setTri}
-                    enseignantWidth={enseignantWidth} setEnseignantWidth={setEnseignantWidth}
+                    enseignantWidth={enseignantWidth} setEnseignantWidth={(w) => { setEnseignantWidth(w); setColumnWidths({}); }}
                     selectedScenarioId={selectedScenarioId} setSelectedScenarioId={setSelectedScenarioId}
                     currentSessionScenarios={currentSessionScenarios}
                     onHideAll={() => setCache(enseignants?.map(e => e.id) || [])}
                     onShowAll={() => setCache([])}
                     onValidate={valider}
+                    onFitToScreen={fitToScreen}
                     setShowHelp={setShowHelp}
                 />
 
@@ -229,7 +258,7 @@ function TachesContent() {
                 )}
 
                 <div className="table-responsive flex-grow-1 overflow-auto border rounded shadow-inner bg-white" style={{maxHeight: "none"}}>
-                    <table className="table table-hover align-middle mb-0" style={{fontSize: "0.85rem", borderCollapse: "separate", borderSpacing: 0}}>
+                    <table className="table table-hover align-middle mb-0" style={{fontSize: "0.85rem", borderCollapse: "separate", borderSpacing: 0, tableLayout: "fixed", width: "max-content"}}>
                         <thead style={{position: "sticky", top: 0, zIndex: 110}}>
                             <tr className="table-light">
                                 <StickyHeader 
@@ -242,27 +271,35 @@ function TachesContent() {
                                         borderBottom: "1px solid #dee2e6",
                                         padding: "4px 12px",
                                         fontSize: "0.8rem",
-                                        width: "1px"
+                                        width: "200px",
+                                        minWidth: "200px",
+                                        maxWidth: "200px"
                                     }}
                                 >
                                     Actions / Enseignants
                                 </StickyHeader>
                                 {visibleEnseignants.map(enseignant => (
-                                    <Enseignant key={enseignant.id} enseignant={enseignant} globalWidth={enseignantWidth} onCache={() => setCache([...cache, enseignant.id])}/>
+                                    <Enseignant 
+                                        key={enseignant.id} 
+                                        enseignant={enseignant} 
+                                        globalWidth={getWidth(enseignant.id)} 
+                                        onCache={() => setCache([...cache, enseignant.id])}
+                                        onWidthChange={(newWidth) => handleWidthChange(enseignant.id, newWidth)}
+                                    />
                                 ))}
                             </tr>
                         </thead>
                         <tbody>{mode === "Automne" ? (
                                 <>
-                                    <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth} ciTop="37px" ciBottom="74px"/>
-                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth} ciBottom="37px"/>
+                                    <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="74px"/>
+                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciBottom="37px"/>
                                 </>
                                 ) : (
                                 <>
-                                    <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} enseignantWidth={enseignantWidth} ciTop="37px" ciBottom="74px"/>
-                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} enseignantWidth={enseignantWidth} ciBottom="37px"/>
+                                    <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="74px"/>
+                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciBottom="37px"/>
                                 </>
-                                )}<Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={mode} enseignantWidth={enseignantWidth} scenario={selectedScenarioId}/></tbody>
+                                )}<Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={mode} columnWidths={columnWidths} globalWidth={enseignantWidth} scenario={selectedScenarioId}/></tbody>
                     </table>
                 </div>
             </div>

@@ -4,7 +4,7 @@ import { useData } from "./DataContext"
 import StickyHeader from "./ui/StickyHeader"
 import StickyCell from "./ui/StickyCell"
 
-export default function({visibleEnseignants, sessions, saison, firstColWidth, enseignantWidth, scenario = "production"}:any){
+export default function({visibleEnseignants, sessions, saison, firstColWidth, columnWidths, globalWidth, scenario = "production"}:any){
     const data = useData()
     const { CIReelles } = data
 
@@ -24,7 +24,9 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, en
                             boxShadow: "2px 0 5px rgba(0,0,0,0.2)",
                             borderRight: "2px solid #444",
                             fontSize: "0.8rem",
-                            width: "1px"
+                            width: "200px",
+                            minWidth: "200px",
+                            maxWidth: "200px"
                         }}
                         className="fw-bold"
                     >
@@ -40,6 +42,7 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, en
                         const CI = CIA + CIH;
                         
                         const couleur = getCIColor(CI, 'annual')
+                        const width = columnWidths?.[enseignant.id] || globalWidth || 200
                         
                         return <StickyCell 
                             key={enseignant.id} 
@@ -50,8 +53,10 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, en
                                 fontWeight: "bold", 
                                 backgroundColor: "#212529", 
                                 textAlign: "center", 
-                                minWidth: `${enseignantWidth}px`, 
-                                width: `${enseignantWidth}px`, 
+                                minWidth: `${width}px`, 
+                                width: `${width}px`, 
+                                maxWidth: `${width}px`,
+                                overflow: "hidden",
                                 fontSize: "0.9rem"
                             }}
                         >

@@ -5,7 +5,7 @@ import InputModal from "./InputModal"
 import TransferModal from "./TransferModal"
 import { toast } from "react-hot-toast"
 
-export default function({session, charge, groupe, cours, charges, enseignantId, onRemove, scenario = "production"}: any){
+export default function({session, charge, groupe, cours, charges, enseignantId, onRemove, scenario = "production", minimal = false}: any){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)
@@ -47,7 +47,6 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
     function supprimer(ev: any){
         onRemove(groupe.id, enseignantId)
         setHideMenu(true)
-        
     }
 
     const chargesGroupe = charges?.filter((c: any) => c.groupe == groupe.id)
@@ -118,6 +117,54 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
             <p className="mb-0"><button className="btn btn-outline-light btn-sm w-100" onClick={ev => window.open("/admin/groupes/" + session + "?highlight=" + groupe.id, "_blank")}>Modifier le groupe</button></p>
         </div>
     )
+
+    if (minimal) {
+        return <div 
+            onContextMenu={openMenu} 
+            style={{
+                border: `1px solid #eee`, 
+                backgroundColor: "white", 
+                padding: `4px 8px`, 
+                marginBottom: "4px",
+                borderRadius: "3px",
+                cursor: "grab",
+                fontSize: "0.75rem",
+                position: "relative",
+                transition: "all 0.2s"
+            }} 
+            draggable="true" 
+            onDragStart={dragStartHandler}
+        >      
+            <div className="d-flex justify-content-between align-items-center">
+                <span className="fw-bold text-dark">Gr. {groupe.nbEtudiants} étud.</span>
+                {charge.nbSemaines < 15 ? (
+                    <span className="badge bg-warning text-dark px-1 py-0" style={{fontSize: "0.6rem"}}>{charge.nbSemaines} sem.</span>
+                ) : (
+                    <span className="text-muted" style={{fontSize: "0.65rem"}}>15 sem.</span>
+                )}
+            </div>
+            
+            {mounted && menuContent && createPortal(menuContent, document.body)}
+
+            <InputModal 
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onConfirm={handleSemainesConfirm}
+                title="Modifier les semaines"
+                label={`Nombre de semaines pour le cours ${cours.sigle} :`}
+                defaultValue={charge.nbSemaines}
+                max={semainesMax}
+            />
+
+            <TransferModal 
+                isOpen={transferModalOpen}
+                onClose={() => setTransferModalOpen(false)}
+                onConfirm={handleTransferConfirm}
+                title={`Transférer ${cours.sigle}`}
+                currentEnseignantId={enseignantId}
+            />
+        </div>
+    }
 
     return <div 
         onContextMenu={openMenu} 

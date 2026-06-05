@@ -8,7 +8,7 @@ import ListeLiberations from "./ListeLiberations"
 import CI from "./CI"
 import { toast } from "react-hot-toast"
 
-export default function({visibleEnseignants, session, enseignantWidth, scenario = "production", ciBottom, ciTop}:any){
+export default function({visibleEnseignants, session, columnWidths, globalWidth, scenario = "production", ciBottom, ciTop}:any){
     const { groupes, charges: allCharges, allocations, liberations: allLiberations, stages, supervisions: allSupervisions, cours } = useData()
 
     const {saison, annee} = extractSessionInfos(session)
@@ -108,11 +108,16 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
         }
     }
 
-    const cellStyle = {
-        borderRight: "1px solid #dee2e6",
-        borderBottom: "1px solid #dee2e6",
-        minWidth: `${enseignantWidth}px`,
-        width: `${enseignantWidth}px`
+    const getCellStyle = (enseignantId: string) => {
+        const width = columnWidths?.[enseignantId] || globalWidth || 200
+        return {
+            borderRight: "1px solid #dee2e6",
+            borderBottom: "1px solid #dee2e6",
+            minWidth: `${width}px`,
+            width: `${width}px`,
+            maxWidth: `${width}px`,
+            overflow: "hidden"
+        }
     }
 
     return <>
@@ -133,7 +138,8 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
                 </div>
             </StickyHeader>
             { visibleEnseignants.map((enseignant: any) => {
-                return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario} style={cellStyle}/>
+                const width = columnWidths?.[enseignant.id] || globalWidth || 200
+                return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={width} scenario={scenario} style={getCellStyle(enseignant.id)}/>
             })}
         </tr>
         <tr>
@@ -144,7 +150,8 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
                 </div>
             </StickyHeader>
             { visibleEnseignants.map((enseignant: any) => {
-                return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} scenario={scenario} style={cellStyle}/>
+                const width = columnWidths?.[enseignant.id] || globalWidth || 200
+                return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={width} scenario={scenario} style={getCellStyle(enseignant.id)}/>
             })}
         </tr>
         <tr>
@@ -159,13 +166,13 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
                 const supervision = supervisions?.find(supervision => supervision.enseignant == enseignant.id && supervision.stage == stage?.id)
                 const value = supervision ? supervision.nbStagiaires : 0
                 return stage 
-                    ?<td key={enseignant.id} className="text-center" style={cellStyle}>
+                    ?<td key={enseignant.id} className="text-center" style={getCellStyle(enseignant.id)}>
                         <div className="input-group input-group-sm mx-auto" style={{maxWidth: "70px"}}>
                             <input className="form-control text-center p-0" type="number" min="0" step="1" value={value} data-enseignant-id={enseignant.id} data-stage-id={stage.id} onChange={stagiairesHandler} style={{fontSize: "0.8rem"}}/>
                             <span className="input-group-text p-1" style={{fontSize: "0.7rem"}}>/{stage.nbStagiaires}</span>
                         </div>
                     </td>
-                    :<td key={enseignant.id} className="text-muted text-center extra-small" style={{...cellStyle, fontSize: "0.75rem"}}>--</td>
+                    :<td key={enseignant.id} className="text-muted text-center extra-small" style={{...getCellStyle(enseignant.id), fontSize: "0.75rem"}}>--</td>
             })}
         </tr>
         <tr>
@@ -184,7 +191,8 @@ export default function({visibleEnseignants, session, enseignantWidth, scenario 
                 CI {saison}
             </StickyHeader>
             { visibleEnseignants.map((enseignant: any) => {
-                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={enseignantWidth} trigger={{charges, liberations, groupes}} scenario={scenario} style={cellStyle} bottom={ciBottom} top={ciTop}/>
+                const width = columnWidths?.[enseignant.id] || globalWidth || 200
+                return <CI key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={width} trigger={{charges, liberations, groupes}} scenario={scenario} style={getCellStyle(enseignant.id)} bottom={ciBottom} top={ciTop}/>
             })}
         </tr>
     </>

@@ -372,11 +372,18 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                     onClick={(e) => toggleDisplayCourse(courseId, e)}
                     style={{ fontSize: "0.8rem", cursor: "pointer" }}
                 >
-                    <div style={{ lineHeight: "1.2" }}>
-                        <span style={{ fontWeight: "bold", color: "#333" }}>{cour?.sigle}</span>
-                        <span className="text-muted ms-2" style={{ fontSize: "0.75rem" }}>({courseCharges.length} {courseCharges.length > 1 ? "groupes" : "groupe"})</span>
+                    <div className="w-100">
+                        <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
+                            <span className="fw-bold text-dark">{cour?.sigle}</span>
+                            <span className="badge rounded-pill bg-info text-dark" style={{ fontSize: "0.65rem", flexShrink: 0 }}>
+                                {courseCharges.length} gr.
+                            </span>
+                        </div>
+                        <div className="text-muted text-truncate d-none d-xl-block" style={{ fontSize: "0.7rem", width: "100%" }}>
+                            {cour?.nom}
+                        </div>
                     </div>
-                    <span style={{ fontSize: "0.65rem", color: "#666" }}>{isExpanded ? "▲" : "▼"}</span>
+                    <span className="ms-2" style={{ fontSize: "0.65rem", color: "#666" }}>{isExpanded ? "▲" : "▼"}</span>
                 </div>
                 {isExpanded && (
                     <div className="p-2 pt-0">
@@ -384,7 +391,7 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                             {courseCharges.map(charge => {
                                 const groupe = groupes?.find(groupe => groupe.id == charge.groupe)
                                 if(!groupe || !cour) return null
-                                return <Charge key={charge.id} session={session} charge={charge} groupe={groupe} cours={cour} charges={charges} enseignantId={enseignant.id} onRemove={removeHandlerCharge} scenario={scenario}/>
+                                return <Charge key={charge.id} session={session} charge={charge} groupe={groupe} cours={cour} charges={charges} enseignantId={enseignant.id} onRemove={removeHandlerCharge} scenario={scenario} minimal={true}/>
                             })}
                         </div>
                     </div>

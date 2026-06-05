@@ -76,7 +76,7 @@ export default function(){
                                     <SelectSession code={editData.session} onChange={(val:any) => setEditData({...editData, session: val})} />
                                 </td>
                                 <td>
-                                    <input type="number" step="0.001" className="form-control" value={editData.ETCparStagiaire} onChange={e => setEditData({...editData, ETCparStagiaire: Number(e.target.value)})} />
+                                    <input type="number" step="0.0001" className="form-control" value={editData.ETCparStagiaire} onChange={e => setEditData({...editData, ETCparStagiaire: Number(e.target.value)})} />
                                 </td>
                                 <td>
                                     <input type="number" className="form-control" value={editData.nbStagiaires} onChange={e => setEditData({...editData, nbStagiaires: Number(e.target.value)})} />
@@ -89,7 +89,7 @@ export default function(){
                         ) : (
                             <>
                                 <td>{formatSession(stage.session)}</td>
-                                <td>{stage.ETCparStagiaire}</td>
+                                <td>{stage.ETCparStagiaire?.toFixed(4)}</td>
                                 <td>{stage.nbStagiaires}</td>
                                 <td>
                                     <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(stage)}>✏️</button>
@@ -104,7 +104,7 @@ export default function(){
                         <SelectSession code={newData.session} onChange={(val:any) => setNewData({...newData, session: val})} />
                     </td>
                     <td>
-                        <input type="number" step="0.001" className="form-control" placeholder="ETC/Stagiaire" value={newData.ETCparStagiaire} onChange={e => setNewData({...newData, ETCparStagiaire: Number(e.target.value)})} />
+                        <input type="number" step="0.0001" className="form-control" placeholder="ETC/Stagiaire" value={newData.ETCparStagiaire} onChange={e => setNewData({...newData, ETCparStagiaire: Number(e.target.value)})} />
                     </td>
                     <td>
                         <input type="number" className="form-control" placeholder="Nb Stagiaires" value={newData.nbStagiaires} onChange={e => setNewData({...newData, nbStagiaires: Number(e.target.value)})} />

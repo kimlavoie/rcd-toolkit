@@ -28,7 +28,7 @@ export default function Breadcrumbs() {
   const pathSegments = pathname.split('/').filter(segment => segment !== '')
 
   return (
-    <nav aria-label="breadcrumb" className="container-fluid mt-3 mb-0">
+    <nav aria-label="breadcrumb" className="container-fluid mt-3 mb-0 no-print">
       <ol className="breadcrumb bg-white p-2 rounded shadow-sm border" style={{ fontSize: '0.9rem' }}>
         <li className="breadcrumb-item">
           <Link href="/" style={{ textDecoration: 'none' }}>🏠 Accueil</Link>

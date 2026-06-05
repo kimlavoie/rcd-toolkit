@@ -128,7 +128,7 @@ export default function({session, liberation, allocation, liberations, enseignan
             border: `1px solid #ddd`, 
             backgroundColor: "#fcf9ff", 
             borderLeft: `4px solid #6f42c1`,
-            padding: `4px 8px`, 
+            padding: `6px 8px`, 
             marginBottom: "4px",
             borderRadius: "4px",
             boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
@@ -148,14 +148,16 @@ export default function({session, liberation, allocation, liberations, enseignan
         draggable="true" 
         onDragStart={dragStartHandler}
     >      
-        <div className="d-flex justify-content-between align-items-center gap-2">
-            <div className="text-truncate" title={allocation.description}>
+        <div className="w-100">
+            <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
                 <span style={{fontWeight: "bold", color: "#444"}}>{allocation.code}</span>
-                <span className="text-muted ms-2 d-none d-xl-inline" style={{fontSize: "0.75rem"}}>{allocation.description}</span>
+                <span className="badge rounded-pill bg-primary" style={{fontSize: "0.65rem", flexShrink: 0}}>
+                    {liberation.quantite} ETC
+                </span>
             </div>
-            <span className="badge rounded-pill bg-primary" style={{fontSize: "0.65rem", flexShrink: 0}}>
-                {liberation.quantite} ETC
-            </span>
+            <div className="text-muted text-truncate d-none d-xl-block" style={{fontSize: "0.7rem", width: "100%"}} title={allocation.description}>
+                {allocation.description}
+            </div>
         </div>
         
         {mounted && menuContent && createPortal(menuContent, document.body)}

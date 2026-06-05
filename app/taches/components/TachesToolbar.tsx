@@ -20,6 +20,7 @@ interface TachesToolbarProps {
     onHideAll: () => void
     onShowAll: () => void
     onValidate: () => void
+    onFitToScreen: () => void
     setShowHelp: (show: boolean) => void
 }
 
@@ -30,11 +31,15 @@ export default function TachesToolbar({
     enseignantWidth, setEnseignantWidth,
     selectedScenarioId, setSelectedScenarioId,
     currentSessionScenarios,
-    onHideAll, onShowAll, onValidate,
+    onHideAll, onShowAll, onValidate, onFitToScreen,
     setShowHelp
 }: TachesToolbarProps) {
+    const handleExportPDF = () => {
+        window.print();
+    }
+
     return (
-        <div className="mb-2 px-2">
+        <div className="mb-2 px-2 no-print">
             <div className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
                 <div className="d-flex align-items-center gap-3">
                     <h1 className="mb-0 text-primary h5 fw-bold">
@@ -124,6 +129,7 @@ export default function TachesToolbar({
                     <button className={`btn btn-white py-0 border-0 ${enseignantWidth === 100 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.65rem"}} onClick={() => setEnseignantWidth(100)}>Min</button>
                     <button className={`btn btn-white py-0 border-0 ${enseignantWidth === 200 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.65rem"}} onClick={() => setEnseignantWidth(200)}>Std</button>
                     <button className={`btn btn-white py-0 border-0 ${enseignantWidth === 300 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.65rem"}} onClick={() => setEnseignantWidth(300)}>Max</button>
+                    <button className="btn btn-outline-primary py-0 border-0 border-start" style={{fontSize: "0.65rem"}} onClick={onFitToScreen} title="Ajuster à l'écran">Ajuster</button>
                 </div>
 
                 {/* Visibilité */}
@@ -133,9 +139,14 @@ export default function TachesToolbar({
                 </div>
 
                 {/* Validation */}
-                <button className="btn btn-sm btn-success rounded-pill shadow-sm px-3 fw-bold" style={{height: "31px", fontSize: "0.75rem"}} onClick={onValidate}>
-                    ✅ Valider
-                </button>
+                <div className="d-flex gap-1">
+                    <button className="btn btn-sm btn-success rounded-pill shadow-sm px-3 fw-bold" style={{height: "31px", fontSize: "0.75rem"}} onClick={onValidate}>
+                        ✅ Valider
+                    </button>
+                    <button className="btn btn-sm btn-outline-danger rounded-pill shadow-sm px-3 fw-bold" style={{height: "31px", fontSize: "0.75rem"}} onClick={handleExportPDF}>
+                        🖨️ PDF
+                    </button>
+                </div>
 
                 {/* Help */}
                 <button 

@@ -31,7 +31,8 @@ export default function StickyHeader({
         zIndex: isFirstCol ? zIndex + 5 : zIndex,
         backgroundClip: "padding-box",
         boxShadow: isFirstCol ? "2px 0 5px rgba(0,0,0,0.1)" : "none",
-        whiteSpace: isFirstCol ? "nowrap" : "normal"
+        whiteSpace: isFirstCol ? "nowrap" : "normal",
+        minWidth: isFirstCol ? "180px" : "auto"
     };
 
     return (
