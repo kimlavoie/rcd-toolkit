@@ -34,8 +34,10 @@ export const AllocationSchema = z.object({
 
 export const StageSchema = z.object({
   session: z.string().min(1),
-  ETCparStagiaire: z.coerce.number().min(0),
+  nom: z.string().min(1, "Le nom du stage est requis"),
+  CIparStagiaire: z.coerce.number().min(0),
   nbStagiaires: z.coerce.number().min(0),
+  pourcentageCoordination: z.coerce.number().min(0).max(100).default(0),
 });
 
 export const ChargeSchema = z.object({
@@ -57,6 +59,7 @@ export const SupervisionSchema = z.object({
   enseignant: z.string().min(1),
   stage: z.string().min(1),
   nbStagiaires: z.coerce.number().min(0),
+  coordination: z.coerce.number().min(0).default(0),
   scenario: z.string().optional(),
 });
 

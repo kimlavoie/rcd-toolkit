@@ -12,26 +12,16 @@ export interface CIEntries {
     allocations: Allocation[] | undefined
 }
 
-export function calculateSessionCI(
-    enseignantId: string, 
-    session: string, 
-    data: CIEntries, 
-    scenario: string = "production"
-) {
-    const { charges, liberations, supervisions, groupes, cours, stages, allocations } = data;
+export function calculateSessionCI(enseignantId: string, session: string, data: CIEntries, scenario: string = "production") {
+    const { charges, liberations, supervisions, groupes, cours, stages, allocations } = data
 
-    // Filter by scenario
-    const scenarioCharges = charges?.filter(c => (c.scenario || "production") === scenario)
-    const scenarioLiberations = liberations?.filter(l => (l.scenario || "production") === scenario)
-    const scenarioSupervisions = supervisions?.filter(s => (s.scenario || "production") === scenario)
+    const chargesSession = charges?.filter(c => {
+        const groupe = groupes?.find(g => String(g.id) === String(c.groupe))
+        return String(c.enseignant) === enseignantId && groupe?.session === session && (c.scenario || "production") === scenario
+    })
 
-    // Filter by teacher and session
-    const chargesEnseignant = scenarioCharges?.filter(charge => String(charge.enseignant) === String(enseignantId))
-    const groupesSession = groupes?.filter(groupe => groupe.session === session)
-    const chargesSession = chargesEnseignant?.filter(charge => groupesSession?.find(groupe => groupe.id === charge.groupe))
-    
     const chargesInfos = chargesSession?.map(charge => {
-        const groupe = groupes?.find(groupe => groupe.id === charge.groupe)
+        const groupe = groupes?.find(g => String(g.id) === String(charge.groupe))
         const cour = cours?.find(cour => String(groupe?.cours) === String(cour.id))
         return {
             sigle: cour?.sigle ?? "", 
@@ -44,17 +34,28 @@ export function calculateSessionCI(
         }
     }) || []
 
-    const liberationsEnseignant = scenarioLiberations?.filter(liberation => String(liberation.enseignant) === String(enseignantId))
-    const allocationsSession = allocations?.filter(allocation => allocation.session === session)
-    const liberationsSession = liberationsEnseignant?.filter(liberation => allocationsSession?.find(allocation => allocation.id === liberation.allocation))
-    const liberationsInfos = liberationsSession?.map(liberation => ({ qte: Number(liberation.quantite ?? 0) })) || []
+    const liberationsSession = liberations?.filter(l => {
+        const allocation = allocations?.find(a => String(a.id) === String(l.allocation))
+        return String(l.enseignant) === enseignantId && allocation?.session === session && (l.scenario || "production") === scenario
+    })
 
-    const supervisionsEnseignant = scenarioSupervisions?.filter(supervision => String(supervision.enseignant) === String(enseignantId))
-    const stagesSession = stages?.filter(stage => stage.session === session)
-    const supervisionsSession = supervisionsEnseignant?.find(supervision => stagesSession?.find(stage => stage.id === supervision.stage))
+    const liberationsInfos = liberationsSession?.map(l => ({ qte: Number(l.quantite ?? 0) })) || []
+
+    // Supervisions multi-stages
+    const supervisionsSession = supervisions?.filter(s => {
+        const stage = stages?.find(st => String(st.id) === String(s.stage))
+        return String(s.enseignant) === enseignantId && stage?.session === session && (s.scenario || "production") === scenario
+    }) || []
+
+    const supervisionsInfos = supervisionsSession.map(s => {
+        const stage = stages?.find(st => String(st.id) === String(s.stage))
+        return {
+            nbStagiaires: Number(s.nbStagiaires ?? 0),
+            CIparStagiaire: Number(stage?.CIparStagiaire ?? 0),
+            coordination: Number(s.coordination ?? 0),
+            pourcentageCoordination: Number(stage?.pourcentageCoordination ?? 0)
+        }
+    })
     
-    const stagiaires = Number(supervisionsSession?.nbStagiaires ?? 0)
-    const ETCparStagiaire = Number(stagesSession?.[0]?.ETCparStagiaire ?? 0)
-    
-    return calculateur(chargesInfos, liberationsInfos, stagiaires, ETCparStagiaire).total
+    return calculateur(chargesInfos, liberationsInfos, supervisionsInfos).total
 }

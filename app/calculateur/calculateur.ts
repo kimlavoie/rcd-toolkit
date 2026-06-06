@@ -12,6 +12,13 @@ interface Liberation {
     qte: number
 }
 
+interface SupervisionCalcul {
+    nbStagiaires: number
+    CIparStagiaire: number
+    coordination: number
+    pourcentageCoordination: number
+}
+
 function coursUniques(groupes:Array<Groupe>){
     return  groupes.filter((groupe, index, self) => 
         index === self.findIndex((u) => u.sigle === groupe.sigle)
@@ -27,13 +34,12 @@ function somme(tableau: Array<number>){
     return tableau.reduce((acc, n) => acc + n, 0)
 }
 
-export default function(groupes: Array<Groupe>, liberations: Array<Liberation>, stagiaires: number, ETCparStagiaire: number){
+export default function(groupes: Array<Groupe>, liberations: Array<Liberation>, supervisions: Array<SupervisionCalcul>){
     const facteurPreparation = calculerNbPrep(groupes)
     const facteurPrestation = 1.2
     const facteurPES = 0.04
-    const CIparStagiaire = ETCparStagiaire * 40
 
-    let vueCI:any = {} //define later
+    let vueCI:any = {} 
     vueCI.groupes = groupes.map((groupe, index, self) => {
         const notSeen = index === self.findIndex((u) => u.sigle === groupe.sigle)
         
@@ -69,7 +75,13 @@ export default function(groupes: Array<Groupe>, liberations: Array<Liberation>, 
     vueCI.exceptions.NES160 = vueCI.sommes.etudiants > 160 ? ((vueCI.sommes.etudiants - 160) ** 2 ) * 0.1 : 0
     vueCI.exceptions.NES75 = vueCI.sommes.etudiants >= 75 ? vueCI.sommes.etudiants * 0.01 : 0
     vueCI.exceptions.liberations = somme(liberations.map((lib) => lib.qte)) * 40
-    vueCI.exceptions.stages = stagiaires * CIparStagiaire
+    
+    // Nouveau calcul de CI pour les stages
+    // La CI de supervision directe est réduite du pourcentage alloué à la coordination
+    vueCI.exceptions.stages = somme(supervisions.map(s => {
+        const facteurSupervision = 1 - (s.pourcentageCoordination / 100)
+        return (s.nbStagiaires * s.CIparStagiaire * facteurSupervision) + s.coordination
+    }))
 
     vueCI.total = 
         vueCI.sommes.total + 
@@ -82,4 +94,4 @@ export default function(groupes: Array<Groupe>, liberations: Array<Liberation>, 
     return vueCI
 }
 
-export type {Groupe, Liberation}
+export type {Groupe, Liberation, SupervisionCalcul}

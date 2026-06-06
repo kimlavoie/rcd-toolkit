@@ -28,9 +28,9 @@ function SupervisionsPageContent() {
             if (stage) {
                 try {
                     const {saison, annee} = extractSessionInfos(stage.session)
-                    stageLabel = `${saison} ${annee}`
+                    stageLabel = `${stage.nom} (${saison} ${annee})`
                 } catch {
-                    stageLabel = stage.session
+                    stageLabel = `${stage.nom} (${stage.session})`
                 }
             }
             return {
@@ -47,7 +47,8 @@ function SupervisionsPageContent() {
         return enrichedSupervisions.filter(s => 
             s.enseignantName.toLowerCase().includes(searchLower) ||
             s.stageName.toLowerCase().includes(searchLower) ||
-            s.nbStagiaires.toString().includes(searchLower)
+            (s.nbStagiaires ?? 0).toString().includes(searchLower) ||
+            (s.coordination ?? 0).toString().includes(searchLower)
         )
     }, [enrichedSupervisions, search])
 
@@ -55,7 +56,7 @@ function SupervisionsPageContent() {
 
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editData, setEditData] = useState<any>({})
-    const [newData, setNewData] = useState({ enseignant: "", stage: "", nbStagiaires: 0 })
+    const [newData, setNewData] = useState({ enseignant: "", stage: "", nbStagiaires: 0, coordination: 0 })
 
     if (loading) return <div className="container mt-5">Chargement...</div>
     if (!user) {
@@ -78,7 +79,7 @@ function SupervisionsPageContent() {
     async function addNew() {
         if (newData.enseignant && newData.stage) {
             await firebaseDb.supervisions.add(newData)
-            setNewData({ ...newData, nbStagiaires: 0 })
+            setNewData({ ...newData, nbStagiaires: 0, coordination: 0 })
         } else {
             toast.error("L'enseignant et le stage sont requis.")
         }
@@ -104,9 +105,10 @@ function SupervisionsPageContent() {
         <table className="table table-striped align-middle">
             <thead>
                 <tr>
-                    <th onClick={() => toggleSort("stageName")} style={{cursor: "pointer"}}>Session du stage {getSortIcon("stageName")}</th>
+                    <th onClick={() => toggleSort("stageName")} style={{cursor: "pointer"}}>Stage / Session {getSortIcon("stageName")}</th>
                     <th onClick={() => toggleSort("enseignantName")} style={{cursor: "pointer"}}>Enseignant {getSortIcon("enseignantName")}</th>
-                    <th onClick={() => toggleSort("nbStagiaires")} style={{cursor: "pointer"}}>Nombre de stagiaires {getSortIcon("nbStagiaires")}</th>
+                    <th onClick={() => toggleSort("nbStagiaires")} style={{cursor: "pointer"}}>Stagiaires {getSortIcon("nbStagiaires")}</th>
+                    <th onClick={() => toggleSort("coordination")} style={{cursor: "pointer"}}>Coordination (CI) {getSortIcon("coordination")}</th>
                     <th style={{width: "120px"}}>Actions</th>
                 </tr>
             </thead>
@@ -127,6 +129,9 @@ function SupervisionsPageContent() {
                                     <input type="number" className="form-control" value={editData.nbStagiaires} onChange={e => setEditData({...editData, nbStagiaires: Number(e.target.value)})} />
                                 </td>
                                 <td>
+                                    <input type="number" step="0.01" className="form-control" value={editData.coordination} onChange={e => setEditData({...editData, coordination: Number(e.target.value)})} />
+                                </td>
+                                <td>
                                     <button className="btn btn-success btn-sm me-1" onClick={saveEdit}>💾</button>
                                     <button className="btn btn-secondary btn-sm" onClick={() => setEditingId(null)}>❌</button>
                                 </td>
@@ -136,6 +141,7 @@ function SupervisionsPageContent() {
                                 <td>{supervision.stageName}</td>
                                 <td>{enseignant?.prenom} {enseignant?.nom}</td>
                                 <td>{supervision.nbStagiaires}</td>
+                                <td>{supervision.coordination ?? 0} CI</td>
                                 <td>
                                     <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(supervision)}>✏️</button>
                                     <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => firebaseDb.supervisions.delete(supervision.id)}>🗑️</button>
@@ -152,7 +158,10 @@ function SupervisionsPageContent() {
                         <SelectEnseignant value={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: val})} />
                     </td>
                     <td>
-                        <input type="number" className="form-control" placeholder="Stagiaires" value={newData.nbStagiaires} onChange={e => setNewData({...newData, nbStagiaires: Number(e.target.value)})} />
+                        <input type="number" className="form-control" placeholder="Étud." value={newData.nbStagiaires} onChange={e => setNewData({...newData, nbStagiaires: Number(e.target.value)})} />
+                    </td>
+                    <td>
+                        <input type="number" step="0.01" className="form-control" placeholder="Coord (CI)" value={newData.coordination} onChange={e => setNewData({...newData, coordination: Number(e.target.value)})} />
                     </td>
                     <td>
                         <button className="btn btn-primary btn-sm w-100" onClick={addNew}>+</button>

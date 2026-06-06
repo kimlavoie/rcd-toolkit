@@ -37,8 +37,10 @@ export interface Allocation{
 export interface Stage{
     id: string
     session: string
-    ETCparStagiaire: number
+    nom: string
+    CIparStagiaire: number
     nbStagiaires: number
+    pourcentageCoordination?: number
 }
 
 export interface Charge{
@@ -63,6 +65,7 @@ export interface Supervision {
     enseignant: string
     stage: string
     nbStagiaires: number
+    coordination?: number
     scenario?: string
 }
 
