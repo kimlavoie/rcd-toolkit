@@ -14,6 +14,8 @@ interface TachesToolbarProps {
     setTri: (tri: string) => void
     enseignantWidth: number
     setEnseignantWidth: (width: number) => void
+    teachersPerPage: number
+    setTeachersPerPage: (count: number) => void
     selectedScenarioId: string
     setSelectedScenarioId: (id: string) => void
     currentSessionScenarios: Scenario[]
@@ -21,6 +23,7 @@ interface TachesToolbarProps {
     onShowAll: () => void
     onValidate: () => void
     onFitToScreen: () => void
+    onExportPDF: () => void
     setShowHelp: (show: boolean) => void
 }
 
@@ -29,15 +32,12 @@ export default function TachesToolbar({
     search, setSearch,
     tri, setTri,
     enseignantWidth, setEnseignantWidth,
+    teachersPerPage, setTeachersPerPage,
     selectedScenarioId, setSelectedScenarioId,
     currentSessionScenarios,
-    onHideAll, onShowAll, onValidate, onFitToScreen,
+    onHideAll, onShowAll, onValidate, onFitToScreen, onExportPDF,
     setShowHelp
 }: TachesToolbarProps) {
-    const handleExportPDF = () => {
-        window.print();
-    }
-
     return (
         <div className="mb-2 px-2 no-print">
             <div className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
@@ -138,19 +138,49 @@ export default function TachesToolbar({
                     <button className="btn btn-sm btn-primary py-0 shadow-sm border-0" style={{fontSize: "0.65rem", height: "31px", opacity: 0.8}} onClick={onShowAll}>Tout afficher</button>
                 </div>
 
-                {/* Validation */}
-                <div className="d-flex gap-1">
+                {/* Validation & PDF Unified */}
+                <div className="d-flex gap-2 align-items-center">
                     <button className="btn btn-sm btn-success rounded-pill shadow-sm px-3 fw-bold" style={{height: "31px", fontSize: "0.75rem"}} onClick={onValidate}>
                         ✅ Valider
                     </button>
-                    <button className="btn btn-sm btn-outline-danger rounded-pill shadow-sm px-3 fw-bold" style={{height: "31px", fontSize: "0.75rem"}} onClick={handleExportPDF}>
-                        🖨️ PDF
-                    </button>
+
+                    <div className="d-flex align-items-center bg-white rounded-pill shadow-sm border border-danger overflow-hidden" style={{height: "31px"}}>
+                        <button 
+                            className="btn btn-sm btn-danger border-0 px-3 fw-bold rounded-0" 
+                            style={{fontSize: "0.75rem", height: "100%"}} 
+                            onClick={onExportPDF}
+                            title="Lancer l'impression PDF"
+                        >
+                            🖨️ PDF
+                        </button>
+                        <div className="border-start border-danger-subtle h-100 d-flex align-items-center px-2 bg-light">
+                            <span className="text-muted extra-small me-2" style={{fontSize: "0.6rem"}}>PAR PAGE:</span>
+                            <select 
+                                className="form-select form-select-sm border-0 fw-bold text-danger p-0 bg-transparent text-center" 
+                                style={{
+                                    width: "40px", 
+                                    outline: "none", 
+                                    boxShadow: "none", 
+                                    fontSize: "0.75rem", 
+                                    cursor: "pointer",
+                                    appearance: "none",
+                                    backgroundImage: "none",
+                                    paddingRight: "0"
+                                }}
+                                value={teachersPerPage}
+                                onChange={e => setTeachersPerPage(Number(e.target.value))}
+                            >
+                                {[2,3,4,5,6,7,8,9,10].map(n => (
+                                    <option key={n} value={n}>{n}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Help */}
                 <button 
-                    className="btn btn-sm btn-link text-muted p-0 ms-auto" 
+                    className="btn btn-sm btn-link text-muted p-0 ms-2" 
                     onClick={() => setShowHelp(true)}
                     title="Aide et astuces"
                     style={{textDecoration: "none", fontSize: "1rem"}}

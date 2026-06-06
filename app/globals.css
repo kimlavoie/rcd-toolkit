@@ -12,83 +12,49 @@ option {
     margin: 10mm;
   }
 
-  /* Forcer le flux naturel pour Chrome */
-  html, body, #__next, main, div {
-    display: block !important;
-    height: auto !important;
-    overflow: visible !important;
-    position: static !important;
-    flex: none !important;
-    max-height: none !important;
-  }
-
-  body {
+  html, body {
     background: white !important;
     color: black !important;
-  }
-
-  /* Cacher les éléments inutiles */
-  .no-print, 
-  nav, 
-  button, 
-  .btn,
-  .alert,
-  .toast,
-  .modal-backdrop,
-  .modal,
-  .fixed-bottom,
-  .breadcrumbs {
-    display: none !important;
-  }
-
-  /* Conteneur du tableau */
-  .table-responsive {
-    display: block !important;
-    width: 100% !important;
-    overflow: visible !important;
     height: auto !important;
-    max-height: none !important;
-    border: none !important;
+    overflow: visible !important;
+  }
+
+  .no-print {
+    display: none !important;
   }
 
   table {
     width: 100% !important;
-    table-layout: auto !important;
     border-collapse: collapse !important;
-    page-break-after: auto !important;
-  }
-
-  /* Répéter l'en-tête */
-  thead {
-    display: table-header-group !important;
-  }
-
-  tr {
-    page-break-inside: avoid !important;
-    page-break-after: auto !important;
   }
 
   th, td {
-    padding: 8px !important;
     border: 1px solid #dee2e6 !important;
+    padding: 8px !important;
     background-color: white !important;
     color: black !important;
-    position: static !important;
-    overflow: visible !important;
   }
 
-  /* Forcer les couleurs */
+  /* Forcer l'affichage des noms de cours et descriptions de libérations */
+  .d-none.d-xl-block, .d-none.d-xl-inline {
+    display: block !important;
+  }
+
+  .text-truncate {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
+
+  .print-page-break {
+    page-break-after: always !important;
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-
-  /* Ajustements de texte */
-  h1, .h5 {
-    font-size: 1.2rem !important;
-    margin-bottom: 20px !important;
-  }
-  }
+}
 
   /* Forcer le respect des largeurs de colonnes dans le tableau des tâches */
   .table-responsive table {

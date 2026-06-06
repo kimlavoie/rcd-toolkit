@@ -37,6 +37,8 @@ function TachesContent() {
     const [enseignantWidth, setEnseignantWidth] = useState(200)
     const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
     const [selectedScenarioId, setSelectedScenarioId] = useState<string>("production")
+    const [isPrinting, setIsPrinting] = useState(false)
+    const [teachersPerPage, setTeachersPerPage] = useState(7)
 
     const getWidth = (id: string) => columnWidths[id] || enseignantWidth
 
@@ -46,36 +48,43 @@ function TachesContent() {
 
     const fitToScreen = () => {
         if (visibleEnseignants.length === 0) return
-        
-        // On récupère la largeur du conteneur du tableau (ou de la fenêtre)
         const container = document.querySelector('.table-responsive')
         if (!container) return
-        
         const containerWidth = container.clientWidth
-        const firstColWidth = 200 // Largeur fixe de la colonne d'actions
-        const availableWidth = containerWidth - firstColWidth - 20 // -20 pour les marges/scroll
-        
+        const firstColWidth = 200
+        const availableWidth = containerWidth - firstColWidth - 20
         if (availableWidth <= 0) return
-        
         const idealWidth = Math.floor(availableWidth / visibleEnseignants.length)
-        const finalWidth = Math.max(100, idealWidth) // Minimum 100px par colonne
-        
+        const finalWidth = Math.max(100, idealWidth)
         setEnseignantWidth(finalWidth)
-        setColumnWidths({}) // Réinitialise les ajustements individuels
-        toast.success(`Colonnes ajustées à ${finalWidth}px`)
+        setColumnWidths({})
+    }
+
+    const handleExportPDF = () => {
+        setIsPrinting(true)
+        // Petit délai pour laisser React faire le rendu de la version segmentée
+        setTimeout(() => {
+            window.print()
+            setIsPrinting(false)
+        }, 500)
     }
 
     // Force non-scrollable body for this page only
     useEffect(() => {
-        document.documentElement.style.overflow = 'hidden';
-        document.body.style.overflow = 'hidden';
+        if (!isPrinting) {
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.documentElement.style.overflow = 'visible';
+            document.body.style.overflow = 'visible';
+        }
         return () => {
             document.documentElement.style.overflow = 'unset';
             document.body.style.overflow = 'unset';
         };
-    }, []);
+    }, [isPrinting]);
 
-    // For scenarios, we might want to see scenarios from both sessions or just the one relevant to the mode
+    // For scenarios
     const currentSession = mode === "Automne" ? sessionA : sessionH;
     const currentSessionScenarios = scenarios?.filter(s => s.session === currentSession) || []
 
@@ -109,12 +118,8 @@ function TachesContent() {
     }, [user, authLoading, router])
 
     if (authLoading || isLoading) return <div className="container mt-5 text-center">Chargement...</div>
-
     if (!user) return null;
-
-    if (!isValidYear) {
-        return <div className="container mt-5 alert alert-danger">Année scolaire invalide: {year}</div>
-    }
+    if (!isValidYear) return <div className="container mt-5 alert alert-danger">Année scolaire invalide: {year}</div>
 
     const valider = async () => {
         if (!groupes || !charges || !allocations || !liberations || !stages || !supervisions || !cours) {
@@ -178,6 +183,56 @@ function TachesContent() {
         }
     }
 
+    // Helper to chunk teachers for print
+    const chunkArray = (arr: any[], size: number) => {
+        const chunks = []
+        for (let i = 0; i < arr.length; i += size) {
+            chunks.push(arr.slice(i, i + size))
+        }
+        return chunks
+    }
+
+    const teacherChunks = chunkArray(visibleEnseignants, teachersPerPage)
+
+    // Si on imprime, on ne rend QUE la version segmentée
+    if (isPrinting) {
+        return (
+            <div className="p-4 bg-white">
+                {teacherChunks.map((chunk, chunkIdx) => (
+                    <div key={chunkIdx} className={chunkIdx < teacherChunks.length - 1 ? "print-page-break mb-5" : ""}>
+                        <h2 className="h5 mb-3 text-dark">Tâches Enseignants - Page {chunkIdx + 1} / {teacherChunks.length} ({anneeScolaireLabel})</h2>
+                        <table className="table table-bordered align-middle w-100" style={{fontSize: "0.7rem"}}>
+                            <thead>
+                                <tr className="table-light">
+                                    <th style={{width: "150px"}}>Actions / Enseignants</th>
+                                    {chunk.map(enseignant => (
+                                        <th key={enseignant.id} style={{textAlign: "center"}}>
+                                            {enseignant.prenom} {enseignant.nom}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {mode === "Automne" ? (
+                                    <>
+                                        <Tache session={sessionsAnnuelle[0]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150}/>
+                                        <Tache session={sessionsAnnuelle[1]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150}/>
+                                    </>
+                                ) : (
+                                    <>
+                                        <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={chunk} globalWidth={150}/>
+                                        <Tache session={sessionsAnnuelle[1]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150}/>
+                                    </>
+                                )}
+                                <Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={chunk} saison={mode} globalWidth={150} scenario={selectedScenarioId}/>
+                            </tbody>
+                        </table>
+                    </div>
+                ))}
+            </div>
+        )
+    }
+
     return (
         <div className="d-flex flex-column bg-light overflow-hidden" style={{ height: "calc(100vh - 60px)", padding: "0.5rem" }}>
             <div className="card shadow-sm p-2 flex-grow-1 d-flex flex-column overflow-hidden">
@@ -185,18 +240,20 @@ function TachesContent() {
                     mode={mode} setMode={setMode} anneeScolaireLabel={anneeScolaireLabel}
                     search={search} setSearch={setSearch} tri={tri} setTri={setTri}
                     enseignantWidth={enseignantWidth} setEnseignantWidth={(w) => { setEnseignantWidth(w); setColumnWidths({}); }}
+                    teachersPerPage={teachersPerPage} setTeachersPerPage={setTeachersPerPage}
                     selectedScenarioId={selectedScenarioId} setSelectedScenarioId={setSelectedScenarioId}
                     currentSessionScenarios={currentSessionScenarios}
                     onHideAll={() => setCache(enseignants?.map(e => e.id) || [])}
                     onShowAll={() => setCache([])}
                     onValidate={valider}
                     onFitToScreen={fitToScreen}
+                    onExportPDF={handleExportPDF}
                     setShowHelp={setShowHelp}
                 />
 
                 {/* Chips Enseignants cachés */}
                 {cache.length > 0 && (
-                    <div className="d-flex gap-1 flex-wrap align-items-center mb-2 px-2 animate-fade-in border-top pt-2">
+                    <div className="d-flex gap-1 flex-wrap align-items-center mb-2 px-2 border-top pt-2">
                         <span className="extra-small text-muted fw-bold text-uppercase me-1" style={{fontSize: "0.6rem"}}>Cachés:</span>
                         {(enseignants ?? [])
                             .filter(e => cache.includes(e.id))
@@ -215,6 +272,7 @@ function TachesContent() {
                     </div>
                 )}
                 
+                {/* Modal Help */}
                 {showHelp && (
                     <div 
                         className="modal d-block" 
