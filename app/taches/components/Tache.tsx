@@ -1,5 +1,5 @@
 'use client'
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { firebaseDb } from "@/app/utilities/firebaseDb"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import { useData } from "./DataContext"
@@ -9,8 +9,8 @@ import ListeLiberations from "./ListeLiberations"
 import CI from "./CI"
 import { toast } from "react-hot-toast"
 
-export default function Tache({visibleEnseignants, session, columnWidths, globalWidth, scenario = "production", ciBottom, ciTop, showCI = true}:any){
-    const { groupes, charges: allCharges, allocations, liberations: allLiberations, stages, supervisions: allSupervisions, cours } = useData()
+export default function Tache({visibleEnseignants, session, columnWidths, globalWidth, scenario = "production", ciBottom, ciTop, showCI = true, isPrinting}:any){
+    const { groupes, charges: allCharges, allocations, liberations: allLiberations, stages, supervisions: allSupervisions, cours, expansionTrigger } = useData()
 
     const {saison, annee} = extractSessionInfos(session)
     
@@ -19,6 +19,20 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
     const [showCharges, setShowCharges] = useState(true)
     const [showLiberations, setShowLiberations] = useState(true)
     const [showStagesList, setShowStagesList] = useState(true)
+
+    // Synchronisation avec expansionTrigger uniquement si pas en train d'imprimer
+    useEffect(() => {
+        if (!isPrinting) {
+            if (expansionTrigger === "expand") {
+                setShowSession(true)
+                setShowCharges(true)
+                setShowLiberations(true)
+                setShowStagesList(true)
+            } else if (expansionTrigger === "collapse") {
+                setShowSession(false)
+            }
+        }
+    }, [expansionTrigger, isPrinting])
 
     // Filter data by scenario
     const charges = allCharges?.filter(c => (c.scenario || "production") === scenario)

@@ -8,8 +8,10 @@ import { getGroupColor as getGroupColorUtil } from "@/app/utilities/groupColors"
 import InputModal from "./InputModal"
 import TransferModal from "./TransferModal"
 import { toast } from "react-hot-toast"
+import { useData } from "./DataContext"
 
-export default function ListeCharges({enseignant, session, enseignantWidth, scenario = "production", style}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any}){
+export default function ListeCharges({enseignant, session, enseignantWidth, scenario = "production", style, isPrinting}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any, isPrinting?: boolean}){
+    const { expansionTrigger } = useData()
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)
@@ -111,6 +113,18 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
     // 4. Gestionnaires d'actions
     const [expandedMenuCourses, setExpandedMenuCourses] = useState<Record<string, boolean>>({})
     const [expandedDisplayCourses, setExpandedDisplayCourses] = useState<Record<string, boolean>>({})
+
+    // Synchronisation avec expansionTrigger uniquement si pas en train d'imprimer
+    useEffect(() => {
+        if (!isPrinting) {
+            if (expansionTrigger === "expand") {
+                const allExpanded = sortedCourseIdsForDisplay.reduce((acc, id) => ({ ...acc, [id]: true }), {})
+                setExpandedDisplayCourses(allExpanded)
+            } else if (expansionTrigger === "collapse") {
+                setExpandedDisplayCourses({})
+            }
+        }
+    }, [expansionTrigger, isPrinting, sortedCourseIdsForDisplay])
 
     useEffect(() => {
         setMounted(true)

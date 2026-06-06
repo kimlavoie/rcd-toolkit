@@ -21,6 +21,8 @@ interface TachesToolbarProps {
     currentSessionScenarios: Scenario[]
     onHideAll: () => void
     onShowAll: () => void
+    onExpandAll: () => void
+    onCollapseAll: () => void
     onValidate: () => void
     onFitToScreen: () => void
     onExportPDF: () => void
@@ -35,7 +37,7 @@ export default function TachesToolbar({
     teachersPerPage, setTeachersPerPage,
     selectedScenarioId, setSelectedScenarioId,
     currentSessionScenarios,
-    onHideAll, onShowAll, onValidate, onFitToScreen, onExportPDF,
+    onHideAll, onShowAll, onExpandAll, onCollapseAll, onValidate, onFitToScreen, onExportPDF,
     setShowHelp
 }: TachesToolbarProps) {
     return (
@@ -132,10 +134,26 @@ export default function TachesToolbar({
                     <button className="btn btn-outline-primary py-0 border-0 border-start" style={{fontSize: "0.65rem"}} onClick={onFitToScreen} title="Ajuster à l'écran">Ajuster</button>
                 </div>
 
-                {/* Visibilité */}
-                <div className="d-flex gap-1">
-                    <button className="btn btn-sm btn-secondary py-0 shadow-sm border-0" style={{fontSize: "0.65rem", height: "31px", opacity: 0.8}} onClick={onHideAll}>Tout cacher</button>
-                    <button className="btn btn-sm btn-primary py-0 shadow-sm border-0" style={{fontSize: "0.65rem", height: "31px", opacity: 0.8}} onClick={onShowAll}>Tout afficher</button>
+                {/* Enseignants */}
+                <div className="d-flex align-items-center gap-1 bg-white px-2 rounded shadow-sm border" style={{height: "31px"}}>
+                    <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Enseignants</span>
+                    <div className="btn-group btn-group-sm rounded overflow-hidden" style={{height: "24px"}}>
+                        <button className="btn btn-white py-0 border-0 text-secondary" style={{fontSize: "0.65rem"}} onClick={onHideAll}>Cacher tout</button>
+                        <button className="btn btn-white py-0 border-0 text-primary fw-bold border-start" style={{fontSize: "0.65rem"}} onClick={onShowAll}>Afficher tout</button>
+                    </div>
+                </div>
+
+                {/* Détails */}
+                <div className="d-flex align-items-center gap-1 bg-white px-2 rounded shadow-sm border" style={{height: "31px"}}>
+                    <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Détails</span>
+                    <div className="btn-group btn-group-sm rounded overflow-hidden" style={{height: "24px"}}>
+                        <button className="btn btn-white py-0 border-0 text-secondary" style={{fontSize: "0.65rem"}} onClick={onCollapseAll} title="Tout replier (cours, sessions)">
+                            <span style={{fontSize: "0.8rem", marginRight: "3px"}}>➖</span>Replier tout
+                        </button>
+                        <button className="btn btn-white py-0 border-0 text-primary fw-bold border-start" style={{fontSize: "0.65rem"}} onClick={onExpandAll} title="Tout déplier (cours, sessions, sections)">
+                            <span style={{fontSize: "0.8rem", marginRight: "3px"}}>➕</span>Déplier tout
+                        </button>
+                    </div>
                 </div>
 
                 {/* Validation & PDF Unified */}
@@ -146,7 +164,7 @@ export default function TachesToolbar({
 
                     <div className="d-flex align-items-center bg-white rounded-pill shadow-sm border border-danger overflow-hidden" style={{height: "31px"}}>
                         <button 
-                            className="btn btn-sm btn-danger border-0 px-3 fw-bold rounded-0" 
+                            className="btn btn-sm btn-danger border-0 px-3 fw-bold rounded-0 text-white" 
                             style={{fontSize: "0.75rem", height: "100%"}} 
                             onClick={onExportPDF}
                             title="Lancer l'impression PDF"
@@ -180,7 +198,7 @@ export default function TachesToolbar({
 
                 {/* Help */}
                 <button 
-                    className="btn btn-sm btn-link text-muted p-0 ms-2" 
+                    className="btn btn-sm btn-link text-muted p-0 ms-1" 
                     onClick={() => setShowHelp(true)}
                     title="Aide et astuces"
                     style={{textDecoration: "none", fontSize: "1rem"}}

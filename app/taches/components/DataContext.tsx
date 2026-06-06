@@ -18,6 +18,8 @@ interface DataContextType {
     CIReelles: CIReelle[] | undefined
     scenarios: Scenario[] | undefined
     isLoading: boolean
+    expansionTrigger: "expand" | "collapse" | null
+    triggerExpansion: (action: "expand" | "collapse") => void
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -34,6 +36,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const CIReelles = useFirestoreCollection<CIReelle>("CIReelles")
     const scenarios = useFirestoreCollection<Scenario>("scenarios")
 
+    const [expansionTrigger, setExpansionTrigger] = React.useState<"expand" | "collapse" | null>(null)
+
+    const triggerExpansion = (action: "expand" | "collapse") => {
+        setExpansionTrigger(action)
+        setTimeout(() => setExpansionTrigger(null), 100)
+    }
+
     const isLoading = !enseignants || !charges || !liberations || !groupes || 
                       !cours || !supervisions || !stages || !allocations || 
                       !CIReelles || !scenarios;
@@ -41,7 +50,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const value = {
         enseignants, charges, liberations, groupes, cours, 
         supervisions, stages, allocations, CIReelles, scenarios,
-        isLoading
+        isLoading, expansionTrigger, triggerExpansion
     };
 
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

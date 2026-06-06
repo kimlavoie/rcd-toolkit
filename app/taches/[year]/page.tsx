@@ -18,7 +18,7 @@ function TachesContent() {
     const params = useParams()
     const year = params.year as string
     
-    const { enseignants, groupes, charges, allocations, liberations, stages, supervisions, cours, scenarios, isLoading } = useData()
+    const { enseignants, groupes, charges, allocations, liberations, stages, supervisions, cours, scenarios, isLoading, triggerExpansion } = useData()
 
     // Safety check for year format (should be like 2024)
     const isValidYear = year && /^\d{4}$/.test(year);
@@ -29,7 +29,7 @@ function TachesContent() {
     const sessionH = isValidYear ? `H${(parseInt(year.substring(2,4)) + 1).toString().padStart(2, '0')}` : "";
     const sessionsAnnuelle = [sessionA, sessionH];
 
-    const [mode, setMode] = useState<"Automne" | "Hiver">("Automne")
+    const [mode, setMode] = useState<"Automne" | "Hiver" >("Automne")
     const [cache, setCache] = useState<any[]>([])
     const [search, setSearch] = useState("")
     const [tri, setTri] = useState("nom")
@@ -250,13 +250,13 @@ function TachesContent() {
                             <tbody>
                                 {mode === "Automne" ? (
                                     <>
-                                        <Tache session={sessionsAnnuelle[0]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150}/>
-                                        <Tache session={sessionsAnnuelle[1]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150}/>
+                                        <Tache session={sessionsAnnuelle[0]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150} isPrinting={true}/>
+                                        <Tache session={sessionsAnnuelle[1]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150} isPrinting={true}/>
                                     </>
                                 ) : (
                                     <>
                                         <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={chunk} globalWidth={150}/>
-                                        <Tache session={sessionsAnnuelle[1]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150}/>
+                                        <Tache session={sessionsAnnuelle[1]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150} isPrinting={true}/>
                                     </>
                                 )}
                                 <Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={chunk} saison={mode} globalWidth={150} scenario={selectedScenarioId}/>
@@ -280,6 +280,8 @@ function TachesContent() {
                     currentSessionScenarios={currentSessionScenarios}
                     onHideAll={() => setCache(enseignants?.map(e => e.id) || [])}
                     onShowAll={() => setCache([])}
+                    onExpandAll={() => triggerExpansion("expand")}
+                    onCollapseAll={() => triggerExpansion("collapse")}
                     onValidate={valider}
                     onFitToScreen={fitToScreen}
                     onExportPDF={handleExportPDF}
@@ -384,13 +386,13 @@ function TachesContent() {
                         </thead>
                         <tbody>{mode === "Automne" ? (
                                 <>
-                                    <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="74px"/>
-                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciBottom="37px"/>
+                                    <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="74px" isPrinting={isPrinting}/>
+                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciBottom="37px" isPrinting={isPrinting}/>
                                 </>
                                 ) : (
                                 <>
                                     <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="auto" ciBottom="auto" forceHideCI={true}/>
-                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="37px" showCI={true}/>
+                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="37px" showCI={true} isPrinting={isPrinting}/>
                                 </>
                                 )}<Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={mode} columnWidths={columnWidths} globalWidth={enseignantWidth} scenario={selectedScenarioId}/></tbody>
                     </table>
