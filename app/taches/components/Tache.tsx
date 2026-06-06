@@ -221,7 +221,7 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
                 </tr>
                 {!showCharges && (
                     <tr className="bg-light">
-                        <StickyHeader isFirstCol style={{fontSize: "0.7rem", color: "#999", py: 1}}>
+                        <StickyHeader isFirstCol style={{fontSize: "0.7rem", color: "#999"}}>
                             <div className="cursor-pointer ps-1 d-flex align-items-center gap-2" onClick={() => setShowCharges(true)} style={{cursor: "pointer"}}>
                                 <span style={{fontSize: "0.7rem", color: "#999", width: "12px"}}>▶</span>
                                 <span>Afficher les cours</span>
@@ -248,7 +248,7 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
                 </tr>
                 {!showLiberations && (
                     <tr className="bg-light">
-                        <StickyHeader isFirstCol style={{fontSize: "0.7rem", color: "#999", py: 1}}>
+                        <StickyHeader isFirstCol style={{fontSize: "0.7rem", color: "#999"}}>
                             <div className="cursor-pointer ps-1 d-flex align-items-center gap-2" onClick={() => setShowLiberations(true)} style={{cursor: "pointer"}}>
                                 <span style={{fontSize: "0.7rem", color: "#999", width: "12px"}}>▶</span>
                                 <span>Afficher les libérations</span>
@@ -284,7 +284,7 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
                 </tr>
                 {!showStagiaires && (
                     <tr className="bg-light">
-                        <StickyHeader isFirstCol style={{fontSize: "0.7rem", color: "#999", py: 1}}>
+                        <StickyHeader isFirstCol style={{fontSize: "0.7rem", color: "#999"}}>
                             <div className="cursor-pointer ps-1 d-flex align-items-center gap-2" onClick={() => setShowStagiaires(true)} style={{cursor: "pointer"}}>
                                 <span style={{fontSize: "0.7rem", color: "#999", width: "12px"}}>▶</span>
                                 <span>Afficher les stagiaires</span>

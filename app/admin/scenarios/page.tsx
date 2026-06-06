@@ -2,7 +2,7 @@
 
 import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/app/utilities/auth"
 import type { Scenario } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
@@ -16,7 +16,18 @@ export default function ScenariosPage() {
     const scenarios = useFirestoreCollection<Scenario>("scenarios")
     const router = useRouter()
     
-    const { sortedData, toggleSort, getSortIcon } = useTableSort(scenarios, "session")
+    const [search, setSearch] = useState("")
+    
+    const filteredScenarios = useMemo(() => {
+        if (!search) return scenarios || []
+        const searchLower = search.toLowerCase()
+        return (scenarios ?? []).filter(s => 
+            (s.nom ?? "").toLowerCase().includes(searchLower) || 
+            (s.session ?? "").toLowerCase().includes(searchLower)
+        )
+    }, [scenarios, search])
+
+    const { sortedData, toggleSort, getSortIcon } = useTableSort(filteredScenarios, "session")
 
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editData, setEditData] = useState<any>({})
@@ -178,7 +189,22 @@ export default function ScenariosPage() {
     }
 
     return <div className="container mt-3">
-        <h2 className="mb-4 text-primary">Gestion des Scénarios</h2>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+            <h2 className="text-primary mb-0">Gestion des Scénarios</h2>
+            <div className="input-group input-group-sm w-auto shadow-sm" style={{maxWidth: "300px"}}>
+                <span className="input-group-text bg-white border-end-0 text-muted">🔍</span>
+                <input 
+                    type="text" 
+                    className="form-control border-start-0 ps-0" 
+                    placeholder="Rechercher par nom ou session..." 
+                    value={search} 
+                    onChange={e => setSearch(e.target.value)} 
+                />
+                {search && (
+                    <button className="btn btn-outline-secondary border-start-0" onClick={() => setSearch("")}>✕</button>
+                )}
+            </div>
+        </div>
         <div className="card shadow-sm p-4">
             <table className="table table-striped align-middle">
                 <thead>

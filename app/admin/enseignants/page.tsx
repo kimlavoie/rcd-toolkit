@@ -2,7 +2,7 @@
 
 import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useMemo } from "react"
 import { useAuth } from "@/app/utilities/auth"
 import type { Enseignant } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
@@ -15,7 +15,19 @@ function EnseignantsPageContent(){
     const searchParams = useSearchParams()
     const highlightId = searchParams.get("highlight")
     
-    const { sortedData, toggleSort, getSortIcon } = useTableSort(enseignants, "nom")
+    const [search, setSearch] = useState("")
+    
+    const filteredEnseignants = useMemo(() => {
+        if (!search) return enseignants || []
+        const searchLower = search.toLowerCase()
+        return (enseignants ?? []).filter(e => 
+            (e.nom ?? "").toLowerCase().includes(searchLower) || 
+            (e.prenom ?? "").toLowerCase().includes(searchLower) ||
+            (e.numeroEmploye ?? "").toLowerCase().includes(searchLower)
+        )
+    }, [enseignants, search])
+
+    const { sortedData, toggleSort, getSortIcon } = useTableSort(filteredEnseignants, "nom")
 
     useEffect(() => {
         if (highlightId) {
@@ -58,6 +70,22 @@ function EnseignantsPageContent(){
     }
 
     return <div className="container mt-3">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+            <h1>Gestion des enseignants</h1>
+            <div className="input-group input-group-sm w-auto shadow-sm" style={{maxWidth: "300px"}}>
+                <span className="input-group-text bg-white border-end-0 text-muted">🔍</span>
+                <input 
+                    type="text" 
+                    className="form-control border-start-0 ps-0" 
+                    placeholder="Rechercher par nom, prénom, no..." 
+                    value={search} 
+                    onChange={e => setSearch(e.target.value)} 
+                />
+                {search && (
+                    <button className="btn btn-outline-secondary border-start-0" onClick={() => setSearch("")}>✕</button>
+                )}
+            </div>
+        </div>
         <table className="table table-striped align-middle">
             <thead>
                 <tr>

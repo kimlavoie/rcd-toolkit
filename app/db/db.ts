@@ -22,6 +22,8 @@ export interface Groupe {
     session: string
     cours: string
     nbEtudiants: number
+    aTheorie?: boolean
+    aPratique?: boolean
 }
 
 export interface Allocation{
@@ -44,6 +46,7 @@ export interface Charge{
     enseignant: string
     groupe: string
     nbSemaines: number
+    type?: "T" | "P" | "TP"
     scenario?: string
 }
 

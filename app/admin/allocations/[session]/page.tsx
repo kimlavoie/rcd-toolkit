@@ -2,7 +2,7 @@
 
 import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useMemo } from "react"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import { useAuth } from "@/app/utilities/auth"
 import type { Allocation } from "@/app/db/db"
@@ -20,8 +20,19 @@ function AllocationsPageContent(){
     const session = params.session as string
     const {saison, annee} = extractSessionInfos(session)
 
-    const filteredAllocations = (allocations ?? []).filter(a => a.session === session)
-    const { sortedData, toggleSort, getSortIcon } = useTableSort(filteredAllocations, "code")
+    const [search, setSearch] = useState("")
+    
+    const filteredBySearch = useMemo(() => {
+        const base = (allocations ?? []).filter(a => a.session === session)
+        if (!search) return base
+        const searchLower = search.toLowerCase()
+        return base.filter(a => 
+            (a.code ?? "").toLowerCase().includes(searchLower) || 
+            (a.description ?? "").toLowerCase().includes(searchLower)
+        )
+    }, [allocations, session, search])
+
+    const { sortedData, toggleSort, getSortIcon } = useTableSort(filteredBySearch, "code")
     
     useEffect(() => {
         if (highlightId) {
@@ -64,7 +75,22 @@ function AllocationsPageContent(){
     }
 
     return <div className="container mt-3">
-        <h1>{saison} {annee}</h1>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+            <h1 className="mb-0">{saison} {annee}</h1>
+            <div className="input-group input-group-sm w-auto shadow-sm" style={{maxWidth: "300px"}}>
+                <span className="input-group-text bg-white border-end-0 text-muted">🔍</span>
+                <input 
+                    type="text" 
+                    className="form-control border-start-0 ps-0" 
+                    placeholder="Rechercher par code ou description..." 
+                    value={search} 
+                    onChange={e => setSearch(e.target.value)} 
+                />
+                {search && (
+                    <button className="btn btn-outline-secondary border-start-0" onClick={() => setSearch("")}>✕</button>
+                )}
+            </div>
+        </div>
         <table className="table table-striped align-middle">
             <thead>
                 <tr>

@@ -2,14 +2,13 @@
 
 import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useParams, useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import SelectEnseignant from "../../components/inputs/SelectEnseignant"
 import SelectGroupe from "../../components/inputs/SelectGroupe"
 import { useAuth } from "@/app/utilities/auth"
 import type { Charge, Enseignant, Groupe, Cours } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
-import { useMemo } from "react"
 import { toast } from "react-hot-toast"
 
 export default function(){
@@ -40,7 +39,19 @@ export default function(){
         })
     }, [charges, enseignants, groupes, coursListe, session])
 
-    const { sortedData, toggleSort, getSortIcon } = useTableSort(enrichedCharges, "enseignantNom")
+    const [search, setSearch] = useState("")
+
+    const filteredBySearch = useMemo(() => {
+        if (!search) return enrichedCharges
+        const searchLower = search.toLowerCase()
+        return enrichedCharges.filter(c => 
+            c.enseignantNom.toLowerCase().includes(searchLower) ||
+            c.groupeNom.toLowerCase().includes(searchLower) ||
+            c.nbSemaines.toString().includes(searchLower)
+        )
+    }, [enrichedCharges, search])
+
+    const { sortedData, toggleSort, getSortIcon } = useTableSort(filteredBySearch, "enseignantNom")
     
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editData, setEditData] = useState<any>({})
@@ -74,7 +85,22 @@ export default function(){
     }
 
     return <div className="container mt-3">
-        <h1>{saison} {annee}</h1>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+            <h1 className="mb-0">{saison} {annee}</h1>
+            <div className="input-group input-group-sm w-auto shadow-sm" style={{maxWidth: "300px"}}>
+                <span className="input-group-text bg-white border-end-0 text-muted">🔍</span>
+                <input 
+                    type="text" 
+                    className="form-control border-start-0 ps-0" 
+                    placeholder="Rechercher par enseignant ou groupe..." 
+                    value={search} 
+                    onChange={e => setSearch(e.target.value)} 
+                />
+                {search && (
+                    <button className="btn btn-outline-secondary border-start-0" onClick={() => setSearch("")}>✕</button>
+                )}
+            </div>
+        </div>
         <table className="table table-striped align-middle">
             <thead>
                 <tr>
