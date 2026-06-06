@@ -3,6 +3,9 @@ interface Groupe {
     etudiants: number
     heures: number
     semaines: number
+    heuresTheorie?: number
+    heuresPratique?: number
+    type?: "T" | "P" | "TP"
 }
 
 interface Liberation {
@@ -33,24 +36,32 @@ export default function(groupes: Array<Groupe>, liberations: Array<Liberation>, 
     let vueCI:any = {} //define later
     vueCI.groupes = groupes.map((groupe, index, self) => {
         const notSeen = index === self.findIndex((u) => u.sigle === groupe.sigle)
-        const preparation = notSeen ? groupe.heures * facteurPreparation : 0
-        const prestation = groupe.heures * facteurPrestation
-        const PES = groupe.heures * groupe.etudiants * facteurPES
+        
+        let heuresEquivalentes = groupe.heures
+        if (groupe.type === "T") {
+            heuresEquivalentes = groupe.heuresTheorie ?? (groupe.heures * 0.5)
+        } else if (groupe.type === "P") {
+            heuresEquivalentes = groupe.heuresPratique ?? (groupe.heures * 0.5)
+        }
+
+        const preparation = notSeen ? heuresEquivalentes * facteurPreparation : 0
+        const prestation = heuresEquivalentes * facteurPrestation
+        const PES = heuresEquivalentes * groupe.etudiants * facteurPES
         const CI = (preparation + prestation + PES) * (groupe.semaines/15)
 
-        return { ...groupe, preparation, prestation, PES, CI }
+        return { ...groupe, heuresEffectives: heuresEquivalentes, preparation, prestation, PES, CI }
     })
 
     vueCI.sommes = {}
 
     vueCI.sommes.etudiants = somme(groupes.map((groupe) => groupe.etudiants))
-    vueCI.sommes.heures = somme(groupes.map((groupe) => groupe.heures))
+    vueCI.sommes.heures = somme(vueCI.groupes.map((groupe:any) => groupe.heuresEffectives))
     vueCI.sommes.preparations = somme(vueCI.groupes.map((groupe:any) => groupe.preparation))
     vueCI.sommes.prestations = somme(vueCI.groupes.map((groupe:any) => groupe.prestation))
     vueCI.sommes.PES = somme(vueCI.groupes.map((groupe:any) => groupe.PES))
     vueCI.sommes.total = somme(vueCI.groupes.map((groupe:any) => groupe.CI))
 
-    const sommePES = somme(groupes.map((groupe) => groupe.etudiants * groupe.heures))
+    const sommePES = somme(vueCI.groupes.map((groupe:any) => groupe.etudiants * groupe.heuresEffectives))
 
     vueCI.exceptions = {}
 

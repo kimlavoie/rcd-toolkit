@@ -47,7 +47,7 @@ function GroupesPageContent(){
 
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editData, setEditData] = useState<any>({})
-    const [newData, setNewData] = useState({ cours: "", nbEtudiants: 0 })
+    const [newData, setNewData] = useState({ cours: "", nbEtudiants: 0, aTheorie: true, aPratique: true })
 
     if (loading) return <div className="container mt-5">Chargement...</div>
     if (!user) {
@@ -57,7 +57,7 @@ function GroupesPageContent(){
 
     function startEdit(groupe: any) {
         setEditingId(groupe.id)
-        setEditData({ ...groupe })
+        setEditData({ ...groupe, aTheorie: groupe.aTheorie ?? true, aPratique: groupe.aPratique ?? true })
     }
 
     async function saveEdit() {
@@ -70,7 +70,7 @@ function GroupesPageContent(){
     async function addNew() {
         if (newData.cours) {
             await firebaseDb.groupes.add({ ...newData, session })
-            setNewData({ cours: "", nbEtudiants: 0 })
+            setNewData({ cours: "", nbEtudiants: 0, aTheorie: true, aPratique: true })
         } else {
             toast.error("Le cours est requis.")
         }
@@ -83,6 +83,7 @@ function GroupesPageContent(){
                 <tr>
                     <th onClick={() => toggleSort("coursNom")} style={{cursor: "pointer"}}>Cours {getSortIcon("coursNom")}</th>
                     <th onClick={() => toggleSort("nbEtudiants")} style={{cursor: "pointer"}}>Nombre d'étudiants {getSortIcon("nbEtudiants")}</th>
+                    <th className="text-center">Composantes</th>
                     <th style={{width: "120px"}}>Actions</th>
                 </tr>
             </thead>
@@ -100,6 +101,18 @@ function GroupesPageContent(){
                                 <td>
                                     <input type="number" className="form-control" value={editData.nbEtudiants} onChange={e => setEditData({...editData, nbEtudiants: Number(e.target.value)})} />
                                 </td>
+                                <td className="text-center">
+                                    <div className="d-flex justify-content-center gap-3">
+                                        <div className="form-check">
+                                            <input className="form-check-input" type="checkbox" checked={editData.aTheorie} onChange={e => setEditData({...editData, aTheorie: e.target.checked})} id={`edit-t-${groupe.id}`} />
+                                            <label className="form-check-label fw-bold text-primary" htmlFor={`edit-t-${groupe.id}`}>T</label>
+                                        </div>
+                                        <div className="form-check">
+                                            <input className="form-check-input" type="checkbox" checked={editData.aPratique} onChange={e => setEditData({...editData, aPratique: e.target.checked})} id={`edit-p-${groupe.id}`} />
+                                            <label className="form-check-label fw-bold text-success" htmlFor={`edit-p-${groupe.id}`}>P</label>
+                                        </div>
+                                    </div>
+                                </td>
                                 <td>
                                     <button className="btn btn-success btn-sm me-1" onClick={saveEdit}>💾</button>
                                     <button className="btn btn-secondary btn-sm" onClick={() => setEditingId(null)}>❌</button>
@@ -109,6 +122,12 @@ function GroupesPageContent(){
                             <>
                                 <td>{cour?.sigle} - {cour?.nom}</td> 
                                 <td>{groupe.nbEtudiants}</td>
+                                <td className="text-center">
+                                    <div className="d-flex justify-content-center gap-2 font-weight-bold">
+                                        {(groupe.aTheorie ?? true) && <span className="badge bg-primary-subtle text-primary border border-primary">T</span>}
+                                        {(groupe.aPratique ?? true) && <span className="badge bg-success-subtle text-success border border-success">P</span>}
+                                    </div>
+                                </td>
                                 <td>
                                     <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(groupe)}>✏️</button>
                                     <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => firebaseDb.groupes.delete(groupe.id)}>🗑️</button>
@@ -123,6 +142,18 @@ function GroupesPageContent(){
                     </td>
                     <td>
                         <input type="number" className="form-control" placeholder="Étudiants" value={newData.nbEtudiants} onChange={e => setNewData({...newData, nbEtudiants: Number(e.target.value)})} />
+                    </td>
+                    <td className="text-center">
+                        <div className="d-flex justify-content-center gap-3">
+                            <div className="form-check">
+                                <input className="form-check-input" type="checkbox" checked={newData.aTheorie} onChange={e => setNewData({...newData, aTheorie: e.target.checked})} id="new-t" />
+                                <label className="form-check-label fw-bold text-primary" htmlFor="new-t">T</label>
+                            </div>
+                            <div className="form-check">
+                                <input className="form-check-input" type="checkbox" checked={newData.aPratique} onChange={e => setNewData({...newData, aPratique: e.target.checked})} id="new-p" />
+                                <label className="form-check-label fw-bold text-success" htmlFor="new-p">P</label>
+                            </div>
+                        </div>
                     </td>
                     <td>
                         <button className="btn btn-primary btn-sm w-100" onClick={addNew}>+</button>

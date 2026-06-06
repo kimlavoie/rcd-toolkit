@@ -22,9 +22,19 @@ export default function({visibleEnseignants, session, columnWidths, globalWidth,
         const groupesSession = groupes?.filter(groupe => groupe.session == session)
 
         const missing = groupesSession?.filter(groupe => {
-            const charge = charges?.filter(charge => charge.groupe == groupe.id)
-            const sommeCharges = charge?.reduce((somme, charge) => somme + (charge.nbSemaines ?? 0), 0)
-            return 15 - (sommeCharges ?? 0) > 0.001
+            const groupCharges = charges?.filter(charge => charge.groupe == groupe.id) || []
+            
+            // Un groupe est manquant si une composante requise n'a pas 15 semaines
+            const needsT = groupe.aTheorie ?? true
+            const needsP = groupe.aPratique ?? true
+            
+            const weeksT = groupCharges.filter(c => c.type === "T" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
+            const weeksP = groupCharges.filter(c => c.type === "P" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
+
+            const missingT = needsT && (15 - weeksT > 0.001)
+            const missingP = needsP && (15 - weeksP > 0.001)
+
+            return missingT || missingP
         })
 
         return missing?.length

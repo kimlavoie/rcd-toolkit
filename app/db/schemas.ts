@@ -21,6 +21,8 @@ export const GroupeSchema = z.object({
   session: z.string().min(1),
   cours: z.string().min(1),
   nbEtudiants: z.coerce.number().min(0),
+  aTheorie: z.boolean().default(true),
+  aPratique: z.boolean().default(true),
 });
 
 export const AllocationSchema = z.object({
@@ -40,6 +42,7 @@ export const ChargeSchema = z.object({
   enseignant: z.string().min(1),
   groupe: z.string().min(1),
   nbSemaines: z.coerce.number().min(0).max(15),
+  type: z.enum(["T", "P", "TP"]).default("TP"),
   scenario: z.string().optional(),
 });
 

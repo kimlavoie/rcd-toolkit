@@ -10,7 +10,6 @@ interface StickyCellProps {
     className?: string;
     style?: React.CSSProperties;
 }
-
 export default function StickyCell({ 
     children, 
     top = "auto", 

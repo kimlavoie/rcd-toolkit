@@ -7,7 +7,7 @@ import StickyCell from "./ui/StickyCell"
 
 export default function({enseignant, session, trigger, scenario = "production", style, bottom = "auto", top = "auto"}: any){
     const data = useData()
-    const { CIReelles } = data
+    const { CIReelles, charges: allCharges } = data
     
     const enseignantId = String(enseignant.id)
 

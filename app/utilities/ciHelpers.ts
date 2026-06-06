@@ -37,7 +37,10 @@ export function calculateSessionCI(
             sigle: cour?.sigle ?? "", 
             etudiants: Number(groupe?.nbEtudiants ?? 0), 
             heures: Number(cour?.heuresTheorie ?? 0) + Number(cour?.heuresPratique ?? 0), 
-            semaines: Number(charge.nbSemaines ?? 0)
+            heuresTheorie: Number(cour?.heuresTheorie ?? 0),
+            heuresPratique: Number(cour?.heuresPratique ?? 0),
+            semaines: Number(charge.nbSemaines ?? 0),
+            type: charge.type ?? "TP"
         }
     }) || []
 

@@ -134,18 +134,31 @@ function TachesContent() {
             const { saison: sSaison, annee: sAnnee } = extractSessionInfos(sCode)
             const sessionLabel = `${sSaison} ${sAnnee}`
 
-            // 1. Cours restants (groupes non complets - 15 semaines)
+            // 1. Cours restants (groupes non complets - 15 semaines par composante)
             const groupesSession = groupes.filter((g: any) => g.session === sCode)
             const groupesIncomplets = groupesSession.map((g: any) => {
                 const chargesDuGroupe = charges.filter((c: any) => String(c.groupe) === String(g.id) && (c.scenario || "production") === selectedScenarioId)
-                const totalSemaines = chargesDuGroupe.reduce((sum: number, c: any) => sum + Number(c.nbSemaines || 0), 0)
-                return { group: g, restant: 15 - totalSemaines }
-            }).filter((r: any) => r.restant > 0.001)
+                
+                const needsT = g.aTheorie ?? true
+                const needsP = g.aPratique ?? true
+                
+                const weeksT = chargesDuGroupe.filter((c: any) => c.type === "T" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
+                const weeksP = chargesDuGroupe.filter((c: any) => c.type === "P" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
+
+                const missingT = needsT && (15 - weeksT > 0.001)
+                const missingP = needsP && (15 - weeksP > 0.001)
+
+                let details = []
+                if (missingT) details.push(`Théorie (${(15 - weeksT).toFixed(1)} sem.)`)
+                if (missingP) details.push(`Pratique (${(15 - weeksP).toFixed(1)} sem.)`)
+
+                return { group: g, details }
+            }).filter((r: any) => r.details.length > 0)
             
             if (groupesIncomplets.length > 0) {
-                sessionReports.push("Cours non complétés (moins de 15 sem.) :\n" + groupesIncomplets.map((r: any) => {
+                sessionReports.push("Cours non complétés :\n" + groupesIncomplets.map((r: any) => {
                     const c = cours.find((c: any) => String(c.id) === String(r.group.cours))
-                    return `- ${c?.sigle ?? 'Inconnu'} (Gr. ${r.group.id.substring(0,4)}) : ${r.restant.toFixed(1)} sem. restantes`
+                    return `- ${c?.sigle ?? 'Inconnu'} (Gr. ${r.group.id.substring(0,4)}) : ${r.details.join(" + ")}`
                 }).join("\n"))
             }
 
