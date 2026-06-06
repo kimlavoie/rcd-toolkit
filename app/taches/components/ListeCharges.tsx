@@ -11,7 +11,7 @@ import { toast } from "react-hot-toast"
 import { useData } from "./DataContext"
 
 export default function ListeCharges({enseignant, session, enseignantWidth, scenario = "production", style, isPrinting}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any, isPrinting?: boolean}){
-    const { expansionTrigger } = useData()
+    const { visibilityMap, setVisibility } = useData()
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)
@@ -37,25 +37,15 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
 
     const availableGroupsForMenu = useMemo(() => {
         return sessionGroupes.filter(groupe => {
-            // Déterminer ce qui est déjà assigné globalement pour ce groupe
             const groupCharges = scenarioCharges.filter(c => c.groupe === groupe.id)
-            
             const totalT = groupCharges.filter(c => c.type === "T" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
             const totalP = groupCharges.filter(c => c.type === "P" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
-            
-            // Ce qui est requis par le groupe mais pas encore totalement assigné
             const canStillAddT = (groupe.aTheorie ?? true) && (15 - totalT > 0.001)
             const canStillAddP = (groupe.aPratique ?? true) && (15 - totalP > 0.001)
-
-            // Ce que l'enseignant actuel possède déjà
             const teacherHasT = groupCharges.some(c => c.enseignant === enseignant.id && (c.type === "T" || c.type === "TP"))
             const teacherHasP = groupCharges.some(c => c.enseignant === enseignant.id && (c.type === "P" || c.type === "TP"))
-
-            // Le groupe est proposé si l'enseignant peut encore ajouter une partie non totalement assignée
             const isAvailableForTeacher = (canStillAddT && !teacherHasT) || (canStillAddP && !teacherHasP)
-
             if (!isAvailableForTeacher) return false
-
             if (menuSearch) {
                 const cour = coursData?.find(c => c.id == groupe.cours)
                 const searchLower = menuSearch.toLowerCase()
@@ -110,21 +100,20 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
         })
     , [chargesByCourseForDisplay, coursData])
 
-    // 4. Gestionnaires d'actions
+    // 4. Gestionnaires d'actions (lecture/écriture dans la map globale)
     const [expandedMenuCourses, setExpandedMenuCourses] = useState<Record<string, boolean>>({})
-    const [expandedDisplayCourses, setExpandedDisplayCourses] = useState<Record<string, boolean>>({})
 
-    // Synchronisation avec expansionTrigger uniquement si pas en train d'imprimer
-    useEffect(() => {
-        if (!isPrinting) {
-            if (expansionTrigger === "expand") {
-                const allExpanded = sortedCourseIdsForDisplay.reduce((acc, id) => ({ ...acc, [id]: true }), {})
-                setExpandedDisplayCourses(allExpanded)
-            } else if (expansionTrigger === "collapse") {
-                setExpandedDisplayCourses({})
-            }
-        }
-    }, [expansionTrigger, isPrinting, sortedCourseIdsForDisplay])
+    const isExpanded = (courseId: string) => {
+        const key = `${session}_${enseignant.id}_${courseId}_expanded`
+        if (visibilityMap[key] !== undefined) return visibilityMap[key]
+        if (visibilityMap["global_expansion"] !== undefined) return visibilityMap["global_expansion"]
+        return false // Par défaut replié
+    }
+
+    const toggleExpand = (courseId: string) => {
+        const key = `${session}_${enseignant.id}_${courseId}_expanded`
+        setVisibility(key, !isExpanded(courseId))
+    }
 
     useEffect(() => {
         setMounted(true)
@@ -152,16 +141,12 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
     async function quickAddCharge(groupe: Groupe, type: "T" | "P" | "TP" = "TP"){
         const groupCharges = scenarioCharges.filter(c => c.groupe === groupe.id)
         const existingCharge = groupCharges.find(c => c.enseignant === enseignant.id)
-        
-        // Calculer les semaines restantes globales pour chaque partie
         const totalT = groupCharges.filter(c => c.type === "T" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
         const totalP = groupCharges.filter(c => c.type === "P" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
-        
         const remT = Math.max(0, Number((15 - totalT).toFixed(3)))
         const remP = Math.max(0, Number((15 - totalP).toFixed(3)))
 
         if (existingCharge) {
-            // Fusion ou mise à jour
             if ((existingCharge.type === "T" && type === "P") || (existingCharge.type === "P" && type === "T") || type === "TP") {
                 await firebaseDb.charges.update(existingCharge.id, { type: "TP", nbSemaines: 15 })
             } else {
@@ -169,7 +154,6 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                 await firebaseDb.charges.update(existingCharge.id, { type, nbSemaines: finalWeeks })
             }
         } else {
-            // Nouvel ajout intelligent
             if (type === "TP") {
                 await firebaseDb.charges.add({groupe: groupe.id, enseignant: enseignant.id, nbSemaines: 15, scenario, type: "TP"})
             } else {
@@ -177,7 +161,6 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                 await firebaseDb.charges.add({groupe: groupe.id, enseignant: enseignant.id, nbSemaines: finalWeeks, scenario, type})
             }
         }
-        // Suppression de setHideMenu(true) pour permettre des sélections multiples
         setMenuSearch("");
     }
 
@@ -185,11 +168,9 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
         for(const groupe of groupeList){
             await quickAddCharge(groupe, "TP")
         }
-        // Suppression de setHideMenu(true)
         setMenuSearch("");
     }
 
-    // 5. Gestion du menu de regroupement (Tout supprimer / Tout transférer)
     const [groupMenu, setGroupMenu] = useState<{show: boolean, pos: {left: number, top: number}, courseId: string | null}>({show: false, pos: {left: 0, top: 0}, courseId: null})
     const groupMenuRef = useRef<HTMLDivElement>(null)
 
@@ -230,7 +211,6 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
             const g = sessionGroupes.find(gr => gr.id === c.groupe)
             return g?.cours === transferCourseId
         })
-        
         let count = 0
         for (const charge of courseCharges) {
             const exists = scenarioCharges.find(c => c.enseignant == targetEnseignantId && c.groupe == charge.groupe)
@@ -249,22 +229,18 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
         setGroupTransferOpen(false)
     }
 
-    // 6. Drag and Drop
     async function dropHandlerCharge(ev: any) {
         ev.currentTarget.style.boxShadow = ""
         ev.currentTarget.style.backgroundColor = ""
         const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
         if (!idNouveauEnseignant) return
-
         const idCourse = ev.dataTransfer.getData("courseId")
         const idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
-
         if (idCourse) {
             const courseCharges = allChargesData?.filter(c => {
                 const g = groupesData?.find(gr => gr.id === c.groupe)
                 return c.enseignant == idAncienEnseignant && g?.cours === idCourse && (c.scenario || "production") === scenario
             }) || []
-
             let count = 0
             for (const charge of courseCharges) {
                 const existingInTarget = scenarioCharges.find(c => c.enseignant == idNouveauEnseignant && c.groupe == charge.groupe)
@@ -282,11 +258,9 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
             if (count > 0) toast.success(`${count} groupe(s) transféré(s)`)
             return
         }
-
         const idGroupe = ev.dataTransfer.getData("groupeId")
         const ancienneCharge = scenarioCharges.find(c => c.enseignant == idAncienEnseignant && c.groupe == idGroupe)
         const chargeExisteDeja = scenarioCharges.find(c => c.enseignant == idNouveauEnseignant && c.groupe == idGroupe)
-
         if (chargeExisteDeja && ancienneCharge) {
             if ((chargeExisteDeja.type === "T" && ancienneCharge.type === "P") || (chargeExisteDeja.type === "P" && ancienneCharge.type === "T")) {
                 await firebaseDb.charges.update(chargeExisteDeja.id, { type: "TP" })
@@ -297,7 +271,6 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
             toast.error("Cet enseignant a déjà cette charge")
             return
         }
-
         if (ancienneCharge) {
             await firebaseDb.charges.update(ancienneCharge.id, { enseignant: idNouveauEnseignant })
             toast.success("Charge déplacée")
@@ -309,44 +282,16 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
             const menu = menuRef.current;
             const rect = menu.getBoundingClientRect();
             const { innerWidth, innerHeight } = window;
-            
             let newLeft = position.left;
             let newTop = position.top;
-
-            // Ajustement horizontal
-            if (position.left + rect.width > innerWidth) {
-                newLeft = Math.max(10, innerWidth - rect.width - 10);
-            }
-            // Ajustement vertical
-            if (position.top + rect.height > innerHeight) {
-                newTop = Math.max(10, innerHeight - rect.height - 10);
-            }
-
-            if (newLeft !== position.left || newTop !== position.top) {
-                setPosition({ left: newLeft, top: newTop });
-            }
+            if (position.left + rect.width > innerWidth) newLeft = Math.max(10, innerWidth - rect.width - 10);
+            if (position.top + rect.height > innerHeight) newTop = Math.max(10, innerHeight - rect.height - 10);
+            if (newLeft !== position.left || newTop !== position.top) setPosition({ left: newLeft, top: newTop });
         }
-    }, [hideMenu, position.left, position.top, expandedMenuCourses]); // On réagit aussi aux expansions
+    }, [hideMenu, position.left, position.top, expandedMenuCourses]);
 
     const menuContent = !hideMenu && (
-        <div ref={menuRef} style={{ 
-            position: "fixed", 
-            left: position.left, 
-            top: position.top, 
-            backgroundColor: "#212529", 
-            color: "white", 
-            display: "block", 
-            padding: "10px", 
-            zIndex: 9999, 
-            borderRadius: "8px", 
-            boxShadow: "0 8px 24px rgba(0,0,0,0.5)", 
-            minWidth: "280px", 
-            border: "1px solid #444", 
-            maxHeight: "85vh", 
-            overflowY: "auto", 
-            opacity: (position.left === 0 && position.top === 0) ? 0 : 1,
-            transition: "top 0.2s, left 0.2s"
-        }}>
+        <div ref={menuRef} style={{ position: "fixed", left: position.left, top: position.top, backgroundColor: "#212529", color: "white", display: "block", padding: "10px", zIndex: 9999, borderRadius: "8px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)", minWidth: "280px", border: "1px solid #444", maxHeight: "85vh", overflowY: "auto", opacity: (position.left === 0 && position.top === 0) ? 0 : 1, transition: "top 0.2s, left 0.2s" }}>
             <p className="mb-2 small text-white-50 text-uppercase fw-bold border-bottom pb-1 border-secondary">Ajouter un cours</p>
             <div className="mb-3">
                 <input type="text" className="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Rechercher sigle ou nom..." value={menuSearch} onChange={e => setMenuSearch(e.target.value)} autoFocus />
@@ -358,24 +303,14 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                 const isExpanded = expandedMenuCourses[courseId]
                 return <div key={courseId} className="mb-1 border-bottom border-secondary last-child-no-border pb-1">
                     <div className="d-flex align-items-stretch gap-1">
-                        <button 
-                            className="btn btn-outline-light btn-sm flex-grow-1 text-start py-2 d-flex justify-content-between align-items-center transition-all" 
-                            style={{fontSize: '0.8rem', border: 'none', transition: "background-color 0.2s"}} 
-                            onClick={() => addAllCourseGroups(courseGroups)}
-                            onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.04)"}
-                            onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
-                            title={`Assigner toutes les parties disponibles de ce cours`}
-                        >
+                        <button className="btn btn-outline-light btn-sm flex-grow-1 text-start py-2 d-flex justify-content-between align-items-center transition-all" style={{fontSize: '0.8rem', border: 'none', transition: "background-color 0.2s"}} onClick={() => addAllCourseGroups(courseGroups)}>
                             <div style={{lineHeight: "1.2"}}>
                                 <span className="fw-bold text-info">{cour?.sigle}</span><br/>
                                 <span className="text-white-50 extra-small fw-normal">{cour?.nom}</span>
                             </div>
-                            <span className="badge bg-info text-dark rounded-pill ms-2 shadow-sm" style={{fontSize: '0.65rem'}}>
-                                <span style={{marginRight: "2px"}}>👥</span>
-                                {courseGroups.length}
-                            </span>
+                            <span className="badge bg-info text-dark rounded-pill ms-2 shadow-sm" style={{fontSize: '0.65rem'}}><span style={{marginRight: "2px"}}>👥</span>{courseGroups.length}</span>
                         </button>
-                        <button className="btn btn-link btn-sm text-secondary p-2" style={{textDecoration: 'none'}} onClick={(e) => { e.stopPropagation(); setExpandedMenuCourses(prev => ({...prev, [courseId]: !prev[courseId]})); }} title={isExpanded ? "Réduire" : "Voir les groupes"}>{isExpanded ? "▲" : "▼"}</button>
+                        <button className="btn btn-link btn-sm text-secondary p-2" style={{textDecoration: 'none'}} onClick={(e) => { e.stopPropagation(); setExpandedMenuCourses(prev => ({...prev, [courseId]: !prev[courseId]})); }}>{isExpanded ? "▲" : "▼"}</button>
                     </div>
                     {isExpanded && (
                         <div className="bg-dark rounded p-2 mb-2 mx-1 mt-1 border border-secondary shadow-inner text-center">
@@ -386,63 +321,15 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                                 const teacherHasAny = groupCharges.some(c => c.enseignant === enseignant.id)
                                 const canAddT = (groupe.aTheorie ?? true) && !hasT
                                 const canAddP = (groupe.aPratique ?? true) && !hasP
-                                const canAddTP = canAddT && canAddP && !teacherHasAny
-                                return <div 
-                                    key={groupe.id} 
-                                    className="mb-2 p-2 border border-secondary rounded text-center transition-all cursor-pointer shadow-sm"
-                                    style={{ 
-                                        transition: "all 0.2s",
-                                        backgroundColor: "rgba(255,255,255,0.03)",
-                                        display: "block",
-                                        border: "1px solid rgba(255,255,255,0.1) !important"
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.08)"}
-                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)"}
-                                    onClick={() => quickAddCharge(groupe, "TP")}
-                                    title="Cliquez ici pour assigner toutes les parties disponibles"
-                                >
+                                return <div key={groupe.id} className="mb-2 p-2 border border-secondary rounded text-center transition-all cursor-pointer shadow-sm" style={{ transition: "all 0.2s", backgroundColor: "rgba(255,255,255,0.03)", display: "block", border: "1px solid rgba(255,255,255,0.1) !important" }} onClick={() => quickAddCharge(groupe, "TP")}>
                                     <div className="d-flex align-items-center justify-content-center gap-2 mb-2">
-                                        <div className="badge rounded-pill bg-info text-dark shadow-sm d-flex align-items-center py-1 px-2" style={{fontSize: "0.65rem"}}>
-                                            <span style={{fontSize: "0.75rem", marginRight: "4px"}}>👤</span>
-                                            <span className="fw-bold">{groupe.nbEtudiants}</span>
-                                        </div>
-                                        <div 
-                                            style={{ 
-                                                width: "10px", 
-                                                height: "10px", 
-                                                borderRadius: "50%", 
-                                                backgroundColor: getGroupColorUtil(groupe.id),
-                                                boxShadow: "0 0 3px rgba(0,0,0,0.5)",
-                                                flexShrink: 0
-                                            }}
-                                        ></div>
+                                        <div className="badge rounded-pill bg-info text-dark shadow-sm d-flex align-items-center py-1 px-2" style={{fontSize: "0.65rem"}}><span style={{fontSize: "0.75rem", marginRight: "4px"}}>👤</span><span className="fw-bold">{groupe.nbEtudiants}</span></div>
+                                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: getGroupColorUtil(groupe.id), boxShadow: "0 0 3px rgba(0,0,0,0.5)", flexShrink: 0 }}></div>
                                     </div>
                                     <div className="d-flex gap-1 justify-content-center" onClick={e => e.stopPropagation()}>
-                                        {canAddT && (
-                                            <button 
-                                                className="btn btn-xs btn-primary py-0 px-2 shadow-sm" 
-                                                style={{fontSize: '0.65rem', transition: "transform 0.1s"}} 
-                                                onClick={() => quickAddCharge(groupe, "T")}
-                                                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
-                                                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                                                title="Assigner la Théorie uniquement"
-                                            >
-                                                T
-                                            </button>
-                                        )}
-                                        {canAddP && (
-                                            <button 
-                                                className="btn btn-xs btn-success py-0 px-2 shadow-sm" 
-                                                style={{fontSize: '0.65rem', transition: "transform 0.1s"}} 
-                                                onClick={() => quickAddCharge(groupe, "P")}
-                                                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
-                                                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                                                title="Assigner la Pratique uniquement"
-                                            >
-                                                P
-                                            </button>
-                                        )}
-                                        <button className="btn btn-xs btn-outline-secondary py-0 px-1 shadow-sm" onClick={() => {setSelectedGroupe(groupe); setModalOpen(true);}} title="Paramètres personnalisés">⚙️</button>
+                                        {canAddT && <button className="btn btn-xs btn-primary py-0 px-2 shadow-sm" style={{fontSize: '0.65rem'}} onClick={() => quickAddCharge(groupe, "T")}>T</button>}
+                                        {canAddP && <button className="btn btn-xs btn-success py-0 px-2 shadow-sm" style={{fontSize: '0.65rem'}} onClick={() => quickAddCharge(groupe, "P")}>P</button>}
+                                        <button className="btn btn-xs btn-outline-secondary py-0 px-1 shadow-sm" onClick={() => {setSelectedGroupe(groupe); setModalOpen(true);}}>⚙️</button>
                                     </div>
                                 </div>
                             })}
@@ -468,40 +355,29 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
         {sortedCourseIdsForDisplay.map(courseId => {
             const courseCharges = chargesByCourseForDisplay[courseId]
             const cour = coursData?.find(c => c.id == courseId)
-            const isExpanded = expandedDisplayCourses[courseId]
+            const expanded = isExpanded(courseId)
             const courseColor = cour?.couleur || "#0dcaf0"
-            return <div key={courseId} className="mb-2 rounded shadow-sm overflow-hidden" style={{ border: "1px solid #ddd", borderLeft: `6px solid ${courseColor}`, backgroundColor: "white", display: "block", cursor: "grab" }} draggable="true" onDragStart={ev => { ev.dataTransfer.setData("courseId", courseId); ev.dataTransfer.setData("enseignantId", enseignant.id); }} onContextMenu={e => openGroupMenu(e, courseId)}>
+            return <div key={courseId} className="mb-2 rounded shadow-sm overflow-hidden" style={{ border: "1px solid #ddd", borderLeft: `6px solid ${courseColor}`, backgroundColor: "white", display: "block", cursor: expanded && isPrinting ? "default" : "grab" }} draggable={!isPrinting} onDragStart={ev => { ev.dataTransfer.setData("courseId", courseId); ev.dataTransfer.setData("enseignantId", enseignant.id); }} onContextMenu={e => openGroupMenu(e, courseId)}>
                 <div 
                     className="d-flex justify-content-between align-items-center cursor-pointer p-2" 
-                    onClick={() => setExpandedDisplayCourses(prev => ({ ...prev, [courseId]: !prev[courseId] }))}
+                    onClick={() => toggleExpand(courseId)}
                     style={{ fontSize: "0.8rem", cursor: "pointer" }}
                 >
                     <div className="flex-grow-1 min-width-0">
                         <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
                             <span className="fw-bold text-dark text-truncate">{cour?.sigle}</span>
                             <div className="d-flex gap-1 flex-shrink-0">
-                                <span className="badge rounded-pill bg-info text-dark shadow-sm" style={{ fontSize: "0.65rem" }} title="Nombre de groupes">
-                                    <span style={{marginRight: "3px"}}>👥</span>
-                                    {courseCharges.length}
-                                </span>
-                                <span className="badge rounded-pill bg-info text-dark shadow-sm" style={{ fontSize: "0.65rem" }} title="Total des étudiants">
-                                    <span style={{marginRight: "3px"}}>👤</span>
-                                    {courseCharges.reduce((sum, c) => {
-                                        const g = sessionGroupes.find(gr => gr.id === c.groupe)
-                                        return sum + (g?.nbEtudiants ?? 0)
-                                    }, 0)}
-                                </span>
+                                <span className="badge rounded-pill bg-info text-dark shadow-sm" style={{ fontSize: "0.65rem" }} title="Nombre de groupes"><span style={{marginRight: "3px"}}>👥</span>{courseCharges.length}</span>
+                                <span className="badge rounded-pill bg-info text-dark shadow-sm" style={{ fontSize: "0.65rem" }} title="Total des étudiants"><span style={{marginRight: "3px"}}>👤</span>{courseCharges.reduce((sum, c) => { const g = sessionGroupes.find(gr => gr.id === c.groupe); return sum + (g?.nbEtudiants ?? 0); }, 0)}</span>
                             </div>
                         </div>
-                        <div className="text-muted text-truncate d-none d-xl-block" style={{ fontSize: "0.7rem" }}>
-                            {cour?.nom}
-                        </div>
+                        <div className="text-muted text-truncate d-none d-xl-block" style={{ fontSize: "0.7rem" }}>{cour?.nom}</div>
                     </div>
-                    <div className="d-flex align-items-center ps-2 flex-shrink-0">
-                        <span style={{ fontSize: "0.65rem", color: "#666" }}>{isExpanded ? "▲" : "▼"}</span>
+                    <div className="d-flex align-items-center ps-2 flex-shrink-0 no-print">
+                        <span style={{ fontSize: "0.65rem", color: "#666" }}>{expanded ? "▲" : "▼"}</span>
                     </div>
                 </div>
-                {isExpanded && <div className="p-2 pt-0"><div className="ps-2 border-start" style={{ borderColor: "#eee" }}>{courseCharges.map(charge => { const groupe = sessionGroupes.find(g => g.id == charge.groupe); if(!groupe || !cour) return null; return <Charge key={charge.id} session={session} charge={charge} groupe={groupe} cours={cour} charges={scenarioCharges} enseignantId={enseignant.id} onRemove={removeHandlerCharge} scenario={scenario} minimal={true}/> })}</div></div>}
+                {expanded && <div className="p-2 pt-0"><div className="ps-2 border-start" style={{ borderColor: "#eee" }}>{courseCharges.map(charge => { const groupe = sessionGroupes.find(g => g.id == charge.groupe); if(!groupe || !cour) return null; return <Charge key={charge.id} session={session} charge={charge} groupe={groupe} cours={cour} charges={scenarioCharges} enseignantId={enseignant.id} onRemove={removeHandlerCharge} scenario={scenario} minimal={true}/> })}</div></div>}
             </div>
         })}
         {mounted && menuContent && createPortal(menuContent, document.body)}

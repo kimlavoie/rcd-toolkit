@@ -4,7 +4,7 @@ import { useData } from "./DataContext"
 import StickyHeader from "./ui/StickyHeader"
 import StickyCell from "./ui/StickyCell"
 
-export default function({visibleEnseignants, sessions, saison, firstColWidth, columnWidths, globalWidth, scenario = "production"}:any){
+export default function({visibleEnseignants, sessions, saison, firstColWidth, columnWidths, globalWidth, scenario = "production", isPrinting}:any){
     const data = useData()
     const { CIReelles } = data
 
@@ -18,10 +18,10 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, co
                     <StickyHeader 
                         isFirstCol 
                         zIndex={103} 
-                        bottom="0"
+                        bottom={isPrinting ? "auto" : "0"}
                         style={{
                             backgroundColor: "#212529",
-                            boxShadow: "2px 0 5px rgba(0,0,0,0.2)",
+                            boxShadow: isPrinting ? "none" : "2px 0 5px rgba(0,0,0,0.2)",
                             borderRight: "2px solid #444",
                             fontSize: "0.8rem",
                             width: "200px",
@@ -46,7 +46,7 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, co
                         
                         return <StickyCell 
                             key={enseignant.id} 
-                            bottom="0" 
+                            bottom={isPrinting ? "auto" : "0"} 
                             zIndex={102}
                             style={{
                                 color: couleur, 

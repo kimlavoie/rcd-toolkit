@@ -33,6 +33,16 @@ option {
     padding: 8px !important;
     background-color: white !important;
     color: black !important;
+    position: static !important; /* Désactive le sticky en impression */
+  }
+
+  /* Désactiver aussi les ombres et les offsets sticky qui ne font pas de sens en print */
+  [style*="position: sticky"], [style*="position:sticky"] {
+    position: static !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    box-shadow: none !important;
   }
 
   /* Forcer l'affichage des noms de cours et descriptions de libérations */

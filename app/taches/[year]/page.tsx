@@ -250,16 +250,16 @@ function TachesContent() {
                             <tbody>
                                 {mode === "Automne" ? (
                                     <>
-                                        <Tache session={sessionsAnnuelle[0]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150} isPrinting={true}/>
-                                        <Tache session={sessionsAnnuelle[1]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150} isPrinting={true}/>
+                                        <Tache session={sessionsAnnuelle[0]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150} isPrinting={true} ciTop="auto" ciBottom="auto"/>
+                                        <Tache session={sessionsAnnuelle[1]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150} isPrinting={true} ciTop="auto" ciBottom="auto"/>
                                     </>
                                 ) : (
                                     <>
-                                        <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={chunk} globalWidth={150}/>
-                                        <Tache session={sessionsAnnuelle[1]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150} isPrinting={true}/>
+                                        <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={chunk} globalWidth={150} ciTop="auto" ciBottom="auto" forceHideCI={true}/>
+                                        <Tache session={sessionsAnnuelle[1]} visibleEnseignants={chunk} scenario={selectedScenarioId} globalWidth={150} isPrinting={true} ciTop="auto" ciBottom="auto"/>
                                     </>
                                 )}
-                                <Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={chunk} saison={mode} globalWidth={150} scenario={selectedScenarioId}/>
+                                <Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={chunk} saison={mode} globalWidth={150} scenario={selectedScenarioId} isPrinting={true}/>
                             </tbody>
                         </table>
                     </div>
