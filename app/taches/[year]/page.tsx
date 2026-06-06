@@ -103,11 +103,33 @@ function TachesContent() {
         .filter(e => {
             if (!search) return true
             const searchLower = search.toLowerCase()
-            return (
-                (e.nom ?? "").toLowerCase().includes(searchLower) || 
-                (e.prenom ?? "").toLowerCase().includes(searchLower) ||
-                (e.numeroEmploye ?? "").toLowerCase().includes(searchLower)
-            )
+            
+            // 1. Infos enseignant
+            const matchTeacher = (e.nom ?? "").toLowerCase().includes(searchLower) || 
+                                (e.prenom ?? "").toLowerCase().includes(searchLower) ||
+                                (e.numeroEmploye ?? "").toLowerCase().includes(searchLower)
+            if (matchTeacher) return true
+
+            // 2. Cours (Charges)
+            const teacherCharges = (charges ?? []).filter(c => c.enseignant === e.id && (c.scenario || "production") === selectedScenarioId)
+            const matchCourse = teacherCharges.some(charge => {
+                const groupe = (groupes ?? []).find(g => g.id === charge.groupe)
+                const cour = (cours ?? []).find(c => c.id === groupe?.cours)
+                return (cour?.sigle ?? "").toLowerCase().includes(searchLower) || 
+                       (cour?.nom ?? "").toLowerCase().includes(searchLower)
+            })
+            if (matchCourse) return true
+
+            // 3. Libérations (Allocations)
+            const teacherLiberations = (liberations ?? []).filter(l => l.enseignant === e.id && (l.scenario || "production") === selectedScenarioId)
+            const matchLiberation = teacherLiberations.some(lib => {
+                const allocation = (allocations ?? []).find(a => a.id === lib.allocation)
+                return (allocation?.code ?? "").toLowerCase().includes(searchLower) || 
+                       (allocation?.description ?? "").toLowerCase().includes(searchLower)
+            })
+            if (matchLiberation) return true
+
+            return false
         })
         .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
 
@@ -367,8 +389,8 @@ function TachesContent() {
                                 </>
                                 ) : (
                                 <>
-                                    <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="74px"/>
-                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciBottom="37px"/>
+                                    <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="auto" ciBottom="auto" forceHideCI={true}/>
+                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="37px" showCI={true}/>
                                 </>
                                 )}<Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={mode} columnWidths={columnWidths} globalWidth={enseignantWidth} scenario={selectedScenarioId}/></tbody>
                     </table>
