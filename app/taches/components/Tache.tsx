@@ -138,7 +138,69 @@ export default function({visibleEnseignants, session, columnWidths, globalWidth,
                     <button type="button" className="btn btn-link btn-sm text-danger p-0 m-0" style={{lineHeight: 1, textDecoration: "none"}} onClick={clearAll} title="Réinitialiser la session">⟲</button>
                 </div>
             </StickyHeader>
-            <td colSpan={visibleEnseignants.length} style={{backgroundColor: "#e9ecef", borderBottom: "1px solid #dee2e6"}}></td>
+            {visibleEnseignants.map((enseignant: any) => {
+                // Filtrer les charges pour ne garder que celles de l'enseignant ET de la session actuelle
+                const enseignantCharges = charges?.filter(c => {
+                    if (c.enseignant !== enseignant.id) return false
+                    const g = groupes?.find(gr => gr.id === c.groupe)
+                    return g?.session === session
+                }) || []
+                
+                const groupCount = enseignantCharges.length
+                
+                // Total étudiants des cours de cette session
+                const studentsFromCourses = enseignantCharges.reduce((sum, c) => {
+                    const g = groupes?.find(gr => gr.id === c.groupe)
+                    return sum + (g?.nbEtudiants ?? 0)
+                }, 0)
+
+                // Ajouter les stagiaires supervisés pour cette session
+                const stage = stages?.find(s => s.session === session)
+                const supervision = supervisions?.find(sup => sup.enseignant === enseignant.id && sup.stage === stage?.id)
+                const studentCount = studentsFromCourses + (supervision?.nbStagiaires ?? 0)
+
+                // Total libérations (ETC) pour cette session
+                const enseignantLiberations = liberations?.filter(l => {
+                    if (l.enseignant !== enseignant.id) return false
+                    const a = allocations?.find(al => al.id === l.allocation)
+                    return a?.session === session
+                }) || []
+                const totalETC = enseignantLiberations.reduce((sum, l) => sum + (l.quantite ?? 0), 0)
+
+                // Nombre de cours différents (préparations)
+                const uniqueCourseIds = new Set(enseignantCharges.map(c => {
+                    const g = groupes?.find(gr => gr.id === c.groupe)
+                    return g?.cours
+                }).filter(Boolean))
+                const courseCount = uniqueCourseIds.size
+
+                return <td key={enseignant.id} style={{ ...getCellStyle(enseignant.id), backgroundColor: "#e9ecef" }}>
+                    { (groupCount > 0 || (supervision?.nbStagiaires ?? 0) > 0 || totalETC > 0) && (
+                        <div className="d-flex justify-content-center gap-1">
+                            {courseCount > 0 && (
+                                <span className="badge rounded-pill bg-info text-dark shadow-sm" style={{ fontSize: "0.6rem" }} title="Nombre de cours différents (préparations)">
+                                    <span style={{marginRight: "2px"}}>📚</span>{courseCount}
+                                </span>
+                            )}
+                            {groupCount > 0 && (
+                                <span className="badge rounded-pill bg-info text-dark shadow-sm" style={{ fontSize: "0.6rem" }} title="Total groupes session">
+                                    <span style={{marginRight: "2px"}}>👥</span>{groupCount}
+                                </span>
+                            )}
+                            {(studentCount > 0) && (
+                                <span className="badge rounded-pill bg-info text-dark shadow-sm" style={{ fontSize: "0.6rem" }} title="Total étudiants (Cours + Stagiaires) session">
+                                    <span style={{marginRight: "2px"}}>👤</span>{studentCount}
+                                </span>
+                            )}
+                            {totalETC > 0 && (
+                                <span className="badge rounded-pill bg-primary shadow-sm" style={{ fontSize: "0.6rem" }} title="Total libérations (ETC) session">
+                                    {Number(totalETC.toFixed(3))} ETC
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </td>
+            })}
         </tr>
         <tr>
             <StickyHeader isFirstCol>

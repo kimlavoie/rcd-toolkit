@@ -152,7 +152,7 @@ export default function({session, liberation, allocation, liberations, enseignan
             <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
                 <span style={{fontWeight: "bold", color: "#444"}}>{allocation.code}</span>
                 <span className="badge rounded-pill bg-primary" style={{fontSize: "0.65rem", flexShrink: 0}}>
-                    {liberation.quantite} ETC
+                    {Number(liberation.quantite?.toFixed(3))} ETC
                 </span>
             </div>
             <div className="text-muted text-truncate d-none d-xl-block" style={{fontSize: "0.7rem", width: "100%"}} title={allocation.description}>

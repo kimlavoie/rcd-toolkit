@@ -160,7 +160,10 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
         >      
             <div className="d-flex justify-content-between align-items-center">
                 <div className="d-flex align-items-center gap-2">
-                    <span className="fw-bold text-dark">Gr. ({groupe.nbEtudiants} étud.)</span>
+                    <span className="fw-bold text-dark" title={`${groupe.nbEtudiants} étudiants`}>
+                        <span style={{fontSize: "0.7rem", opacity: 0.8, marginRight: "2px"}}>👤</span>{groupe.nbEtudiants}
+
+                    </span>
                     {charge.type !== "TP" && (
                         <span className={`badge ${charge.type === 'T' ? 'bg-primary' : 'bg-success'}`} style={{fontSize: "0.6rem"}}>
                             {charge.type}
@@ -234,7 +237,10 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
                     </span>
                 )}
             </div>
-            <span className="badge bg-light text-dark border" style={{fontSize: "0.7rem"}}>Gr. {groupe.nbEtudiants} étud.</span>
+            <span className="text-dark extra-small fw-bold" style={{fontSize: "0.75rem"}}>
+                <span style={{fontSize: "0.7rem", opacity: 0.8, marginRight: "2px"}}>👤</span>{groupe.nbEtudiants}
+
+            </span>
         </div>
         <div style={{color: "#555", fontSize: "0.85rem", lineHeight: "1.2", marginBottom: "4px"}}>{cours.nom}</div>
         

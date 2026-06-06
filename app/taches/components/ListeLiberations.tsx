@@ -208,7 +208,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
                             <span className="fw-bold text-info">{allocation.code}</span><br/>
                             <span className="text-white-50 extra-small fw-normal">{allocation.description}</span>
                         </div>
-                        {isPartial && <span className="badge bg-warning text-dark ms-2" style={{fontSize: '0.6rem'}}>{remaining.toFixed(3)}</span>}
+                        {isPartial && <span className="badge bg-warning text-dark ms-2" style={{fontSize: '0.6rem'}}>{Number(remaining.toFixed(3))}</span>}
                     </button>
                     <button 
                         className="btn btn-outline-secondary btn-sm px-2 py-1" 

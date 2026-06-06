@@ -4,10 +4,10 @@ import type { Groupe, Charge as ChargeType, Cours, Enseignant } from "@/app/db/d
 import { useState, useEffect, useRef, useMemo } from "react"
 import { createPortal } from "react-dom"
 import Charge from "./Charge"
+import { getGroupColor as getGroupColorUtil } from "@/app/utilities/groupColors"
 import InputModal from "./InputModal"
 import TransferModal from "./TransferModal"
 import { toast } from "react-hot-toast"
-import { getGroupColor } from "@/app/utilities/groupColors"
 
 export default function ListeCharges({enseignant, session, enseignantWidth, scenario = "production", style}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any}){
     const [hideMenu, setHideMenu] = useState(true)
@@ -344,9 +344,22 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                 const isExpanded = expandedMenuCourses[courseId]
                 return <div key={courseId} className="mb-1 border-bottom border-secondary last-child-no-border pb-1">
                     <div className="d-flex align-items-stretch gap-1">
-                        <button className="btn btn-outline-light btn-sm flex-grow-1 text-start py-2 d-flex justify-content-between align-items-center" style={{fontSize: '0.8rem', border: 'none'}} onClick={() => addAllCourseGroups(courseGroups)} title={`Assigner toutes les parties disponibles de ce cours`}>
-                            <div style={{lineHeight: "1.2"}}><span className="fw-bold text-info">{cour?.sigle}</span><br/><span className="text-white-50 extra-small fw-normal">{cour?.nom}</span></div>
-                            <span className="badge bg-primary rounded-pill ms-2" style={{fontSize: '0.65rem'}}>{courseGroups.length} gr.</span>
+                        <button 
+                            className="btn btn-outline-light btn-sm flex-grow-1 text-start py-2 d-flex justify-content-between align-items-center transition-all" 
+                            style={{fontSize: '0.8rem', border: 'none', transition: "background-color 0.2s"}} 
+                            onClick={() => addAllCourseGroups(courseGroups)}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.04)"}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+                            title={`Assigner toutes les parties disponibles de ce cours`}
+                        >
+                            <div style={{lineHeight: "1.2"}}>
+                                <span className="fw-bold text-info">{cour?.sigle}</span><br/>
+                                <span className="text-white-50 extra-small fw-normal">{cour?.nom}</span>
+                            </div>
+                            <span className="badge bg-info text-dark rounded-pill ms-2 shadow-sm" style={{fontSize: '0.65rem'}}>
+                                <span style={{marginRight: "2px"}}>👥</span>
+                                {courseGroups.length}
+                            </span>
                         </button>
                         <button className="btn btn-link btn-sm text-secondary p-2" style={{textDecoration: 'none'}} onClick={(e) => { e.stopPropagation(); setExpandedMenuCourses(prev => ({...prev, [courseId]: !prev[courseId]})); }} title={isExpanded ? "Réduire" : "Voir les groupes"}>{isExpanded ? "▲" : "▼"}</button>
                     </div>
@@ -365,25 +378,30 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                                     className="mb-2 p-2 border border-secondary rounded text-center transition-all cursor-pointer shadow-sm"
                                     style={{ 
                                         transition: "all 0.2s",
-                                        backgroundColor: "rgba(255,255,255,0.05)",
-                                        display: "block"
+                                        backgroundColor: "rgba(255,255,255,0.03)",
+                                        display: "block",
+                                        border: "1px solid rgba(255,255,255,0.1) !important"
                                     }}
-                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.15)"}
-                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"}
+                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.08)"}
+                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)"}
                                     onClick={() => quickAddCharge(groupe, "TP")}
                                     title="Cliquez ici pour assigner toutes les parties disponibles"
                                 >
                                     <div className="d-flex align-items-center justify-content-center gap-2 mb-2">
+                                        <div className="badge rounded-pill bg-info text-dark shadow-sm d-flex align-items-center py-1 px-2" style={{fontSize: "0.65rem"}}>
+                                            <span style={{fontSize: "0.75rem", marginRight: "4px"}}>👤</span>
+                                            <span className="fw-bold">{groupe.nbEtudiants}</span>
+                                        </div>
                                         <div 
                                             style={{ 
-                                                width: "12px", 
-                                                height: "12px", 
+                                                width: "10px", 
+                                                height: "10px", 
                                                 borderRadius: "50%", 
-                                                backgroundColor: getGroupColor(groupe.id),
-                                                boxShadow: "0 0 4px rgba(0,0,0,0.5)"
+                                                backgroundColor: getGroupColorUtil(groupe.id),
+                                                boxShadow: "0 0 3px rgba(0,0,0,0.5)",
+                                                flexShrink: 0
                                             }}
                                         ></div>
-                                        <div className="extra-small text-white fw-bold">{groupe.nbEtudiants} étud.</div>
                                     </div>
                                     <div className="d-flex gap-1 justify-content-center" onClick={e => e.stopPropagation()}>
                                         {canAddT && (
@@ -439,9 +457,35 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
             const isExpanded = expandedDisplayCourses[courseId]
             const courseColor = cour?.couleur || "#0dcaf0"
             return <div key={courseId} className="mb-2 rounded shadow-sm overflow-hidden" style={{ border: "1px solid #ddd", borderLeft: `6px solid ${courseColor}`, backgroundColor: "white", display: "block", cursor: "grab" }} draggable="true" onDragStart={ev => { ev.dataTransfer.setData("courseId", courseId); ev.dataTransfer.setData("enseignantId", enseignant.id); }} onContextMenu={e => openGroupMenu(e, courseId)}>
-                <div className="d-flex justify-content-between align-items-center cursor-pointer p-2" onClick={() => setExpandedDisplayCourses(prev => ({ ...prev, [courseId]: !prev[courseId] }))} style={{ fontSize: "0.8rem", cursor: "pointer" }}>
-                    <div className="w-100"><div className="d-flex justify-content-between align-items-center gap-2 mb-1"><span className="fw-bold text-dark">{cour?.sigle}</span><span className="badge rounded-pill bg-info text-dark" style={{ fontSize: "0.65rem", flexShrink: 0 }}>{courseCharges.length} gr.</span></div><div className="text-muted text-truncate d-none d-xl-block" style={{ fontSize: "0.7rem", width: "100%" }}>{cour?.nom}</div></div>
-                    <span className="ms-2" style={{ fontSize: "0.65rem", color: "#666" }}>{isExpanded ? "▲" : "▼"}</span>
+                <div 
+                    className="d-flex justify-content-between align-items-center cursor-pointer p-2" 
+                    onClick={() => setExpandedDisplayCourses(prev => ({ ...prev, [courseId]: !prev[courseId] }))}
+                    style={{ fontSize: "0.8rem", cursor: "pointer" }}
+                >
+                    <div className="flex-grow-1 min-width-0">
+                        <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
+                            <span className="fw-bold text-dark text-truncate">{cour?.sigle}</span>
+                            <div className="d-flex gap-1 flex-shrink-0">
+                                <span className="badge rounded-pill bg-info text-dark shadow-sm" style={{ fontSize: "0.65rem" }} title="Nombre de groupes">
+                                    <span style={{marginRight: "3px"}}>👥</span>
+                                    {courseCharges.length}
+                                </span>
+                                <span className="badge rounded-pill bg-info text-dark shadow-sm" style={{ fontSize: "0.65rem" }} title="Total des étudiants">
+                                    <span style={{marginRight: "3px"}}>👤</span>
+                                    {courseCharges.reduce((sum, c) => {
+                                        const g = sessionGroupes.find(gr => gr.id === c.groupe)
+                                        return sum + (g?.nbEtudiants ?? 0)
+                                    }, 0)}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="text-muted text-truncate d-none d-xl-block" style={{ fontSize: "0.7rem" }}>
+                            {cour?.nom}
+                        </div>
+                    </div>
+                    <div className="d-flex align-items-center ps-2 flex-shrink-0">
+                        <span style={{ fontSize: "0.65rem", color: "#666" }}>{isExpanded ? "▲" : "▼"}</span>
+                    </div>
                 </div>
                 {isExpanded && <div className="p-2 pt-0"><div className="ps-2 border-start" style={{ borderColor: "#eee" }}>{courseCharges.map(charge => { const groupe = sessionGroupes.find(g => g.id == charge.groupe); if(!groupe || !cour) return null; return <Charge key={charge.id} session={session} charge={charge} groupe={groupe} cours={cour} charges={scenarioCharges} enseignantId={enseignant.id} onRemove={removeHandlerCharge} scenario={scenario} minimal={true}/> })}</div></div>}
             </div>
