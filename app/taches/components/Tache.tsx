@@ -165,7 +165,6 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
                 
                 const totalStagiaires = enseignantSups.reduce((sum, s) => sum + (s.nbStagiaires ?? 0), 0)
                 const totalCoord = enseignantSups.reduce((sum, s) => sum + (s.coordination ?? 0), 0)
-                const studentCount = studentsFromCourses + totalStagiaires
 
                 const enseignantLiberations = liberations?.filter(l => {
                     if (l.enseignant !== enseignant.id) return false
@@ -192,9 +191,14 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
                                     <span style={{marginRight: "2px"}}>👥</span>{groupCount}
                                 </span>
                             )}
-                            {(studentCount > 0) && (
-                                <span className="badge rounded-pill bg-info text-dark shadow-sm border border-white border-opacity-25" style={{ fontSize: "0.55rem" }} title="Étudiants + Stagiaires">
-                                    <span style={{marginRight: "2px"}}>👤</span>{studentCount}
+                            {studentsFromCourses > 0 && (
+                                <span className="badge rounded-pill bg-info text-dark shadow-sm border border-white border-opacity-25" style={{ fontSize: "0.55rem" }} title="Étudiants (Cours)">
+                                    <span style={{marginRight: "2px"}}>👤</span>{studentsFromCourses}
+                                </span>
+                            )}
+                            {totalStagiaires > 0 && (
+                                <span className="badge rounded-pill bg-info text-dark shadow-sm border border-white border-opacity-25" style={{ fontSize: "0.55rem" }} title="Stagiaires">
+                                    <span style={{marginRight: "2px"}}>🎓</span>{totalStagiaires}
                                 </span>
                             )}
                             {totalCoord > 0 && (
@@ -291,7 +295,7 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
                                 <div className="d-flex gap-1 flex-shrink-0">
                                     { stagiairesRestants(stage) > 0 && (
                                         <span className="badge bg-info text-dark p-1" style={{fontSize: "0.55rem", fontWeight: "normal"}} title={`${stagiairesRestants(stage)} stagiaires à placer`}>
-                                            👤 {stagiairesRestants(stage)}
+                                            🎓 {stagiairesRestants(stage)}
                                         </span>
                                     )}
                                     { coordinationRestante(stage) > 0.001 && (
@@ -309,7 +313,7 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
                             return <td key={enseignant.id} style={getCellStyle(enseignant.id)}>
                                 <div className="d-flex flex-column gap-1 align-items-center justify-content-center py-1">
                                     <div className="input-group input-group-sm" style={{maxWidth: "85px"}}>
-                                        <span className="input-group-text p-1 bg-light text-muted border-0" style={{fontSize: "0.6rem"}} title="Stagiaires">👤</span>
+                                        <span className="input-group-text p-1 bg-light text-muted border-0" style={{fontSize: "0.6rem"}} title="Stagiaires">🎓</span>
                                         <input className="form-control text-center p-0" type="number" min="0" step="1" value={stValue} data-enseignant-id={enseignant.id} data-stage-id={stage.id} onChange={e => supervisionsHandler(e, 'nbStagiaires')} style={{fontSize: "0.75rem"}} title="Nombre de stagiaires"/>
                                     </div>
                                     <div className="input-group input-group-sm" style={{maxWidth: "85px"}}>

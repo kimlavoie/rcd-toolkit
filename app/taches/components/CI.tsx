@@ -24,7 +24,7 @@ export default function({enseignant, session, trigger, scenario = "production", 
         style={{
             ...style,
             color: couleur,
-            backgroundColor: "white",
+            backgroundColor: "#f8f9fa",
             boxShadow: top !== "auto" ? "0 2px 5px rgba(0,0,0,0.05)" : "0 -2px 5px rgba(0,0,0,0.05)",
             borderBottom: top !== "auto" ? "2px solid #dee2e6" : style?.borderBottom,
             borderTop: bottom !== "auto" ? "1px solid #dee2e6" : "none"
