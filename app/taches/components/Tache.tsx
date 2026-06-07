@@ -4,10 +4,17 @@ import { firebaseDb } from "@/app/utilities/firebaseDb"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import { useData } from "./DataContext"
 import StickyHeader from "./ui/StickyHeader"
+import CollapsibleSectionRow from "./ui/CollapsibleSectionRow"
 import ListeCharges from "./ListeCharges"
 import ListeLiberations from "./ListeLiberations"
 import CI from "./CI"
 import { toast } from "react-hot-toast"
+import { 
+    getChargesManquantesCount, 
+    getLiberationsManquantesCount, 
+    getStagiairesRestantsCount, 
+    getCoordinationRestante 
+} from "@/app/utilities/businessLogic"
 
 export default function Tache({visibleEnseignants, session, columnWidths, globalWidth, scenario = "production", ciBottom, ciTop, showCI = true, isPrinting}:any){
     const { groupes, charges: allCharges, allocations, liberations: allLiberations, stages, supervisions: allSupervisions, visibilityMap, setVisibility } = useData()
@@ -29,50 +36,11 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
         setVisibility(key, !getVisible(key, true))
     }
 
-    const charges = allCharges?.filter(c => (c.scenario || "production") === scenario)
-    const liberations = allLiberations?.filter(l => (l.scenario || "production") === scenario)
-    const supervisions = allSupervisions?.filter(s => (s.scenario || "production") === scenario)
+    const charges = allCharges?.filter(c => (c.scenario || "production") === scenario) || []
+    const liberations = allLiberations?.filter(l => (l.scenario || "production") === scenario) || []
+    const supervisions = allSupervisions?.filter(s => (s.scenario || "production") === scenario) || []
 
     const sessionStages = stages?.filter(s => s.session === session) || []
-
-    function chargesManquantes(session:string){
-        const groupesSession = groupes?.filter(groupe => groupe.session == session)
-        const missing = groupesSession?.filter(groupe => {
-            const groupCharges = charges?.filter(charge => charge.groupe == groupe.id) || []
-            const needsT = groupe.aTheorie ?? true
-            const needsP = groupe.aPratique ?? true
-            const weeksT = groupCharges.filter(c => c.type === "T" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
-            const weeksP = groupCharges.filter(c => c.type === "P" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
-            const missingT = needsT && (15 - weeksT > 0.001)
-            const missingP = needsP && (15 - weeksP > 0.001)
-            return missingT || missingP
-        })
-        return missing?.length
-    }
-
-    function liberationsManquantes(session:string){
-        const allocationsSession = allocations?.filter(allocation => allocation.session == session)
-        const missing = allocationsSession?.filter(allocation => {
-            const liberation = liberations?.filter(liberation => liberation.allocation == allocation.id)
-            const sommeLiberations = liberation?.reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0)
-            return (allocation.quantite ?? 0) - (sommeLiberations ?? 0) > 0.001
-        })
-        return missing?.length
-    }
-
-    function stagiairesRestants(stage: any){
-        const supervisionsSimilaires = supervisions?.filter(supervision => supervision.stage == stage?.id)
-        const sommeSupervisions = supervisionsSimilaires?.reduce((somme, supervision) => somme + (supervision.nbStagiaires ?? 0), 0)
-        return (stage?.nbStagiaires ?? 0) - (sommeSupervisions ?? 0)
-    }
-
-    function coordinationRestante(stage: any){
-        const totalCIStage = (stage.nbStagiaires ?? 0) * (stage.CIparStagiaire ?? 0)
-        const budgetCoord = totalCIStage * ((stage.pourcentageCoordination ?? 0) / 100)
-        const supervisionsSimilaires = supervisions?.filter(supervision => supervision.stage == stage?.id)
-        const sommeCoord = supervisionsSimilaires?.reduce((somme, supervision) => somme + (supervision.coordination ?? 0), 0)
-        return budgetCoord - (sommeCoord ?? 0)
-    }
 
     async function supervisionsHandler(ev:any, field: 'nbStagiaires' | 'coordination'){
         const enseignantId = ev.target.dataset.enseignantId
@@ -82,9 +50,8 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
         if(!stage) return
         const currentSupervision = supervisions?.find(s => s.enseignant == enseignantId && s.stage == stageId)
         if (field === 'nbStagiaires') {
-            const supervisionsSimilaires = supervisions?.filter(s => s.stage == stageId && s.enseignant != enseignantId)
-            const sommeSupervisions = supervisionsSimilaires?.reduce((somme, s) => somme + (s.nbStagiaires ?? 0), 0)
-            if((sommeSupervisions ?? 0) + nouvelleValeur > (stage.nbStagiaires ?? 0)){
+            const rem = getStagiairesRestantsCount(stage, supervisions.filter(s => s.enseignant !== enseignantId))
+            if(nouvelleValeur > rem){
                 toast.error("La quantité de stagiaires dépasse le total prévu pour ce stage.")
                 return
             }
@@ -120,6 +87,9 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
         return { borderRight: "1px solid #dee2e6", borderBottom: "1px solid #dee2e6", minWidth: `${width}px`, width: `${width}px`, maxWidth: `${width}px`, overflow: "hidden" }
     }
 
+    const nbChargesManquantes = getChargesManquantesCount(session, groupes || [], charges)
+    const nbLiberationsManquantes = getLiberationsManquantesCount(session, allocations || [], liberations)
+
     return <>
         <tr className="table-secondary border-top border-dark border-opacity-25" style={{borderTopWidth: "2px"}}>
             <StickyHeader isFirstCol style={{ backgroundColor: "#ced4da", zIndex: 102 }}>
@@ -132,33 +102,15 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
                 </div>
             </StickyHeader>
             {visibleEnseignants.map((enseignant: any) => {
-                const enseignantCharges = charges?.filter(c => {
-                    if (c.enseignant !== enseignant.id) return false
-                    const g = groupes?.find(gr => gr.id === c.groupe)
-                    return g?.session === session
-                }) || []
+                const enseignantCharges = charges?.filter(c => c.enseignant === enseignant.id && groupes?.find(gr => gr.id === c.groupe)?.session === session) || []
                 const groupCount = enseignantCharges.length
-                const studentsFromCourses = enseignantCharges.reduce((sum, c) => {
-                    const g = groupes?.find(gr => gr.id === c.groupe)
-                    return sum + (g?.nbEtudiants ?? 0)
-                }, 0)
-                const enseignantSups = supervisions?.filter(s => {
-                    const st = stages?.find(stage => stage.id === s.stage)
-                    return s.enseignant === enseignant.id && st?.session === session
-                }) || []
+                const studentsFromCourses = enseignantCharges.reduce((sum, c) => sum + (groupes?.find(gr => gr.id === c.groupe)?.nbEtudiants ?? 0), 0)
+                const enseignantSups = supervisions?.filter(s => stages?.find(st => st.id === s.stage)?.session === session && s.enseignant === enseignant.id) || []
                 const totalStagiaires = enseignantSups.reduce((sum, s) => sum + (s.nbStagiaires ?? 0), 0)
                 const totalCoord = enseignantSups.reduce((sum, s) => sum + (s.coordination ?? 0), 0)
-                const enseignantLiberations = liberations?.filter(l => {
-                    if (l.enseignant !== enseignant.id) return false
-                    const a = allocations?.find(al => al.id === l.allocation)
-                    return a?.session === session
-                }) || []
-                const totalETC = enseignantLiberations.reduce((sum, l) => sum + (l.quantite ?? 0), 0)
-                const uniqueCourseIds = new Set(enseignantCharges.map(c => {
-                    const g = groupes?.find(gr => gr.id === c.groupe)
-                    return g?.cours
-                }).filter(Boolean))
-                const courseCount = uniqueCourseIds.size
+                const totalETC = liberations?.filter(l => l.enseignant === enseignant.id && allocations?.find(al => al.id === l.allocation)?.session === session).reduce((sum, l) => sum + (l.quantite ?? 0), 0) || 0
+                const courseCount = new Set(enseignantCharges.map(c => groupes?.find(gr => gr.id === c.groupe)?.cours).filter(Boolean)).size
+
                 return <td key={enseignant.id} style={{ ...getCellStyle(enseignant.id), backgroundColor: "#ced4da" }}>
                     { (groupCount > 0 || totalStagiaires > 0 || totalETC > 0 || totalCoord > 0) && (
                         <div className="d-flex justify-content-center gap-1 flex-wrap">
@@ -175,77 +127,31 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
         </tr>
         {showSession && (
             <>
-                <tr style={{ display: showCharges ? "table-row" : "none" }}>
-                    <StickyHeader isFirstCol>
-                        <div className="d-flex justify-content-between align-items-center gap-3 ps-2">
-                            <div className="d-flex align-items-center gap-2 cursor-pointer" onClick={() => toggle(`${session}_charges`)} title="Masquer les cours" style={{cursor: "pointer"}}>
-                                <span style={{fontSize: "0.6rem", color: "#666", width: "12px", display: "inline-block"}}>▼</span>
-                                <span className="fw-bold small text-muted text-uppercase" style={{fontSize: "0.7rem"}}>Cours attribués</span>
-                            </div>
-                            { (chargesManquantes(session) ?? 0) > 0 && <span className="badge bg-danger p-1 no-print" style={{fontSize: "0.65rem"}} title={`${chargesManquantes(session)} restants`}>{chargesManquantes(session)}</span> }
-                        </div>
-                    </StickyHeader>
-                    { visibleEnseignants.map((enseignant: any) => {
-                        const width = columnWidths?.[enseignant.id] || globalWidth || 200
-                        return <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={width} scenario={scenario} style={getCellStyle(enseignant.id)} isPrinting={isPrinting}/>
-                    })}
-                </tr>
-                {!showCharges && (
-                    <tr className="bg-light">
-                        <StickyHeader isFirstCol style={{fontSize: "0.7rem", color: "#999"}}>
-                            <div className="cursor-pointer ps-3 d-flex align-items-center gap-2" onClick={() => toggle(`${session}_charges`)} style={{cursor: "pointer"}}>
-                                <span style={{fontSize: "0.7rem", color: "#999", width: "12px"}}>▶</span>
-                                <span className="text-uppercase small" style={{fontSize: "0.65rem"}}>Afficher les cours</span>
-                            </div>
-                        </StickyHeader>
-                        <td colSpan={visibleEnseignants.length}></td>
-                    </tr>
-                )}
-                <tr style={{ display: showLiberations ? "table-row" : "none" }}>
-                    <StickyHeader isFirstCol>
-                        <div className="d-flex justify-content-between align-items-center gap-3 ps-2">
-                            <div className="d-flex align-items-center gap-2 cursor-pointer" onClick={() => toggle(`${session}_liberations`)} title="Masquer les libérations" style={{cursor: "pointer"}}>
-                                <span style={{fontSize: "0.6rem", color: "#666", width: "12px", display: "inline-block"}}>▼</span>
-                                <span className="fw-bold small text-muted text-uppercase" style={{fontSize: "0.7rem"}}>Libérations</span>
-                            </div>
-                            { (liberationsManquantes(session) ?? 0) > 0 && <span className="badge bg-warning text-dark p-1 no-print" style={{fontSize: "0.65rem"}} title={`${liberationsManquantes(session)} restantes`}>{liberationsManquantes(session)}</span> }
-                        </div>
-                    </StickyHeader>
-                    { visibleEnseignants.map((enseignant: any) => {
-                        const width = columnWidths?.[enseignant.id] || globalWidth || 200
-                        return <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={width} scenario={scenario} style={getCellStyle(enseignant.id)}/>
-                    })}
-                </tr>
-                {!showLiberations && (
-                    <tr className="bg-light">
-                        <StickyHeader isFirstCol style={{fontSize: "0.7rem", color: "#999"}}>
-                            <div className="cursor-pointer ps-3 d-flex align-items-center gap-2" onClick={() => toggle(`${session}_liberations`)} style={{cursor: "pointer"}}>
-                                <span style={{fontSize: "0.7rem", color: "#999", width: "12px"}}>▶</span>
-                                <span className="text-uppercase small" style={{fontSize: "0.65rem"}}>Afficher les libérations</span>
-                            </div>
-                        </StickyHeader>
-                        <td colSpan={visibleEnseignants.length}></td>
-                    </tr>
-                )}
+                <CollapsibleSectionRow title="Cours attribués" isVisible={showCharges} onToggle={() => toggle(`${session}_charges`)} colSpan={visibleEnseignants.length} badge={nbChargesManquantes > 0 && <span className="badge bg-danger p-1 no-print" style={{fontSize: "0.65rem"}} title={`${nbChargesManquantes} restants`}>{nbChargesManquantes}</span>}>
+                    { visibleEnseignants.map((enseignant: any) => <ListeCharges key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={columnWidths?.[enseignant.id] || globalWidth || 200} scenario={scenario} style={getCellStyle(enseignant.id)} isPrinting={isPrinting}/> )}
+                </CollapsibleSectionRow>
+
+                <CollapsibleSectionRow title="Libérations" isVisible={showLiberations} onToggle={() => toggle(`${session}_liberations`)} colSpan={visibleEnseignants.length} badge={nbLiberationsManquantes > 0 && <span className="badge bg-warning text-dark p-1 no-print" style={{fontSize: "0.65rem"}} title={`${nbLiberationsManquantes} restantes`}>{nbLiberationsManquantes}</span>}>
+                    { visibleEnseignants.map((enseignant: any) => <ListeLiberations key={enseignant.id} enseignant={enseignant} session={session} enseignantWidth={columnWidths?.[enseignant.id] || globalWidth || 200} scenario={scenario} style={getCellStyle(enseignant.id)}/> )}
+                </CollapsibleSectionRow>
+
                 {sessionStages.length > 0 && (
-                    <tr className="bg-light border-top border-bottom border-secondary border-opacity-10">
-                        <StickyHeader isFirstCol style={{backgroundColor: "#f8f9fa"}}>
-                            <div className="d-flex align-items-center gap-2 cursor-pointer ps-2" onClick={() => toggle(`${session}_stages`)} style={{cursor: "pointer"}}>
-                                <span style={{fontSize: "0.6rem", color: "#666", width: "12px", display: "inline-block"}}>{showStagesList ? "▼" : "▶"}</span>
-                                <span className="fw-bold small text-muted text-uppercase" style={{fontSize: "0.7rem"}}>Stages & Supervisions</span>
-                            </div>
-                        </StickyHeader>
+                    <CollapsibleSectionRow title="Stages & Supervisions" isVisible={showStagesList} onToggle={() => toggle(`${session}_stages`)} colSpan={visibleEnseignants.length} headerStyle={{backgroundColor: "#f8f9fa"}}>
                         <td colSpan={visibleEnseignants.length} style={{backgroundColor: "#f8f9fa"}}></td>
-                    </tr>
+                    </CollapsibleSectionRow>
                 )}
-                {showStagesList && sessionStages.map(stage => (
-                    <tr key={stage.id}>
+
+                {showStagesList && sessionStages.map(stage => {
+                    const stRem = getStagiairesRestantsCount(stage, supervisions)
+                    const coRem = getCoordinationRestante(stage, supervisions)
+                    
+                    return <tr key={stage.id}>
                         <StickyHeader isFirstCol>
                             <div className="d-flex justify-content-between align-items-center gap-2 ps-4">
                                 <div className="text-truncate" style={{maxWidth: "110px"}}><span className="small text-primary" style={{fontSize: "0.75rem"}}>{stage.nom}</span></div>
                                 <div className="d-flex gap-1 flex-shrink-0">
-                                    { stagiairesRestants(stage) > 0 && <span className="badge bg-info text-dark p-1" style={{fontSize: "0.55rem", fontWeight: "normal"}} title={`${stagiairesRestants(stage)} stagiaires à placer`}>🎓 {stagiairesRestants(stage)}</span>}
-                                    { coordinationRestante(stage) > 0.001 && <span className="badge bg-warning text-dark p-1" style={{fontSize: "0.55rem", fontWeight: "normal"}} title={`${coordinationRestante(stage).toFixed(2)} CI de coordination à placer`}>📢 {Number(coordinationRestante(stage).toFixed(2))}</span>}
+                                    { stRem > 0 && <span className="badge bg-info text-dark p-1" style={{fontSize: "0.55rem", fontWeight: "normal"}} title={`${stRem} stagiaires à placer`}>🎓 {stRem}</span>}
+                                    { coRem > 0.001 && <span className="badge bg-warning text-dark p-1" style={{fontSize: "0.55rem", fontWeight: "normal"}} title={`${coRem.toFixed(2)} CI de coordination à placer`}>📢 {Number(coRem.toFixed(2))}</span>}
                                 </div>
                             </div>
                         </StickyHeader>
@@ -267,7 +173,7 @@ export default function Tache({visibleEnseignants, session, columnWidths, global
                             </td>
                         })}
                     </tr>
-                ))}
+                })}
             </>
         )}
         {showCI && (

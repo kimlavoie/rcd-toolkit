@@ -11,6 +11,12 @@ import { DataProvider, useData } from "../components/DataContext"
 import StickyHeader from "../components/ui/StickyHeader"
 import { useAuth } from "@/app/utilities/auth"
 import { toast } from "react-hot-toast"
+import { useFilteredEnseignants } from "@/app/utilities/hooks"
+import { 
+    getChargesManquantesCount, 
+    getLiberationsManquantesCount, 
+    getStagiairesRestantsCount 
+} from "@/app/utilities/businessLogic"
 
 function TachesContent() {
     const { user, loading: authLoading } = useAuth()
@@ -20,11 +26,9 @@ function TachesContent() {
     
     const { enseignants, groupes, charges, allocations, liberations, stages, supervisions, cours, scenarios, isLoading, triggerExpansion } = useData()
 
-    // Safety check for year format (should be like 2024)
     const isValidYear = year && /^\d{4}$/.test(year);
     const anneeScolaireLabel = isValidYear ? `${year}-${parseInt(year)+1}` : "Inconnue";
 
-    // Sessions for this academic year
     const sessionA = isValidYear ? `A${year.substring(2,4)}` : "";
     const sessionH = isValidYear ? `H${(parseInt(year.substring(2,4)) + 1).toString().padStart(2, '0')}` : "";
     const sessionsAnnuelle = [sessionA, sessionH];
@@ -62,14 +66,12 @@ function TachesContent() {
 
     const handleExportPDF = () => {
         setIsPrinting(true)
-        // Petit délai pour laisser React faire le rendu de la version segmentée
         setTimeout(() => {
             window.print()
             setIsPrinting(false)
         }, 500)
     }
 
-    // Force non-scrollable body for this page only
     useEffect(() => {
         if (!isPrinting) {
             document.documentElement.style.overflow = 'hidden';
@@ -84,7 +86,6 @@ function TachesContent() {
         };
     }, [isPrinting]);
 
-    // For scenarios
     const currentSession = mode === "Automne" ? sessionA : sessionH;
     const currentSessionScenarios = scenarios?.filter(s => s.session === currentSession) || []
 
@@ -97,41 +98,19 @@ function TachesContent() {
         }
     }, [scenarios, currentSession])
 
-    // Filter and Sort Enseignants
-    const visibleEnseignants = (enseignants ?? [])
-        .filter(e => !cache.includes(e.id))
-        .filter(e => {
-            if (!search) return true
-            const searchLower = search.toLowerCase()
-            
-            // 1. Infos enseignant
-            const matchTeacher = (e.nom ?? "").toLowerCase().includes(searchLower) || 
-                                (e.prenom ?? "").toLowerCase().includes(searchLower) ||
-                                (e.numeroEmploye ?? "").toLowerCase().includes(searchLower)
-            if (matchTeacher) return true
-
-            // 2. Cours (Charges)
-            const teacherCharges = (charges ?? []).filter(c => c.enseignant === e.id && (c.scenario || "production") === selectedScenarioId)
-            const matchCourse = teacherCharges.some(charge => {
-                const groupe = (groupes ?? []).find(g => g.id === charge.groupe)
-                const cour = (cours ?? []).find(c => c.id === groupe?.cours)
-                return (cour?.sigle ?? "").toLowerCase().includes(searchLower) || 
-                       (cour?.nom ?? "").toLowerCase().includes(searchLower)
-            })
-            if (matchCourse) return true
-
-            // 3. Libérations (Allocations)
-            const teacherLiberations = (liberations ?? []).filter(l => l.enseignant === e.id && (l.scenario || "production") === selectedScenarioId)
-            const matchLiberation = teacherLiberations.some(lib => {
-                const allocation = (allocations ?? []).find(a => a.id === lib.allocation)
-                return (allocation?.code ?? "").toLowerCase().includes(searchLower) || 
-                       (allocation?.description ?? "").toLowerCase().includes(searchLower)
-            })
-            if (matchLiberation) return true
-
-            return false
-        })
-        .toSorted((a:any, b:any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""))
+    // Utilisation du hook de filtrage refactorisé
+    const visibleEnseignants = useFilteredEnseignants(
+        enseignants,
+        cache,
+        search,
+        tri,
+        charges,
+        groupes,
+        cours,
+        liberations,
+        allocations,
+        selectedScenarioId
+    )
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -156,24 +135,19 @@ function TachesContent() {
             const { saison: sSaison, annee: sAnnee } = extractSessionInfos(sCode)
             const sessionLabel = `${sSaison} ${sAnnee}`
 
-            // 1. Cours restants (groupes non complets - 15 semaines par composante)
+            // 1. Cours restants - Utilisation de la logique métier centralisée (plus granulaire ici pour le rapport)
             const groupesSession = groupes.filter((g: any) => g.session === sCode)
             const groupesIncomplets = groupesSession.map((g: any) => {
                 const chargesDuGroupe = charges.filter((c: any) => String(c.groupe) === String(g.id) && (c.scenario || "production") === selectedScenarioId)
-                
                 const needsT = g.aTheorie ?? true
                 const needsP = g.aPratique ?? true
-                
                 const weeksT = chargesDuGroupe.filter((c: any) => c.type === "T" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
                 const weeksP = chargesDuGroupe.filter((c: any) => c.type === "P" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
-
                 const missingT = needsT && (15 - weeksT > 0.001)
                 const missingP = needsP && (15 - weeksP > 0.001)
-
                 let details = []
                 if (missingT) details.push(`Théorie (${(15 - weeksT).toFixed(1)} sem.)`)
                 if (missingP) details.push(`Pratique (${(15 - weeksP).toFixed(1)} sem.)`)
-
                 return { group: g, details }
             }).filter((r: any) => r.details.length > 0)
             
@@ -199,11 +173,11 @@ function TachesContent() {
             const stagesSession = stages.filter((s: any) => s.session === sCode)
             const stagRestants = stagesSession.map((s: any) => {
                 const totalPlaces = supervisions.filter((sup: any) => String(sup.stage) === String(s.id) && (sup.scenario || "production") === selectedScenarioId).reduce((sum: number, sup: any) => sum + Number(sup.nbStagiaires), 0)
-                return { id: s.id, restant: Number(s.nbStagiaires) - totalPlaces }
+                return { nom: s.nom, restant: Number(s.nbStagiaires) - totalPlaces }
             }).filter((r: any) => r.restant > 0.001)
 
             if (stagRestants.length > 0) {
-                sessionReports.push("Stagiaires à placer :\n" + stagRestants.map((r: any) => `- Stage ${r.id.substring(0,4)} : ${r.restant} stagiaire(s) restant(s)`).join("\n"))
+                sessionReports.push("Stagiaires à placer :\n" + stagRestants.map((r: any) => `- ${r.nom} : ${r.restant} stagiaire(s) restant(s)`).join("\n"))
             }
 
             if (sessionReports.length > 0) {
@@ -218,7 +192,6 @@ function TachesContent() {
         }
     }
 
-    // Helper to chunk teachers for print
     const chunkArray = (arr: any[], size: number) => {
         const chunks = []
         for (let i = 0; i < arr.length; i += size) {
@@ -229,7 +202,6 @@ function TachesContent() {
 
     const teacherChunks = chunkArray(visibleEnseignants, teachersPerPage)
 
-    // Si on imprime, on ne rend QUE la version segmentée
     if (isPrinting) {
         return (
             <div className="p-4 bg-white">
@@ -288,7 +260,6 @@ function TachesContent() {
                     setShowHelp={setShowHelp}
                 />
 
-                {/* Chips Enseignants cachés */}
                 {cache.length > 0 && (
                     <div className="d-flex gap-1 flex-wrap align-items-center mb-2 px-2 border-top pt-2">
                         <span className="extra-small text-muted fw-bold text-uppercase me-1" style={{fontSize: "0.6rem"}}>Cachés:</span>
@@ -309,13 +280,8 @@ function TachesContent() {
                     </div>
                 )}
                 
-                {/* Modal Help */}
                 {showHelp && (
-                    <div 
-                        className="modal d-block" 
-                        style={{backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1060}}
-                        onClick={() => setShowHelp(false)}
-                    >
+                    <div className="modal d-block" style={{backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1060}} onClick={() => setShowHelp(false)}>
                         <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
                             <div className="modal-content shadow-lg border-0">
                                 <div className="modal-header bg-info text-white border-0 py-2">

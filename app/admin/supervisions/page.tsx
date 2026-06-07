@@ -1,15 +1,15 @@
 'use client'
-
 import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import { useRouter } from "next/navigation"
-import { useState, useMemo, Suspense } from "react"
+import { useState, useMemo, Suspense, useCallback } from "react"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import SelectEnseignant from "../components/inputs/SelectEnseignant"
 import SelectStage from "../components/inputs/SelectStage"
 import { useAuth } from "@/app/utilities/auth"
 import type { Supervision, Enseignant, Stage } from "@/app/db/db"
-import { useTableSort } from "@/app/utilities/sorting"
 import { toast } from "react-hot-toast"
+import { useAdminTable } from "../components/useAdminTable"
+import AdminHeader from "../components/AdminHeader"
 
 function SupervisionsPageContent() {
     const { user, loading } = useAuth()
@@ -18,90 +18,50 @@ function SupervisionsPageContent() {
     const stages = useFirestoreCollection<Stage>("stages")
     const router = useRouter()
     
-    const [search, setSearch] = useState("")
-
     const enrichedSupervisions = useMemo(() => {
         return (supervisions ?? []).map(s => {
-            const enseignant = enseignants?.find(e => e.id === s.enseignant)
+            const ens = enseignants?.find(e => e.id === s.enseignant)
             const stage = stages?.find(st => st.id === s.stage)
             let stageLabel = "Stage inconnu"
             if (stage) {
                 try {
                     const {saison, annee} = extractSessionInfos(stage.session)
                     stageLabel = `${stage.nom} (${saison} ${annee})`
-                } catch {
-                    stageLabel = `${stage.nom} (${stage.session})`
-                }
+                } catch { stageLabel = `${stage.nom} (${stage.session})` }
             }
             return {
                 ...s,
-                enseignantName: enseignant ? `${enseignant.nom} ${enseignant.prenom}` : "",
+                enseignantName: ens ? `${ens.nom} ${ens.prenom}` : "",
                 stageName: stageLabel
             }
         })
     }, [supervisions, enseignants, stages])
 
-    const filteredBySearch = useMemo(() => {
-        if (!search) return enrichedSupervisions
+    const filterFn = useCallback((s: any, search: string) => {
         const searchLower = search.toLowerCase()
-        return enrichedSupervisions.filter(s => 
+        return (
             s.enseignantName.toLowerCase().includes(searchLower) ||
             s.stageName.toLowerCase().includes(searchLower) ||
             (s.nbStagiaires ?? 0).toString().includes(searchLower) ||
             (s.coordination ?? 0).toString().includes(searchLower)
         )
-    }, [enrichedSupervisions, search])
+    }, [])
 
-    const { sortedData, toggleSort, getSortIcon } = useTableSort(filteredBySearch, "stageName")
+    const { search, setSearch, sortedData, toggleSort, getSortIcon } = useAdminTable({
+        data: enrichedSupervisions,
+        initialSortKey: "stageName",
+        filterFn
+    })
 
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editData, setEditData] = useState<any>({})
     const [newData, setNewData] = useState({ enseignant: "", stage: "", nbStagiaires: 0, coordination: 0 })
 
     if (loading) return <div className="container mt-5">Chargement...</div>
-    if (!user) {
-        router.push("/login")
-        return null
-    }
-
-    function startEdit(supervision: any) {
-        setEditingId(supervision.id)
-        setEditData({ ...supervision })
-    }
-
-    async function saveEdit() {
-        if (editingId) {
-            await firebaseDb.supervisions.update(editingId, editData)
-            setEditingId(null)
-        }
-    }
-
-    async function addNew() {
-        if (newData.enseignant && newData.stage) {
-            await firebaseDb.supervisions.add(newData)
-            setNewData({ ...newData, nbStagiaires: 0, coordination: 0 })
-        } else {
-            toast.error("L'enseignant et le stage sont requis.")
-        }
-    }
+    if (!user) { router.push("/login"); return null; }
 
     return <div className="container mt-3">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-            <h1>Gestion des supervisions</h1>
-            <div className="input-group input-group-sm w-auto shadow-sm" style={{maxWidth: "300px"}}>
-                <span className="input-group-text bg-white border-end-0 text-muted">🔍</span>
-                <input 
-                    type="text" 
-                    className="form-control border-start-0 ps-0" 
-                    placeholder="Rechercher..." 
-                    value={search} 
-                    onChange={e => setSearch(e.target.value)} 
-                />
-                {search && (
-                    <button className="btn btn-outline-secondary border-start-0" onClick={() => setSearch("")}>✕</button>
-                )}
-            </div>
-        </div>
+        <AdminHeader title="Gestion des supervisions" search={search} setSearch={setSearch} />
         <table className="table table-striped align-middle">
             <thead>
                 <tr>
@@ -113,59 +73,39 @@ function SupervisionsPageContent() {
                 </tr>
             </thead>
             <tbody>
-                {sortedData.map((supervision) => {
-                    const enseignant = enseignants?.find((el) => el.id == supervision.enseignant)
-                    
-                    return <tr key={supervision.id}>
+                {sortedData.map((supervision) => (
+                    <tr key={supervision.id}>
                         {editingId === supervision.id ? (
                             <>
+                                <td><SelectStage value={editData.stage} onChange={(val:any) => setEditData({...editData, stage: val})} /></td>
+                                <td><SelectEnseignant value={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: val})} /></td>
+                                <td><input type="number" className="form-control" value={editData.nbStagiaires} onChange={e => setEditData({...editData, nbStagiaires: Number(e.target.value)})} /></td>
+                                <td><input type="number" step="0.01" className="form-control" value={editData.coordination} onChange={e => setEditData({...editData, coordination: Number(e.target.value)})} /></td>
                                 <td>
-                                    <SelectStage value={editData.stage} onChange={(val:any) => setEditData({...editData, stage: val})} />
-                                </td>
-                                <td>
-                                    <SelectEnseignant value={editData.enseignant} onChange={(val:any) => setEditData({...editData, enseignant: val})} />
-                                </td>
-                                <td>
-                                    <input type="number" className="form-control" value={editData.nbStagiaires} onChange={e => setEditData({...editData, nbStagiaires: Number(e.target.value)})} />
-                                </td>
-                                <td>
-                                    <input type="number" step="0.01" className="form-control" value={editData.coordination} onChange={e => setEditData({...editData, coordination: Number(e.target.value)})} />
-                                </td>
-                                <td>
-                                    <button className="btn btn-success btn-sm me-1" onClick={saveEdit}>💾</button>
+                                    <button className="btn btn-success btn-sm me-1" onClick={async () => { await firebaseDb.supervisions.update(editingId, editData); setEditingId(null); }}>💾</button>
                                     <button className="btn btn-secondary btn-sm" onClick={() => setEditingId(null)}>❌</button>
                                 </td>
                             </>
                         ) : (
                             <>
                                 <td>{supervision.stageName}</td>
-                                <td>{enseignant?.prenom} {enseignant?.nom}</td>
+                                <td>{supervision.enseignantName}</td>
                                 <td>{supervision.nbStagiaires}</td>
                                 <td>{supervision.coordination ?? 0} CI</td>
                                 <td>
-                                    <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(supervision)}>✏️</button>
+                                    <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => { setEditingId(supervision.id); setEditData({...supervision}); }}>✏️</button>
                                     <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => firebaseDb.supervisions.delete(supervision.id)}>🗑️</button>
                                 </td>
                             </>
                         )}
                     </tr>
-                })}
+                ))}
                 <tr className="table-info">
-                    <td>
-                        <SelectStage value={newData.stage} onChange={(val:any) => setNewData({...newData, stage: val})} />
-                    </td>
-                    <td>
-                        <SelectEnseignant value={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: val})} />
-                    </td>
-                    <td>
-                        <input type="number" className="form-control" placeholder="Étud." value={newData.nbStagiaires} onChange={e => setNewData({...newData, nbStagiaires: Number(e.target.value)})} />
-                    </td>
-                    <td>
-                        <input type="number" step="0.01" className="form-control" placeholder="Coord (CI)" value={newData.coordination} onChange={e => setNewData({...newData, coordination: Number(e.target.value)})} />
-                    </td>
-                    <td>
-                        <button className="btn btn-primary btn-sm w-100" onClick={addNew}>+</button>
-                    </td>
+                    <td><SelectStage value={newData.stage} onChange={(val:any) => setNewData({...newData, stage: val})} /></td>
+                    <td><SelectEnseignant value={newData.enseignant} onChange={(val:any) => setNewData({...newData, enseignant: val})} /></td>
+                    <td><input type="number" className="form-control" placeholder="Étud." value={newData.nbStagiaires} onChange={e => setNewData({...newData, nbStagiaires: Number(e.target.value)})} /></td>
+                    <td><input type="number" step="0.01" className="form-control" placeholder="Coord (CI)" value={newData.coordination} onChange={e => setNewData({...newData, coordination: Number(e.target.value)})} /></td>
+                    <td><button className="btn btn-primary btn-sm w-100" onClick={async () => { if(newData.enseignant && newData.stage) { await firebaseDb.supervisions.add(newData); setNewData({...newData, nbStagiaires: 0, coordination: 0}); } else { toast.error("Enseignant et stage requis"); } }}>+</button></td>
                 </tr>
             </tbody>
         </table>
@@ -173,9 +113,5 @@ function SupervisionsPageContent() {
 }
 
 export default function SupervisionsPage() {
-    return (
-        <Suspense fallback={<div className="container mt-5">Chargement...</div>}>
-            <SupervisionsPageContent />
-        </Suspense>
-    )
+    return <Suspense fallback={<div className="container mt-5">Chargement...</div>}><SupervisionsPageContent /></Suspense>
 }
