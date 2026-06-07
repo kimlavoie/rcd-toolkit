@@ -190,7 +190,7 @@ function ScenariosPageContent() {
                         <td>
                             <div className="d-flex gap-1">
                                 <button className="btn btn-primary btn-sm flex-grow-1" onClick={addNew} title="Créer un nouveau scénario vide">+</button>
-                                <button className="btn btn-info btn-sm text-white" onClick={() => copyProduction(newData.session)} title="Créer à partir de la production">📋 Prod</button>
+                                <button className="btn btn-info btn-sm text-white" onClick={() => copyProduction(newData.session || "A26")} title="Créer à partir de la production">📋 Prod</button>
                             </div>
                         </td>
                     </tr>
