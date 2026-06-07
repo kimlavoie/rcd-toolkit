@@ -36,36 +36,36 @@ export default function AdminPage(){
         {
             group: "Ressources Humaines",
             items: [
-                { title: "Enseignants", icon: "👨‍🏫", href: "admin/enseignants", desc: "Liste et profils des enseignants" },
-                { title: "CI Réelles", icon: "📊", href: "admin/CIReelles", desc: "Saisie des charges réelles effectuées" }
+                { title: "Enseignants", icon: "👨‍🏫", href: "/admin/enseignants", desc: "Liste et profils des enseignants" },
+                { title: "CI Réelles", icon: "📊", href: "/admin/CIReelles", desc: "Saisie des charges réelles effectuées" }
             ]
         },
         {
             group: "Structure & Groupes",
             items: [
-                { title: "Cours", icon: "📚", href: "admin/cours", desc: "Catalogue des cours et pondérations" },
-                { title: "Groupes", icon: "👥", href: "admin/groupes", desc: "Répartition des groupes par session" },
-                { title: "Charges", icon: "📝", href: "admin/charges", desc: "Attributions individuelles" }
+                { title: "Cours", icon: "📚", href: "/admin/cours", desc: "Catalogue des cours et pondérations" },
+                { title: "Groupes", icon: "/admin/groupes", href: "/admin/groupes", desc: "Répartition des groupes par session" },
+                { title: "Charges", icon: "📝", href: "/admin/charges", desc: "Attributions individuelles" }
             ]
         },
         {
             group: "Allocations & Libérations",
             items: [
-                { title: "Allocations", icon: "💰", href: "admin/allocations", desc: "Budget et types de libérations" },
-                { title: "Libérations", icon: "🔓", href: "admin/liberations", desc: "Attribution des libérations" }
+                { title: "Allocations", icon: "💰", href: "/admin/allocations", desc: "Budget et types de libérations" },
+                { title: "Libérations", icon: "🔓", href: "/admin/liberations", desc: "Attribution des libérations" }
             ]
         },
         {
             group: "Stages & Supervisions",
             items: [
-                { title: "Stages", icon: "🏗️", href: "admin/stages", desc: "Paramètres des stages par session" },
-                { title: "Supervisions", icon: "👁️", href: "admin/supervisions", desc: "Attribution des stagiaires" }
+                { title: "Stages", icon: "🏗️", href: "/admin/stages", desc: "Paramètres des stages par session" },
+                { title: "Supervisions", icon: "👁️", href: "/admin/supervisions", desc: "Attribution des stagiaires" }
             ]
         },
         {
             group: "Configuration Avancée",
             items: [
-                { title: "Scénarios", icon: "🎭", href: "admin/scenarios", desc: "Gérer les variantes de planification", highlight: true }
+                { title: "Scénarios", icon: "🎭", href: "/admin/scenarios", desc: "Gérer les variantes de planification", highlight: true }
             ]
         }
     ]

@@ -18,6 +18,14 @@ export function useAuth() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Support for Cypress mock user
+        const mockUser = typeof window !== 'undefined' ? localStorage.getItem('cypress-user') : null;
+        if (mockUser) {
+            setUser(JSON.parse(mockUser));
+            setLoading(false);
+            return;
+        }
+
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setUser(user);
             setLoading(false);

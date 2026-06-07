@@ -6,6 +6,7 @@
     "dev": "next dev --port 3456",
     "build": "next build",
     "start": "next start",
+    "test:e2e": "cypress run",
     "gemini": "npx @google/gemini-cli"
   },
   "dependencies": {
@@ -24,6 +25,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "cypress": "^15.16.0",
     "typescript": "^5"
   }
 }

@@ -21,6 +21,13 @@ export function useFirestoreCollection<T>(collectionName: string, extraConstrain
     const [data, setData] = useState<T[] | undefined>(undefined);
 
     useEffect(() => {
+        // Support for Cypress mock data
+        const mockData = typeof window !== 'undefined' ? localStorage.getItem(`cypress-db-${collectionName}`) : null;
+        if (mockData) {
+            setData(JSON.parse(mockData));
+            return;
+        }
+
         let unsubscribeSnapshot: (() => void) | undefined;
 
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
