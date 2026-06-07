@@ -7,7 +7,8 @@ import {
     doc, 
     query,
     where,
-    getDoc
+    getDoc,
+    QueryConstraint
 } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { firestore, auth } from "./firebase";
@@ -16,7 +17,7 @@ import { Schemas } from "@/app/db/schemas";
 import { toast } from "react-hot-toast";
 import { z } from "zod";
 
-export function useFirestoreCollection<T>(collectionName: string) {
+export function useFirestoreCollection<T>(collectionName: string, extraConstraints: QueryConstraint[] = []) {
     const [data, setData] = useState<T[] | undefined>(undefined);
 
     useEffect(() => {
@@ -26,7 +27,8 @@ export function useFirestoreCollection<T>(collectionName: string) {
             if (user) {
                 const q = query(
                     collection(firestore, collectionName),
-                    where("userId", "==", user.uid)
+                    where("userId", "==", user.uid),
+                    ...extraConstraints
                 );
                 
                 unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
@@ -51,7 +53,7 @@ export function useFirestoreCollection<T>(collectionName: string) {
             unsubscribeAuth();
             if (unsubscribeSnapshot) unsubscribeSnapshot();
         };
-    }, [collectionName]);
+    }, [collectionName, extraConstraints]);
 
     return data;
 }

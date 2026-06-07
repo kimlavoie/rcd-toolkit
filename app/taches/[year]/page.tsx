@@ -369,8 +369,16 @@ function TachesContent() {
 }
 
 export default function() {
+    const params = useParams()
+    const year = params.year as string
+    const isValidYear = year && /^\d{4}$/.test(year);
+    
+    const sessionA = isValidYear ? `A${year.substring(2,4)}` : "";
+    const sessionH = isValidYear ? `H${(parseInt(year.substring(2,4)) + 1).toString().padStart(2, '0')}` : "";
+    const sessionsAnnuelle = [sessionA, sessionH];
+
     return (
-        <DataProvider>
+        <DataProvider sessions={sessionsAnnuelle}>
             <TachesContent />
         </DataProvider>
     )

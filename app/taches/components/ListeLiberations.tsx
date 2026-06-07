@@ -55,7 +55,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
 
     async function addHandlerLiberation(quantite: number){
         if(selectedAllocation){
-            await firebaseDb.liberations.add({allocation: selectedAllocation.id, enseignant: enseignant.id, quantite, scenario})
+            await firebaseDb.liberations.add({allocation: selectedAllocation.id, enseignant: enseignant.id, quantite, scenario, session})
             setModalOpen(false)
             setHideMenu(true)
             setMenuSearch("");
@@ -63,7 +63,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     }
 
     async function quickAddLiberation(allocation: Allocation, quantite: number){
-        await firebaseDb.liberations.add({allocation: allocation.id, enseignant: enseignant.id, quantite, scenario})
+        await firebaseDb.liberations.add({allocation: allocation.id, enseignant: enseignant.id, quantite, scenario, session})
         setHideMenu(true)
         setMenuSearch("");
     }
@@ -94,7 +94,8 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
             enseignant: idNouveauEnseignant,
             allocation: ancienneLiberation?.allocation ?? "",
             quantite: ancienneLiberation?.quantite ?? 0,
-            scenario
+            scenario,
+            session
         }
 
         await firebaseDb.liberations.add(nouvelleLiberation)

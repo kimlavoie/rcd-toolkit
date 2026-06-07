@@ -71,7 +71,8 @@ export default function Tache({
                 stage: stageId, 
                 nbStagiaires: field === 'nbStagiaires' ? value : 0, 
                 coordination: field === 'coordination' ? value : 0, 
-                scenario 
+                scenario,
+                session
             })
         }
     }

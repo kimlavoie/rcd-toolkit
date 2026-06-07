@@ -1,6 +1,7 @@
 
-import React, { createContext, useContext, ReactNode, useState } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useMemo } from 'react';
 import { useFirestoreCollection } from "@/app/utilities/firebaseDb";
+import { where } from "firebase/firestore";
 import type { 
     Enseignant, Charge, Liberation, Groupe, Cours, 
     Supervision, Stage, Allocation, CIReelle, Scenario 
@@ -27,17 +28,27 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export function DataProvider({ children }: { children: ReactNode }) {
+export function DataProvider({ children, sessions }: { children: ReactNode, sessions?: string[] }) {
+    // Basic collections (global to the user)
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
-    const charges = useFirestoreCollection<Charge>("charges")
-    const liberations = useFirestoreCollection<Liberation>("liberations")
-    const groupes = useFirestoreCollection<Groupe>("groupes")
     const cours = useFirestoreCollection<Cours>("cours")
-    const supervisions = useFirestoreCollection<Supervision>("supervisions")
-    const stages = useFirestoreCollection<Stage>("stages")
-    const allocations = useFirestoreCollection<Allocation>("allocations")
-    const CIReelles = useFirestoreCollection<CIReelle>("CIReelles")
-    const scenarios = useFirestoreCollection<Scenario>("scenarios")
+    
+    // Session-scoped constraints
+    const sessionConstraints = useMemo(() => 
+        sessions && sessions.length > 0 ? [where("session", "in", sessions)] : [], 
+    [sessions]);
+
+    // Scoped collections
+    const groupes = useFirestoreCollection<Groupe>("groupes", sessionConstraints)
+    const allocations = useFirestoreCollection<Allocation>("allocations", sessionConstraints)
+    const stages = useFirestoreCollection<Stage>("stages", sessionConstraints)
+    const CIReelles = useFirestoreCollection<CIReelle>("CIReelles", sessionConstraints)
+    const scenarios = useFirestoreCollection<Scenario>("scenarios", sessionConstraints)
+
+    // Dependent collections (now filtered by session for better performance)
+    const charges = useFirestoreCollection<Charge>("charges", sessionConstraints)
+    const liberations = useFirestoreCollection<Liberation>("liberations", sessionConstraints)
+    const supervisions = useFirestoreCollection<Supervision>("supervisions", sessionConstraints)
 
     const [visibilityMap, setVisibilityMap] = useState<Record<string, boolean>>({})
 
@@ -47,23 +58,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const triggerExpansion = (action: "expand" | "collapse") => {
         const isExpand = action === "expand"
-        const newMap: Record<string, boolean> = { ...visibilityMap }
-        
-        // On ne peut pas facilement lister toutes les clés possibles ici sans les données,
-        // mais on peut forcer un état global qui sera lu par les composants.
-        // On va plutôt vider la map ou la remplir avec l'état souhaité.
-        // Pour "expand", on met tout à true. Pour "collapse", on met tout à false.
-        
-        // On marque un flag global pour forcer le comportement
-        setVisibility("global_expansion", isExpand)
-        
-        // On nettoie les clés spécifiques pour qu'elles reprennent la valeur globale au prochain rendu
-        // Sauf si on veut garder un historique, mais ici on veut un reset global.
-        setVisibilityMap(prev => {
-            const reset: Record<string, boolean> = { global_expansion: isExpand }
-            // Si collapse, on replie tout. Si expand, on déplie tout.
-            return reset
-        })
+        setVisibilityMap({ global_expansion: isExpand })
     }
 
     const isLoading = !enseignants || !charges || !liberations || !groupes || 

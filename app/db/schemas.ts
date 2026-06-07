@@ -46,6 +46,7 @@ export const ChargeSchema = z.object({
   nbSemaines: z.coerce.number().min(0).max(15),
   type: z.enum(["T", "P", "TP"]).default("TP"),
   scenario: z.string().optional(),
+  session: z.string().optional(),
 });
 
 export const LiberationSchema = z.object({
@@ -53,6 +54,7 @@ export const LiberationSchema = z.object({
   allocation: z.string().min(1),
   quantite: z.coerce.number().min(0),
   scenario: z.string().optional(),
+  session: z.string().optional(),
 });
 
 export const SupervisionSchema = z.object({
@@ -61,6 +63,7 @@ export const SupervisionSchema = z.object({
   nbStagiaires: z.coerce.number().min(0),
   coordination: z.coerce.number().min(0).default(0),
   scenario: z.string().optional(),
+  session: z.string().optional(),
 });
 
 export const ScenarioSchema = z.object({

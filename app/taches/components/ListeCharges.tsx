@@ -88,7 +88,7 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                 await firebaseDb.charges.update(existingCharge.id, { type, nbSemaines: type === "T" ? remT : remP })
             }
         } else {
-            await firebaseDb.charges.add({groupe: groupe.id, enseignant: enseignant.id, nbSemaines: type === "TP" ? 15 : (type === "T" ? remT : remP), scenario, type})
+            await firebaseDb.charges.add({groupe: groupe.id, enseignant: enseignant.id, nbSemaines: type === "TP" ? 15 : (type === "T" ? remT : remP), scenario, type, session})
         }
     }
 
@@ -165,7 +165,7 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
         })}
         {mounted && addMenu.show && createPortal(<ContextMenuAddCourse position={addMenu.pos} onClose={() => setAddMenu({show: false, pos: {left:0, top:0}})} onAdd={quickAddCharge} onAddAll={list => list.forEach(g => quickAddCharge(g, "TP"))} onOpenModal={g => {setSelectedGroupe(g); setModalOpen(true); setAddMenu({show: false, pos:{left:0, top:0}})}} sortedCourseIds={sortedCourseIdsForMenu} groupsByCourse={groupsByCourseForMenu} coursData={coursData} scenarioCharges={scenarioCharges} enseignantId={enseignant.id} />, document.body)}
         {mounted && groupMenu.show && createPortal(<ContextMenuGroup position={groupMenu.pos} onClose={() => setGroupMenu(prev => ({...prev, show: false}))} onRemoveAll={() => removeAllCourseCharges(groupMenu.courseId!)} onTransferAll={() => { setGroupTransferCourseId(groupMenu.courseId); setGroupTransferOpen(true); setGroupMenu(prev => ({...prev, show: false})) }} onEditCourse={() => window.open("/admin/cours?highlight=" + groupMenu.courseId, "_blank")} />, document.body)}
-        <InputModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onConfirm={val => { if(selectedGroupe) firebaseDb.charges.add({groupe: selectedGroupe.id, enseignant: enseignant.id, nbSemaines: val, scenario, type: "TP"}).then(() => setModalOpen(false)) }} title="Ajouter une charge" label={`Semaines pour ${selectedGroupe ? coursData?.find(c => c.id === selectedGroupe.cours)?.sigle : ''} :`} defaultValue={15} max={15} />
+        <InputModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onConfirm={val => { if(selectedGroupe) firebaseDb.charges.add({groupe: selectedGroupe.id, enseignant: enseignant.id, nbSemaines: val, scenario, type: "TP", session}).then(() => setModalOpen(false)) }} title="Ajouter une charge" label={`Semaines pour ${selectedGroupe ? coursData?.find(c => c.id === selectedGroupe.cours)?.sigle : ''} :`} defaultValue={15} max={15} />
         {transferCourseId && <TransferModal isOpen={groupTransferOpen} onClose={() => setGroupTransferOpen(false)} onConfirm={handleGroupTransferConfirm} title={`Transférer ${coursData?.find(c => c.id === transferCourseId)?.sigle}`} currentEnseignantId={enseignant.id} />}
     </td>
 }

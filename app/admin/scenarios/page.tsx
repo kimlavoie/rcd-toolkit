@@ -101,9 +101,10 @@ export default function ScenariosPage() {
                 
                 const promises = snapshot.docs.map(docSnap => {
                     const { userId, ...data } = docSnap.data()
-                    return firebaseDb[collectionName as keyof typeof firebaseDb].add({
+                    return (firebaseDb[collectionName as keyof typeof firebaseDb] as any).add({
                         ...data,
-                        scenario: newScenarioId
+                        scenario: newScenarioId,
+                        session: scenario.session
                     })
                 })
                 await Promise.all(promises)
@@ -164,9 +165,10 @@ export default function ScenariosPage() {
                     .filter(docSnap => validIds.has(docSnap.data()[idField]))
                     .map(docSnap => {
                         const { userId, ...data } = docSnap.data()
-                        return firebaseDb[collectionName as keyof typeof firebaseDb].add({
+                        return (firebaseDb[collectionName as keyof typeof firebaseDb] as any).add({
                             ...data,
-                            scenario: newScenarioId
+                            scenario: newScenarioId,
+                            session: session
                         })
                     })
                 await Promise.all(promises)
