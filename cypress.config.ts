@@ -11,4 +11,12 @@ export default defineConfig({
     video: false,
     screenshotOnRunFailure: true,
   },
+
+  component: {
+    indexHtmlFile: "cypress/support/component-index.html",
+    devServer: {
+      framework: "next",
+      bundler: "webpack",
+    },
+  },
 });

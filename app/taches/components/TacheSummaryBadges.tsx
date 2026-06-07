@@ -19,7 +19,7 @@ export default function TacheSummaryBadges({
     totalCoord,
     totalETC
 }: TacheSummaryBadgesProps) {
-    if (groupCount === 0 && totalStagiaires === 0 && totalETC === 0 && totalCoord === 0) {
+    if (courseCount === 0 && groupCount === 0 && totalStagiaires === 0 && totalETC === 0 && totalCoord === 0) {
         return null
     }
 
