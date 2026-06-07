@@ -1,71 +1,44 @@
+'use client'
+
 import { firebaseDb } from "@/app/utilities/firebaseDb"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import InputModal from "./InputModal"
 import TransferModal from "./TransferModal"
 import { toast } from "react-hot-toast"
 import { getGroupColor } from "@/app/utilities/groupColors"
+import { useContextMenu } from "@/app/utilities/hooks"
 
-export default function({session, charge, groupe, cours, charges, enseignantId, onRemove, scenario = "production", minimal = false}: any){
-    const [hideMenu, setHideMenu] = useState(true)
-    const [position, setPosition] = useState({left: 0, top: 0})
-    const menuRef = useRef<HTMLDivElement>(null)
-    const [mounted, setMounted] = useState(false)
+export default function Charge({session, charge, groupe, cours, charges, enseignantId, onRemove, scenario = "production", minimal = false}: any){
+    const { isVisible, position, menuRef, openMenu, closeMenu } = useContextMenu()
     const [modalOpen, setModalOpen] = useState(false)
     const [transferModalOpen, setTransferModalOpen] = useState(false)
-
-    useEffect(() => {
-        setMounted(true)
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setHideMenu(true);
-            }
-        };
-
-        if (!hideMenu) {
-            document.addEventListener("mousedown", handleClickOutside);
-        } else {
-            document.removeEventListener("mousedown", handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [hideMenu]);
 
     function dragStartHandler(ev: any){
         ev.dataTransfer.setData("groupeId", groupe.id)
         ev.dataTransfer.setData("enseignantId", enseignantId)
     }
 
-    function openMenu(ev: any){
-        ev.preventDefault()
-        ev.stopPropagation()
-        setHideMenu(false)
-        setPosition({left: ev.clientX, top: ev.clientY})
-    }
-
-    function supprimer(ev: any){
+    function supprimer(){
         onRemove(groupe.id, enseignantId)
-        setHideMenu(true)
+        closeMenu()
     }
 
-    const chargesGroupe = charges?.filter((c: any) => c.groupe == groupe.id)
+    const chargesGroupe = charges?.filter((c: any) => c.groupe === groupe.id)
     const sommeCharges = chargesGroupe?.reduce((somme: number, c: any) => somme + (c.nbSemaines ?? 0), 0)
     const semainesMax = 15 - (sommeCharges ?? 0) + (charge.nbSemaines ?? 0)
 
     async function handleSemainesConfirm(quantite: number){
-        const nouvelleCharge = {nbSemaines: quantite}
-        await firebaseDb.charges.update(charge.id, nouvelleCharge)
+        await firebaseDb.charges.update(charge.id, {nbSemaines: quantite})
     }
 
     async function handleTypeChange(type: "T" | "P" | "TP"){
         await firebaseDb.charges.update(charge.id, {type})
-        setHideMenu(true)
+        closeMenu()
     }
 
     async function handleTransferConfirm(targetEnseignantId: string){
-        const chargeExiste = charges?.find((c: any) => c.enseignant == targetEnseignantId && c.groupe == groupe.id)
+        const chargeExiste = charges?.find((c: any) => c.enseignant === targetEnseignantId && c.groupe === groupe.id)
         if(chargeExiste){
             toast.error("Cet enseignant a deja cette charge")
             return
@@ -75,31 +48,7 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
         toast.success("Charge transférée avec succès")
     }
 
-    useEffect(() => {
-        if (!hideMenu && menuRef.current) {
-            const menu = menuRef.current;
-            const rect = menu.getBoundingClientRect();
-            const { innerWidth, innerHeight } = window;
-            
-            let newLeft = position.left;
-            let newTop = position.top;
-
-            if (position.left + rect.width > innerWidth) {
-                newLeft = Math.max(10, innerWidth - rect.width - 10);
-            }
-            if (position.top + rect.height > innerHeight) {
-                newTop = Math.max(10, innerHeight - rect.height - 10);
-            }
-
-            if (newLeft !== position.left || newTop !== position.top) {
-                setPosition({ left: newLeft, top: newTop });
-            }
-        }
-    }, [hideMenu, position.left, position.top]);
-
-    const typeLabel = charge.type === "TP" ? "T+P" : charge.type
-
-    const menuContent = !hideMenu && (
+    const menuContent = isVisible && (
         <div 
             ref={menuRef}
             style={{
@@ -115,7 +64,7 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
                 boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
                 minWidth: "200px",
                 border: "1px solid #444",
-                opacity: (position.left === 0 && position.top === 0) ? 0 : 1 // Hide until positioned
+                opacity: (position.left === 0 && position.top === 0) ? 0 : 1
             }}
         >
             <p className="mb-2 small text-white-50 text-uppercase fw-bold border-bottom pb-1 border-secondary">Modifier le type</p>
@@ -133,10 +82,10 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
 
             <p className="mb-2 small text-white-50 text-uppercase fw-bold border-bottom pb-1 border-secondary">Actions</p>
             <p className="mb-2"><button className="btn btn-danger btn-sm w-100" onClick={supprimer}>Supprimer</button></p>
-            <p className="mb-2"><button className="btn btn-primary btn-sm w-100" onClick={() => { setTransferModalOpen(true); setHideMenu(true); }}>Transférer à...</button></p>
-            <p className="mb-2"><button className="btn btn-outline-light btn-sm w-100" onClick={() => { setModalOpen(true); setHideMenu(true); }}>Changer les semaines</button></p>
-            <p className="mb-2"><button className="btn btn-outline-light btn-sm w-100" onClick={ev => window.open("/admin/cours?highlight=" + cours.id, "_blank")}>Modifier le cours</button></p>
-            <p className="mb-0"><button className="btn btn-outline-light btn-sm w-100" onClick={ev => window.open("/admin/groupes/" + session + "?highlight=" + groupe.id, "_blank")}>Modifier le groupe</button></p>
+            <p className="mb-2"><button className="btn btn-primary btn-sm w-100" onClick={() => { setTransferModalOpen(true); closeMenu(); }}>Transférer à...</button></p>
+            <p className="mb-2"><button className="btn btn-outline-light btn-sm w-100" onClick={() => { setModalOpen(true); closeMenu(); }}>Changer les semaines</button></p>
+            <p className="mb-2"><button className="btn btn-outline-light btn-sm w-100" onClick={() => window.open("/admin/cours?highlight=" + cours.id, "_blank")}>Modifier le cours</button></p>
+            <p className="mb-0"><button className="btn btn-outline-light btn-sm w-100" onClick={() => window.open("/admin/groupes/" + session + "?highlight=" + groupe.id, "_blank")}>Modifier le groupe</button></p>
         </div>
     )
 
@@ -162,7 +111,6 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
                 <div className="d-flex align-items-center gap-2">
                     <span className="fw-bold text-dark" title={`${groupe.nbEtudiants} étudiants`}>
                         <span style={{fontSize: "0.7rem", opacity: 0.8, marginRight: "2px"}}>👤</span>{groupe.nbEtudiants}
-
                     </span>
                     {charge.type !== "TP" && (
                         <span className={`badge ${charge.type === 'T' ? 'bg-primary' : 'bg-success'}`} style={{fontSize: "0.6rem"}}>
@@ -175,7 +123,7 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
                 )}
             </div>
             
-            {mounted && menuContent && createPortal(menuContent, document.body)}
+            {isVisible && createPortal(menuContent, document.body)}
 
             <InputModal 
                 isOpen={modalOpen}
@@ -215,15 +163,11 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
         }} 
         onMouseEnter={ev => {
             ev.currentTarget.style.boxShadow = "0 3px 6px rgba(0,0,0,0.15)";
-            ev.currentTarget.style.borderTopColor = "#bbb";
-            ev.currentTarget.style.borderRightColor = "#bbb";
-            ev.currentTarget.style.borderBottomColor = "#bbb";
+            ev.currentTarget.style.borderColor = "#bbb";
         }}
         onMouseLeave={ev => {
             ev.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-            ev.currentTarget.style.borderTopColor = "#ddd";
-            ev.currentTarget.style.borderRightColor = "#ddd";
-            ev.currentTarget.style.borderBottomColor = "#ddd";
+            ev.currentTarget.style.borderColor = "#ddd";
         }}
         draggable="true" 
         onDragStart={dragStartHandler}
@@ -239,7 +183,6 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
             </div>
             <span className="text-dark extra-small fw-bold" style={{fontSize: "0.75rem"}}>
                 <span style={{fontSize: "0.7rem", opacity: 0.8, marginRight: "2px"}}>👤</span>{groupe.nbEtudiants}
-
             </span>
         </div>
         <div style={{color: "#555", fontSize: "0.85rem", lineHeight: "1.2", marginBottom: "4px"}}>{cours.nom}</div>
@@ -250,7 +193,7 @@ export default function({session, charge, groupe, cours, charges, enseignantId, 
             </div>
         )}
         
-        {mounted && menuContent && createPortal(menuContent, document.body)}
+        {isVisible && createPortal(menuContent, document.body)}
 
         <InputModal 
             isOpen={modalOpen}

@@ -1,17 +1,15 @@
 'use client'
 
-import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
+import { useGenericAdmin } from "@/app/admin/components/useGenericAdmin"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect, Suspense, useMemo } from "react"
+import { useEffect, Suspense } from "react"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 import { useAuth } from "@/app/utilities/auth"
 import type { Allocation } from "@/app/db/db"
-import { useTableSort } from "@/app/utilities/sorting"
 import { toast } from "react-hot-toast"
 
 function AllocationsPageContent(){
     const { user, loading } = useAuth()
-    const allocations = useFirestoreCollection<Allocation>("allocations")
     const params = useParams()
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -20,19 +18,29 @@ function AllocationsPageContent(){
     const session = params.session as string
     const {saison, annee} = extractSessionInfos(session)
 
-    const [search, setSearch] = useState("")
-    
-    const filteredBySearch = useMemo(() => {
-        const base = (allocations ?? []).filter(a => a.session === session)
-        if (!search) return base
-        const searchLower = search.toLowerCase()
-        return base.filter(a => 
-            (a.code ?? "").toLowerCase().includes(searchLower) || 
-            (a.description ?? "").toLowerCase().includes(searchLower)
-        )
-    }, [allocations, session, search])
-
-    const { sortedData, toggleSort, getSortIcon } = useTableSort(filteredBySearch, "code")
+    const {
+        search, setSearch, sortedData, toggleSort, getSortIcon,
+        editingId, editData, setEditData, newData, setNewData,
+        startEdit, cancelEdit, saveEdit, addNew, deleteItem
+    } = useGenericAdmin<Allocation>({
+        collectionName: "allocations",
+        initialSortKey: "code",
+        filterFn: (a, search) => {
+            if (a.session !== session) return false
+            if (!search) return true
+            const s = search.toLowerCase()
+            return (a.code ?? "").toLowerCase().includes(s) || 
+                   (a.description ?? "").toLowerCase().includes(s)
+        },
+        defaultNewData: { code: "", description: "", quantite: 0 },
+        onBeforeAdd: (data) => {
+            if (!data.code || !data.description) {
+                toast.error("Le code et la description sont requis.")
+                return false
+            }
+            data.session = session
+        }
+    })
     
     useEffect(() => {
         if (highlightId) {
@@ -43,35 +51,10 @@ function AllocationsPageContent(){
         }
     }, [highlightId, sortedData])
 
-    const [editingId, setEditingId] = useState<string | null>(null)
-    const [editData, setEditData] = useState<any>({})
-    const [newData, setNewData] = useState({ code: "", description: "", quantite: 0 })
-
     if (loading) return <div className="container mt-5">Chargement...</div>
     if (!user) {
         router.push("/login")
         return null
-    }
-
-    function startEdit(allocation: any) {
-        setEditingId(allocation.id)
-        setEditData({ ...allocation })
-    }
-
-    async function saveEdit() {
-        if (editingId) {
-            await firebaseDb.allocations.update(editingId, editData)
-            setEditingId(null)
-        }
-    }
-
-    async function addNew() {
-        if (newData.code && newData.description) {
-            await firebaseDb.allocations.add({ ...newData, session })
-            setNewData({ code: "", description: "", quantite: 0 })
-        } else {
-            toast.error("Le code et la description sont requis.")
-        }
     }
 
     return <div className="container mt-3">
@@ -111,7 +94,7 @@ function AllocationsPageContent(){
                                 <td><input type="number" step="0.001" className="form-control" value={editData.quantite} onChange={e => setEditData({...editData, quantite: Number(e.target.value)})} /></td>
                                 <td>
                                     <button className="btn btn-success btn-sm me-1" onClick={saveEdit}>💾</button>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => setEditingId(null)}>❌</button>
+                                    <button className="btn btn-secondary btn-sm" onClick={cancelEdit}>❌</button>
                                 </td>
                             </>
                         ) : (
@@ -121,7 +104,7 @@ function AllocationsPageContent(){
                                 <td>{allocation.quantite}</td>
                                 <td>
                                     <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(allocation)}>✏️</button>
-                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => firebaseDb.allocations.delete(allocation.id)}>🗑️</button>
+                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => deleteItem(allocation.id)}>🗑️</button>
                                 </td>
                             </>
                         )}

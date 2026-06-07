@@ -1,32 +1,38 @@
 'use client'
 
-import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
+import { useGenericAdmin } from "@/app/admin/components/useGenericAdmin"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect, Suspense, useMemo } from "react"
+import { useEffect, Suspense } from "react"
 import { useAuth } from "@/app/utilities/auth"
 import type { Cours } from "@/app/db/db"
-import { useTableSort } from "@/app/utilities/sorting"
 import { toast } from "react-hot-toast"
 
 function CoursPageContent(){
     const { user, loading } = useAuth()
-    const cours = useFirestoreCollection<Cours>("cours")
     const router = useRouter()
     const searchParams = useSearchParams()
     const highlightId = searchParams.get("highlight")
     
-    const [search, setSearch] = useState("")
-    
-    const filteredCours = useMemo(() => {
-        if (!search) return cours || []
-        const searchLower = search.toLowerCase()
-        return (cours ?? []).filter(c => 
-            (c.sigle ?? "").toLowerCase().includes(searchLower) || 
-            (c.nom ?? "").toLowerCase().includes(searchLower)
-        )
-    }, [cours, search])
-
-    const { sortedData, toggleSort, getSortIcon } = useTableSort(filteredCours, "sigle")
+    const {
+        search, setSearch, sortedData, toggleSort, getSortIcon,
+        editingId, editData, setEditData, newData, setNewData,
+        startEdit, cancelEdit, saveEdit, addNew, deleteItem
+    } = useGenericAdmin<Cours>({
+        collectionName: "cours",
+        initialSortKey: "sigle",
+        filterFn: (c, search) => {
+            const s = search.toLowerCase()
+            return (c.sigle ?? "").toLowerCase().includes(s) || 
+                   (c.nom ?? "").toLowerCase().includes(s)
+        },
+        defaultNewData: { sigle: "", nom: "", saison: "Automne", couleur: "#000000", heuresTheorie: 0, heuresPratique: 0, heuresMaison: 0 },
+        onBeforeAdd: (data) => {
+            if (!data.sigle || !data.nom) {
+                toast.error("Le sigle et le nom sont requis.")
+                return false
+            }
+        }
+    })
 
     useEffect(() => {
         if (highlightId) {
@@ -37,35 +43,10 @@ function CoursPageContent(){
         }
     }, [highlightId, sortedData])
 
-    const [editingId, setEditingId] = useState<string | null>(null)
-    const [editData, setEditData] = useState<any>({})
-    const [newData, setNewData] = useState({ sigle: "", nom: "", saison: "Automne", couleur: "#000000", heuresTheorie: 0, heuresPratique: 0, heuresMaison: 0 })
-
     if (loading) return <div className="container mt-5">Chargement...</div>
     if (!user) {
         router.push("/login")
         return null
-    }
-
-    function startEdit(cour: any) {
-        setEditingId(cour.id)
-        setEditData({ ...cour })
-    }
-
-    async function saveEdit() {
-        if (editingId) {
-            await firebaseDb.cours.update(editingId, editData)
-            setEditingId(null)
-        }
-    }
-
-    async function addNew() {
-        if (newData.sigle && newData.nom) {
-            await firebaseDb.cours.add(newData)
-            setNewData({ sigle: "", nom: "", saison: "Automne", couleur: "#000000", heuresTheorie: 0, heuresPratique: 0, heuresMaison: 0 })
-        } else {
-            toast.error("Le sigle et le nom sont requis.")
-        }
     }
 
     return <div className="container mt-3">
@@ -123,7 +104,7 @@ function CoursPageContent(){
                                 <td><input type="number" className="form-control" value={editData.heuresMaison} onChange={e => setEditData({...editData, heuresMaison: Number(e.target.value)})} /></td>
                                 <td>
                                     <button className="btn btn-success btn-sm me-1" onClick={saveEdit}>💾</button>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => setEditingId(null)}>❌</button>
+                                    <button className="btn btn-secondary btn-sm" onClick={cancelEdit}>❌</button>
                                 </td>
                             </>
                         ) : (
@@ -142,7 +123,7 @@ function CoursPageContent(){
                                 <td>{cour.heuresMaison}h</td>
                                 <td>
                                     <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(cour)}>✏️</button>
-                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => firebaseDb.cours.delete(cour.id)}>🗑️</button>
+                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => deleteItem(cour.id)}>🗑️</button>
                                 </td>
                             </>
                         )}
