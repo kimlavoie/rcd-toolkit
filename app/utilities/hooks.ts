@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react'
 import type { Enseignant, Charge, Groupe, Cours, Liberation, Allocation } from "@/app/db/db"
 import { filterEnseignants } from "./businessLogic"
 
@@ -38,64 +38,81 @@ export function useFilteredEnseignants(
 
 export function useContextMenu() {
     const [isVisible, setIsVisible] = useState(false)
-    const [position, setPosition] = useState({ left: 0, top: 0 })
+    const [rawPosition, setRawPosition] = useState({ left: 0, top: 0 })
+    const [adjustedPosition, setAdjustedPosition] = useState({ left: 0, top: 0 })
     const menuRef = useRef<HTMLDivElement>(null)
 
     const openMenu = (ev: React.MouseEvent | MouseEvent) => {
         ev.preventDefault()
         ev.stopPropagation()
+        
+        const pos = { left: ev.clientX, top: ev.clientY }
+        setRawPosition(pos)
+        setAdjustedPosition(pos)
         setIsVisible(true)
-        setPosition({ left: ev.clientX, top: ev.clientY })
     }
 
     const closeMenu = () => {
         setIsVisible(false)
     }
 
+    // Handle closing when clicking outside or opening another menu
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
+        if (!isVisible) return
+
+        const handleOutsideAction = (event: Event) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 closeMenu()
             }
         }
 
-        if (isVisible) {
-            document.addEventListener("mousedown", handleClickOutside)
-        } else {
-            document.removeEventListener("mousedown", handleClickOutside)
-        }
+        document.addEventListener("mousedown", handleOutsideAction, true)
+        document.addEventListener("contextmenu", handleOutsideAction, true)
+        document.addEventListener("touchstart", handleOutsideAction, true)
 
         return () => {
-            document.removeEventListener("mousedown", handleClickOutside)
+            document.removeEventListener("mousedown", handleOutsideAction, true)
+            document.removeEventListener("contextmenu", handleOutsideAction, true)
+            document.removeEventListener("touchstart", handleOutsideAction, true)
         }
     }, [isVisible])
 
-    // Re-position menu if it goes off-screen
-    useEffect(() => {
-        if (isVisible && menuRef.current) {
+    const adjust = () => {
+        if (menuRef.current) {
             const menu = menuRef.current
             const rect = menu.getBoundingClientRect()
             const { innerWidth, innerHeight } = window
             
-            let newLeft = position.left
-            let newTop = position.top
+            let newLeft = rawPosition.left
+            let newTop = rawPosition.top
 
-            if (position.left + rect.width > innerWidth) {
+            if (rawPosition.left + rect.width > innerWidth) {
                 newLeft = Math.max(10, innerWidth - rect.width - 10)
             }
-            if (position.top + rect.height > innerHeight) {
+            if (rawPosition.top + rect.height > innerHeight) {
                 newTop = Math.max(10, innerHeight - rect.height - 10)
             }
 
-            if (newLeft !== position.left || newTop !== position.top) {
-                setPosition({ left: newLeft, top: newTop })
+            if (newLeft !== adjustedPosition.left || newTop !== adjustedPosition.top) {
+                setAdjustedPosition({ left: newLeft, top: newTop })
             }
         }
-    }, [isVisible, position.left, position.top])
+    }
+
+    useLayoutEffect(() => {
+        if (isVisible) adjust()
+    }, [isVisible, rawPosition.left, rawPosition.top])
+
+    useEffect(() => {
+        if (!isVisible || !menuRef.current) return
+        const resizeObserver = new ResizeObserver(adjust)
+        resizeObserver.observe(menuRef.current)
+        return () => resizeObserver.disconnect()
+    }, [isVisible, rawPosition.left, rawPosition.top, adjustedPosition])
 
     return {
         isVisible,
-        position,
+        position: adjustedPosition,
         menuRef,
         openMenu,
         closeMenu

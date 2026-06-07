@@ -1,5 +1,5 @@
 'use client'
-import React, { useRef, useEffect } from "react"
+import React from "react"
 
 interface ContextMenuGroupProps {
     position: { left: number, top: number }
@@ -7,6 +7,7 @@ interface ContextMenuGroupProps {
     onRemoveAll: () => void
     onTransferAll: () => void
     onEditCourse: () => void
+    menuRef?: React.RefObject<HTMLDivElement | null>
 }
 
 export default function ContextMenuGroup({
@@ -14,23 +15,12 @@ export default function ContextMenuGroup({
     onClose,
     onRemoveAll,
     onTransferAll,
-    onEditCourse
+    onEditCourse,
+    menuRef
 }: ContextMenuGroupProps) {
-    const menuRef = useRef<HTMLDivElement>(null)
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                onClose()
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside)
-        return () => document.removeEventListener("mousedown", handleClickOutside)
-    }, [onClose])
-
     return (
         <div 
-            ref={menuRef} 
+            ref={menuRef}
             style={{ 
                 position: "fixed", 
                 left: position.left, 
@@ -43,7 +33,8 @@ export default function ContextMenuGroup({
                 borderRadius: "8px", 
                 boxShadow: "0 8px 24px rgba(0,0,0,0.5)", 
                 minWidth: "200px", 
-                border: "1px solid #444" 
+                border: "1px solid #444",
+                opacity: (position.left === 0 && position.top === 0) ? 0 : 1
             }}
             onClick={e => e.stopPropagation()}
         >

@@ -10,6 +10,7 @@ import ContextMenuAddCourse from "./ContextMenuAddCourse"
 import ContextMenuGroup from "./ContextMenuGroup"
 import { toast } from "react-hot-toast"
 import { useData } from "./DataContext"
+import { useContextMenu } from "@/app/utilities/hooks"
 
 export default function ListeCharges({enseignant, session, enseignantWidth, scenario = "production", style, isPrinting}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any, isPrinting?: boolean}){
     const { visibilityMap, setVisibility } = useData()
@@ -17,18 +18,22 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
     const [modalOpen, setModalOpen] = useState(false)
     const [selectedGroupe, setSelectedGroupe] = useState<Groupe | null>(null)
 
+    const { isVisible: addMenuVisible, position: addMenuPos, menuRef: addMenuRef, openMenu: openAddMenu, closeMenu: closeAddMenu } = useContextMenu()
+    const { isVisible: groupMenuVisible, position: groupMenuPos, menuRef: groupMenuRef, openMenu: openGroupMenu, closeMenu: closeGroupMenu } = useContextMenu()
+
     const groupesData = useFirestoreCollection<Groupe>("groupes")
     const allChargesData = useFirestoreCollection<ChargeType>("charges")
     const coursData = useFirestoreCollection<Cours>("cours")
+
+    // Pour le transfert, on a besoin de garder l'ID du cours
+    const [transferCourseId, setTransferCourseId] = useState<string | null>(null)
+    const [groupTransferOpen, setGroupTransferOpen] = useState(false)
 
     useEffect(() => { setMounted(true) }, [])
 
     // 1. Filtrage et Préparation des données
     const scenarioCharges = useMemo(() => allChargesData?.filter(c => (c.scenario || "production") === scenario) || [], [allChargesData, scenario])
     const sessionGroupes = useMemo(() => groupesData?.filter(g => g.session === session) || [], [groupesData, session])
-
-    // 2. Logique pour le menu d'ajout
-    const [addMenu, setAddMenu] = useState<{show: boolean, pos: {left: number, top: number}}>({show: false, pos: {left: 0, top: 0}})
 
     const availableGroupsForMenu = useMemo(() => {
         return sessionGroupes.filter(groupe => {
@@ -95,12 +100,8 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
     async function removeAllCourseCharges(courseId: string){
         const courseCharges = teacherChargesInSession.filter(c => sessionGroupes.find(gr => gr.id === c.groupe)?.cours === courseId)
         for (const charge of courseCharges) await firebaseDb.charges.delete(charge.id)
-        toast.success("Charges supprimées"); setGroupMenu(prev => ({...prev, show: false}))
+        toast.success("Charges supprimées"); closeGroupMenu()
     }
-
-    const [groupMenu, setGroupMenu] = useState<{show: boolean, pos: {left: number, top: number}, courseId: string | null}>({show: false, pos: {left: 0, top: 0}, courseId: null})
-    const [groupTransferOpen, setGroupTransferOpen] = useState(false)
-    const [transferCourseId, setGroupTransferCourseId] = useState<string | null>(null)
 
     async function handleGroupTransferConfirm(targetEnseignantId: string){
         if (!transferCourseId) return
@@ -143,10 +144,10 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
 
     const getCellStyle = () => ({ ...style, borderRight: "1px solid #dee2e6", borderBottom: "1px solid #dee2e6", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, maxWidth: `${enseignantWidth}px`, overflow: "hidden" })
 
-    return <td onContextMenu={e => { e.preventDefault(); setAddMenu({show: true, pos: {left: e.clientX, top: e.clientY}}) }} style={getCellStyle()} data-dropzone="charge" data-enseignant-id={enseignant.id} onDrop={dropHandlerCharge} onDragOver={e => e.preventDefault()} onDragEnter={e => { e.preventDefault(); e.currentTarget.style.boxShadow = "inset 0 0 0 2px #0d6efd"; e.currentTarget.style.backgroundColor = "rgba(13, 110, 253, 0.05)"; }} onDragLeave={e => { e.currentTarget.style.boxShadow = ""; e.currentTarget.style.backgroundColor = ""; }}>
+    return <td onContextMenu={openAddMenu} style={getCellStyle()} data-dropzone="charge" data-enseignant-id={enseignant.id} onDrop={dropHandlerCharge} onDragOver={e => e.preventDefault()} onDragEnter={e => { e.preventDefault(); e.currentTarget.style.boxShadow = "inset 0 0 0 2px #0d6efd"; e.currentTarget.style.backgroundColor = "rgba(13, 110, 253, 0.05)"; }} onDragLeave={e => { e.currentTarget.style.boxShadow = ""; e.currentTarget.style.backgroundColor = ""; }}>
         {sortedCourseIdsForDisplay.map(courseId => {
             const courseCharges = chargesByCourseForDisplay[courseId], cour = coursData?.find(c => c.id == courseId), expanded = isExpanded(courseId)
-            return <div key={courseId} className="mb-2 rounded shadow-sm overflow-hidden" style={{ border: "1px solid #ddd", borderLeft: `6px solid ${cour?.couleur || "#0dcaf0"}`, backgroundColor: "white", display: "block", cursor: expanded && isPrinting ? "default" : "grab" }} draggable={!isPrinting} onDragStart={ev => { ev.dataTransfer.setData("courseId", courseId); ev.dataTransfer.setData("enseignantId", enseignant.id); }} onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setGroupMenu({show: true, pos: {left: e.clientX, top: e.clientY}, courseId}) }}>
+            return <div key={courseId} className="mb-2 rounded shadow-sm overflow-hidden" style={{ border: "1px solid #ddd", borderLeft: `6px solid ${cour?.couleur || "#0dcaf0"}`, backgroundColor: "white", display: "block", cursor: expanded && isPrinting ? "default" : "grab" }} draggable={!isPrinting} onDragStart={ev => { ev.dataTransfer.setData("courseId", courseId); ev.dataTransfer.setData("enseignantId", enseignant.id); }} onContextMenu={e => { setTransferCourseId(courseId); openGroupMenu(e); }}>
                 <div className="d-flex justify-content-between align-items-center cursor-pointer p-2" onClick={() => setVisibility(`${session}_${enseignant.id}_${courseId}_expanded`, !expanded)} style={{ fontSize: "0.8rem" }}>
                     <div className="flex-grow-1 min-width-0">
                         <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
@@ -163,8 +164,33 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                 {expanded && <div className="p-2 pt-0"><div className="ps-2 border-start" style={{ borderColor: "#eee" }}>{courseCharges.map(charge => { const groupe = sessionGroupes.find(g => g.id == charge.groupe); return (groupe && cour) ? <Charge key={charge.id} session={session} charge={charge} groupe={groupe} cours={cour} charges={scenarioCharges} enseignantId={enseignant.id} onRemove={(gid: string, eid: string) => { const c = scenarioCharges.find(ch => ch.groupe == gid && ch.enseignant == eid); if(c) firebaseDb.charges.delete(c.id) }} scenario={scenario} minimal={true}/> : null })}</div></div>}
             </div>
         })}
-        {mounted && addMenu.show && createPortal(<ContextMenuAddCourse position={addMenu.pos} onClose={() => setAddMenu({show: false, pos: {left:0, top:0}})} onAdd={quickAddCharge} onAddAll={list => list.forEach(g => quickAddCharge(g, "TP"))} onOpenModal={g => {setSelectedGroupe(g); setModalOpen(true); setAddMenu({show: false, pos:{left:0, top:0}})}} sortedCourseIds={sortedCourseIdsForMenu} groupsByCourse={groupsByCourseForMenu} coursData={coursData} scenarioCharges={scenarioCharges} enseignantId={enseignant.id} />, document.body)}
-        {mounted && groupMenu.show && createPortal(<ContextMenuGroup position={groupMenu.pos} onClose={() => setGroupMenu(prev => ({...prev, show: false}))} onRemoveAll={() => removeAllCourseCharges(groupMenu.courseId!)} onTransferAll={() => { setGroupTransferCourseId(groupMenu.courseId); setGroupTransferOpen(true); setGroupMenu(prev => ({...prev, show: false})) }} onEditCourse={() => window.open("/admin/cours?highlight=" + groupMenu.courseId, "_blank")} />, document.body)}
+        {mounted && addMenuVisible && createPortal(
+            <ContextMenuAddCourse 
+                position={addMenuPos} 
+                onClose={closeAddMenu} 
+                onAdd={quickAddCharge} 
+                onAddAll={list => list.forEach(g => quickAddCharge(g, "TP"))} 
+                onOpenModal={g => {setSelectedGroupe(g); setModalOpen(true); closeAddMenu();}} 
+                sortedCourseIds={sortedCourseIdsForMenu} 
+                groupsByCourse={groupsByCourseForMenu} 
+                coursData={coursData} 
+                scenarioCharges={scenarioCharges} 
+                enseignantId={enseignant.id} 
+                menuRef={addMenuRef}
+            />, 
+            document.body
+        )}
+        {mounted && groupMenuVisible && createPortal(
+            <ContextMenuGroup 
+                position={groupMenuPos} 
+                onClose={closeGroupMenu} 
+                onRemoveAll={() => removeAllCourseCharges(transferCourseId!)} 
+                onTransferAll={() => { setGroupTransferOpen(true); closeGroupMenu(); }} 
+                onEditCourse={() => window.open("/admin/cours?highlight=" + transferCourseId, "_blank")} 
+                menuRef={groupMenuRef}
+            />, 
+            document.body
+        )}
         <InputModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onConfirm={val => { if(selectedGroupe) firebaseDb.charges.add({groupe: selectedGroupe.id, enseignant: enseignant.id, nbSemaines: val, scenario, type: "TP", session}).then(() => setModalOpen(false)) }} title="Ajouter une charge" label={`Semaines pour ${selectedGroupe ? coursData?.find(c => c.id === selectedGroupe.cours)?.sigle : ''} :`} defaultValue={15} max={15} />
         {transferCourseId && <TransferModal isOpen={groupTransferOpen} onClose={() => setGroupTransferOpen(false)} onConfirm={handleGroupTransferConfirm} title={`Transférer ${coursData?.find(c => c.id === transferCourseId)?.sigle}`} currentEnseignantId={enseignant.id} />}
     </td>

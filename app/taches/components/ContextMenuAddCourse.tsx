@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useRef, useEffect } from "react"
+import React, { useState } from "react"
 import type { Groupe, Charge, Cours } from "@/app/db/db"
 import { getGroupColor } from "@/app/utilities/groupColors"
 
@@ -14,6 +14,7 @@ interface ContextMenuAddCourseProps {
     coursData: Cours[] | undefined
     scenarioCharges: Charge[]
     enseignantId: string
+    menuRef?: React.RefObject<HTMLDivElement | null>
 }
 
 export default function ContextMenuAddCourse({
@@ -26,32 +27,11 @@ export default function ContextMenuAddCourse({
     groupsByCourse,
     coursData,
     scenarioCharges,
-    enseignantId
+    enseignantId,
+    menuRef
 }: ContextMenuAddCourseProps) {
     const [search, setSearch] = useState("")
     const [expandedCourses, setExpandedCourses] = useState<Record<string, boolean>>({})
-    const menuRef = useRef<HTMLDivElement>(null)
-    const [adjustedPos, setAdjustedPos] = useState(position)
-
-    useEffect(() => {
-        if (menuRef.current) {
-            const menu = menuRef.current
-            const rect = menu.getBoundingClientRect()
-            const { innerWidth, innerHeight } = window
-            
-            let newLeft = position.left
-            let newTop = position.top
-
-            if (position.left + rect.width > innerWidth) {
-                newLeft = Math.max(10, innerWidth - rect.width - 10)
-            }
-            if (position.top + rect.height > innerHeight) {
-                newTop = Math.max(10, innerHeight - rect.height - 10)
-            }
-
-            setAdjustedPos({ left: newLeft, top: newTop })
-        }
-    }, [position, expandedCourses])
 
     const filteredCourseIds = sortedCourseIds.filter(id => {
         if (!search) return true
@@ -62,11 +42,11 @@ export default function ContextMenuAddCourse({
 
     return (
         <div 
-            ref={menuRef} 
+            ref={menuRef}
             style={{ 
                 position: "fixed", 
-                left: adjustedPos.left, 
-                top: adjustedPos.top, 
+                left: position.left, 
+                top: position.top, 
                 backgroundColor: "#212529", 
                 color: "white", 
                 display: "block", 
@@ -78,7 +58,7 @@ export default function ContextMenuAddCourse({
                 border: "1px solid #444", 
                 maxHeight: "85vh", 
                 overflowY: "auto",
-                opacity: adjustedPos.left === 0 ? 0 : 1,
+                opacity: (position.left === 0 && position.top === 0) ? 0 : 1,
                 transition: "opacity 0.1s"
             }}
             onClick={e => e.stopPropagation()}

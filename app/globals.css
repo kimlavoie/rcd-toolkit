@@ -83,3 +83,11 @@ option {
     max-width: 100% !important;
     overflow: hidden !important;
   }
+
+  .cursor-pointer {
+    cursor: pointer;
+  }
+
+  .cursor-pointer:hover {
+    opacity: 0.8;
+  }

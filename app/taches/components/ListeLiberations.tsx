@@ -1,53 +1,31 @@
 'use client'
 import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { createPortal } from "react-dom"
 import Liberation from "./Liberation"
 import type { Allocation, Liberation as LiberationType, Enseignant } from "@/app/db/db"
 import InputModal from "./InputModal"
 import { toast } from "react-hot-toast"
+import { useContextMenu } from "@/app/utilities/hooks"
 
 export default function ListeLiberations({enseignant, session, enseignantWidth, scenario = "production", style}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any}){
-    const [hideMenu, setHideMenu] = useState(true)
-    const [position, setPosition] = useState({left: 0, top: 0})
-    const menuRef = useRef<HTMLDivElement>(null)
     const [mounted, setMounted] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [selectedAllocation, setSelectedAllocation] = useState<Allocation | null>(null)
+
+    const { isVisible, position, menuRef, openMenu, closeMenu } = useContextMenu()
 
     const allocations = useFirestoreCollection<Allocation>("allocations")
     const allLiberations = useFirestoreCollection<LiberationType>("liberations")
 
     // Filter by scenario
-    const liberations = allLiberations?.filter(l => (l.scenario || "production") === scenario)
+    const liberations = useMemo(() => allLiberations?.filter(l => (l.scenario || "production") === scenario), [allLiberations, scenario])
 
     const [menuSearch, setMenuSearch] = useState("")
 
     useEffect(() => {
         setMounted(true)
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setHideMenu(true);
-                setMenuSearch("");
-            }
-        };
-
-        if (!hideMenu) {
-            document.addEventListener("mousedown", handleClickOutside);
-        } else {
-            document.removeEventListener("mousedown", handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [hideMenu]);
-
-    function openMenu(ev: any){
-        ev.preventDefault()
-        setHideMenu(false)
-        setPosition({left: ev.clientX, top: ev.clientY})
-    }
+    }, [])
 
     async function removeHandlerLiberation(liberationId: string, enseignantId: string){
         await firebaseDb.liberations.delete(liberationId)
@@ -57,14 +35,14 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
         if(selectedAllocation){
             await firebaseDb.liberations.add({allocation: selectedAllocation.id, enseignant: enseignant.id, quantite, scenario, session})
             setModalOpen(false)
-            setHideMenu(true)
+            closeMenu()
             setMenuSearch("");
         }
     }
 
     async function quickAddLiberation(allocation: Allocation, quantite: number){
         await firebaseDb.liberations.add({allocation: allocation.id, enseignant: enseignant.id, quantite, scenario, session})
-        setHideMenu(true)
+        closeMenu()
         setMenuSearch("");
     }
 
@@ -124,29 +102,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     const currentAllocationSomme = currentAllocationLiberations?.reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0)
     const currentAllocationMax = Number(((selectedAllocation?.quantite ?? 0) - (currentAllocationSomme ?? 0)).toFixed(3))
 
-    useEffect(() => {
-        if (!hideMenu && menuRef.current) {
-            const menu = menuRef.current;
-            const rect = menu.getBoundingClientRect();
-            const { innerWidth, innerHeight } = window;
-            
-            let newLeft = position.left;
-            let newTop = position.top;
-
-            if (position.left + rect.width > innerWidth) {
-                newLeft = Math.max(10, innerWidth - rect.width - 10);
-            }
-            if (position.top + rect.height > innerHeight) {
-                newTop = Math.max(10, innerHeight - rect.height - 10);
-            }
-
-            if (newLeft !== position.left || newTop !== position.top) {
-                setPosition({ left: newLeft, top: newTop });
-            }
-        }
-    }, [hideMenu, position.left, position.top]);
-
-    const menuContent = !hideMenu && (
+    const menuContent = isVisible && (
         <div 
             ref={menuRef}
             style={{
@@ -215,7 +171,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
                         className="btn btn-outline-secondary btn-sm px-2 py-1" 
                         title="Assignation personnalisée (ETC)"
                         style={{fontSize: '0.75rem', border: '1px solid rgba(255,255,255,0.1)'}}
-                        onClick={() => {setSelectedAllocation(allocation); setModalOpen(true);}}
+                        onClick={() => {setSelectedAllocation(allocation); setModalOpen(true); closeMenu();}}
                     >
                         ⚙️
                     </button>
@@ -224,9 +180,9 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
         </div>
     )
 
-    const liberationsEnseignant = liberations?.filter(liberation => liberation.enseignant == enseignant.id)
-    const allocationsSession = allocations?.filter(allocation => allocation.session == session)
-    const liberationsSession = liberationsEnseignant?.filter(liberation => allocationsSession?.find(allocation => allocation.id == liberation.allocation))
+    const liberationsEnseignant = useMemo(() => liberations?.filter(liberation => liberation.enseignant == enseignant.id), [liberations, enseignant.id])
+    const allocationsSession = useMemo(() => allocations?.filter(allocation => allocation.session == session), [allocations, session])
+    const liberationsSession = useMemo(() => liberationsEnseignant?.filter(liberation => allocationsSession?.find(allocation => allocation.id == liberation.allocation)), [liberationsEnseignant, allocationsSession])
 
     return <td 
         key={enseignant.id} 
@@ -245,7 +201,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
             return <Liberation key={liberation.id} session={session} liberation={liberation} allocation={allocation} liberations={liberations} enseignantId={enseignant.id} onRemove={removeHandlerLiberation} scenario={scenario}/>
         })}
         
-        {mounted && menuContent && createPortal(menuContent, document.body)}
+        {mounted && createPortal(menuContent, document.body)}
 
         <InputModal 
             isOpen={modalOpen}
