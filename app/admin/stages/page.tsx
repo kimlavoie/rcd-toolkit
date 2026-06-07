@@ -1,44 +1,51 @@
 'use client'
-import { firebaseDb, useFirestoreCollection } from "@/app/utilities/firebaseDb"
+
+import { useGenericAdmin } from "@/app/admin/components/useGenericAdmin"
 import { useRouter } from "next/navigation"
-import { useState, Suspense, useCallback } from "react"
-import { extractSessionInfos } from "@/app/utilities/sessions"
-import SelectSession from "../components/inputs/SelectSession"
+import { useEffect, Suspense } from "react"
 import { useAuth } from "@/app/utilities/auth"
 import type { Stage } from "@/app/db/db"
-import toast from "react-hot-toast"
-import { useAdminTable } from "../components/useAdminTable"
-import AdminHeader from "../components/AdminHeader"
+import { toast } from "react-hot-toast"
+import { extractSessionInfos } from "@/app/utilities/sessions"
+import SelectSession from "../components/inputs/SelectSession"
+import { DeletionService } from "@/app/utilities/deletionService"
 
-function StagesPageContent() {
+function StagesPageContent(){
     const { user, loading } = useAuth()
-    const stages = useFirestoreCollection<Stage>("stages")
     const router = useRouter()
-
-    const filterFn = useCallback((s: Stage, search: string) => {
-        const searchLower = search.toLowerCase()
-        const sessionLabel = formatSession(s.session).toLowerCase()
-        return (
-            sessionLabel.includes(searchLower) ||
-            (s.nom || "").toLowerCase().includes(searchLower) ||
-            s.session.toLowerCase().includes(searchLower) ||
-            s.CIparStagiaire.toString().includes(searchLower) ||
-            s.nbStagiaires.toString().includes(searchLower)
-        )
-    }, [])
-
-    const { search, setSearch, sortedData, toggleSort, getSortIcon } = useAdminTable({
-        data: stages,
+    
+    const {
+        search, setSearch, sortedData, toggleSort, getSortIcon,
+        editingId, editData, setEditData, newData, setNewData,
+        startEdit, cancelEdit, saveEdit, addNew, deleteItem
+    } = useGenericAdmin<Stage>({
+        collectionName: "stages",
         initialSortKey: "session",
-        filterFn
+        filterFn: (s, search) => {
+            const searchLower = search.toLowerCase()
+            const {saison, annee} = extractSessionInfos(s.session)
+            const sessionLabel = `${saison} ${annee}`.toLowerCase()
+            return (
+                sessionLabel.includes(searchLower) ||
+                (s.nom || "").toLowerCase().includes(searchLower) ||
+                s.session.toLowerCase().includes(searchLower)
+            )
+        },
+        defaultNewData: { session: "A26", nom: "", CIparStagiaire: 0, nbStagiaires: 0, pourcentageCoordination: 0 },
+        onBeforeAdd: (data) => {
+            if (!data.nom) {
+                toast.error("Le nom est requis.")
+                return false
+            }
+        },
+        onDelete: DeletionService.deleteStage
     })
 
-    const [editingId, setEditingId] = useState<string | null>(null)
-    const [editData, setEditData] = useState<any>({})
-    const [newData, setNewData] = useState({ session: "A26", nom: "", CIparStagiaire: 0, nbStagiaires: 0, pourcentageCoordination: 0 })
-
     if (loading) return <div className="container mt-5">Chargement...</div>
-    if (!user) { router.push("/login"); return null; }
+    if (!user) {
+        router.push("/login")
+        return null
+    }
 
     function formatSession(code: string) {
         try {
@@ -48,7 +55,22 @@ function StagesPageContent() {
     }
 
     return <div className="container mt-3">
-        <AdminHeader title="Gestion des stages" search={search} setSearch={setSearch} />
+        <div className="d-flex justify-content-between align-items-center mb-3">
+            <h1>Gestion des stages</h1>
+            <div className="input-group input-group-sm w-auto shadow-sm" style={{maxWidth: "300px"}}>
+                <span className="input-group-text bg-white border-end-0 text-muted">🔍</span>
+                <input 
+                    type="text" 
+                    className="form-control border-start-0 ps-0" 
+                    placeholder="Rechercher..." 
+                    value={search} 
+                    onChange={e => setSearch(e.target.value)} 
+                />
+                {search && (
+                    <button className="btn btn-outline-secondary border-start-0" onClick={() => setSearch("")}>✕</button>
+                )}
+            </div>
+        </div>
         <table className="table table-striped align-middle">
             <thead>
                 <tr>
@@ -71,8 +93,8 @@ function StagesPageContent() {
                                 <td><input type="number" className="form-control" value={editData.nbStagiaires} onChange={e => setEditData({...editData, nbStagiaires: Number(e.target.value)})} /></td>
                                 <td><input type="number" min="0" max="100" className="form-control" value={editData.pourcentageCoordination} onChange={e => setEditData({...editData, pourcentageCoordination: Number(e.target.value)})} /></td>
                                 <td>
-                                    <button className="btn btn-success btn-sm me-1" onClick={async () => { await firebaseDb.stages.update(editingId, editData); setEditingId(null); }}>💾</button>
-                                    <button className="btn btn-secondary btn-sm" onClick={() => setEditingId(null)}>❌</button>
+                                    <button className="btn btn-success btn-sm me-1" onClick={saveEdit}>💾</button>
+                                    <button className="btn btn-secondary btn-sm" onClick={cancelEdit}>❌</button>
                                 </td>
                             </>
                         ) : (
@@ -83,8 +105,8 @@ function StagesPageContent() {
                                 <td>{stage.nbStagiaires}</td>
                                 <td>{stage.pourcentageCoordination ?? 0}%</td>
                                 <td>
-                                    <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => { setEditingId(stage.id); setEditData({...stage}); }}>✏️</button>
-                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => firebaseDb.stages.delete(stage.id)}>🗑️</button>
+                                    <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(stage)}>✏️</button>
+                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => deleteItem(stage.id)}>🗑️</button>
                                 </td>
                             </>
                         )}
@@ -96,7 +118,7 @@ function StagesPageContent() {
                     <td><input type="number" step="0.0001" className="form-control" placeholder="CI/Stag" value={newData.CIparStagiaire} onChange={e => setNewData({...newData, CIparStagiaire: Number(e.target.value)})} /></td>
                     <td><input type="number" className="form-control" placeholder="Total" value={newData.nbStagiaires} onChange={e => setNewData({...newData, nbStagiaires: Number(e.target.value)})} /></td>
                     <td><input type="number" min="0" max="100" className="form-control" placeholder="%" value={newData.pourcentageCoordination} onChange={e => setNewData({...newData, pourcentageCoordination: Number(e.target.value)})} /></td>
-                    <td><button className="btn btn-primary btn-sm w-100" onClick={async () => { if(newData.nom) { await firebaseDb.stages.add(newData); setNewData({...newData, nom: ""}); } else { toast.error("Nom requis"); } }}>+</button></td>
+                    <td><button className="btn btn-primary btn-sm w-100" onClick={addNew}>+</button></td>
                 </tr>
             </tbody>
         </table>

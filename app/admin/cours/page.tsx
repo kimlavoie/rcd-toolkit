@@ -7,6 +7,8 @@ import { useAuth } from "@/app/utilities/auth"
 import type { Cours } from "@/app/db/db"
 import { toast } from "react-hot-toast"
 
+import { DeletionService } from "@/app/utilities/deletionService"
+
 function CoursPageContent(){
     const { user, loading } = useAuth()
     const router = useRouter()
@@ -31,7 +33,8 @@ function CoursPageContent(){
                 toast.error("Le sigle et le nom sont requis.")
                 return false
             }
-        }
+        },
+        onDelete: DeletionService.deleteCours
     })
 
     useEffect(() => {

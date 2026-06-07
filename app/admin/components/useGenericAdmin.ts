@@ -11,6 +11,7 @@ interface UseGenericAdminOptions<T> {
     filterFn: (item: T, search: string) => boolean
     defaultNewData: Partial<T>
     onBeforeAdd?: (data: Partial<T>) => boolean | void
+    onDelete?: (id: string) => Promise<void>
 }
 
 interface FirebaseTable {
@@ -24,7 +25,8 @@ export function useGenericAdmin<T extends { id: string }>({
     initialSortKey,
     filterFn,
     defaultNewData,
-    onBeforeAdd
+    onBeforeAdd,
+    onDelete
 }: UseGenericAdminOptions<T>) {
     const data = useFirestoreCollection<T>(collectionName as string)
     const [search, setSearch] = useState("")
@@ -81,9 +83,13 @@ export function useGenericAdmin<T extends { id: string }>({
     }
 
     const deleteItem = async (id: string) => {
-        if (confirm("Êtes-vous sûr de vouloir supprimer cet élément ?")) {
+        if (confirm("Êtes-vous sûr de vouloir supprimer cet élément ? Cela pourrait supprimer définitivement toutes les données associées (charges, groupes, etc.). Continuer ?")) {
             try {
-                await table.delete(id)
+                if (onDelete) {
+                    await onDelete(id)
+                } else {
+                    await table.delete(id)
+                }
                 toast.success("Élément supprimé")
             } catch (error) {
                 console.error("Error deleting:", error)

@@ -19,79 +19,128 @@ interface SupervisionCalcul {
     pourcentageCoordination: number
 }
 
-function coursUniques(groupes:Array<Groupe>){
-    return  groupes.filter((groupe, index, self) => 
-        index === self.findIndex((u) => u.sigle === groupe.sigle)
-      );
+interface GroupeCI extends Groupe {
+    heuresEffectives: number
+    preparation: number
+    prestation: number
+    PES: number
+    CI: number
 }
 
-function calculerNbPrep(groupes:Array<Groupe>){
+interface ResultatCI {
+    groupes: GroupeCI[]
+    sommes: {
+        etudiants: number
+        heures: number
+        preparations: number
+        prestations: number
+        PES: number
+        total: number
+    }
+    exceptions: {
+        PES415: number
+        NES160: number
+        NES75: number
+        liberations: number
+        stages: number
+    }
+    total: number
+}
+
+function coursUniques(groupes: Array<Groupe>) {
+    return groupes.filter((groupe, index, self) => 
+        index === self.findIndex((u) => u.sigle === groupe.sigle)
+    );
+}
+
+function calculerNbPrep(groupes: Array<Groupe>): number {
     const length = coursUniques(groupes).length
+    if (length === 0) return 0
     return length < 3 ? 0.9 : (length < 4 ? 1.1 : 1.75)
 }
 
-function somme(tableau: Array<number>){
-    return tableau.reduce((acc, n) => acc + n, 0)
+function somme(tableau: Array<number>): number {
+    return tableau.reduce((acc, n) => acc + (isNaN(n) ? 0 : n), 0)
 }
 
-export default function(groupes: Array<Groupe>, liberations: Array<Liberation>, supervisions: Array<SupervisionCalcul>){
+export default function calculateur(
+    groupes: Array<Groupe>, 
+    liberations: Array<Liberation>, 
+    supervisions: Array<SupervisionCalcul>
+): ResultatCI {
     const facteurPreparation = calculerNbPrep(groupes)
     const facteurPrestation = 1.2
     const facteurPES = 0.04
 
-    let vueCI:any = {} 
-    vueCI.groupes = groupes.map((groupe, index, self) => {
+    const groupesCI: GroupeCI[] = groupes.map((groupe, index, self) => {
         const notSeen = index === self.findIndex((u) => u.sigle === groupe.sigle)
         
-        let heuresEquivalentes = groupe.heures
+        let heuresEquivalentes = Number(groupe.heures || 0)
         if (groupe.type === "T") {
-            heuresEquivalentes = groupe.heuresTheorie ?? (groupe.heures * 0.5)
+            heuresEquivalentes = Number(groupe.heuresTheorie ?? (heuresEquivalentes * 0.5))
         } else if (groupe.type === "P") {
-            heuresEquivalentes = groupe.heuresPratique ?? (groupe.heures * 0.5)
+            heuresEquivalentes = Number(groupe.heuresPratique ?? (heuresEquivalentes * 0.5))
         }
 
+        const etudiants = Number(groupe.etudiants || 0)
+        const semaines = Number(groupe.semaines || 0)
+        
         const preparation = notSeen ? heuresEquivalentes * facteurPreparation : 0
         const prestation = heuresEquivalentes * facteurPrestation
-        const PES = heuresEquivalentes * groupe.etudiants * facteurPES
-        const CI = (preparation + prestation + PES) * (groupe.semaines/15)
+        const PES = heuresEquivalentes * etudiants * facteurPES
+        const CI = (preparation + prestation + PES) * (semaines / 15)
 
-        return { ...groupe, heuresEffectives: heuresEquivalentes, preparation, prestation, PES, CI }
+        return { 
+            ...groupe, 
+            heuresEffectives: heuresEquivalentes, 
+            preparation, 
+            prestation, 
+            PES, 
+            CI: isNaN(CI) ? 0 : CI 
+        }
     })
 
-    vueCI.sommes = {}
+    const sommes = {
+        etudiants: somme(groupes.map(g => Number(g.etudiants || 0))),
+        heures: somme(groupesCI.map(g => g.heuresEffectives)),
+        preparations: somme(groupesCI.map(g => g.preparation)),
+        prestations: somme(groupesCI.map(g => g.prestation)),
+        PES: somme(groupesCI.map(g => g.PES)),
+        total: somme(groupesCI.map(g => g.CI))
+    }
 
-    vueCI.sommes.etudiants = somme(groupes.map((groupe) => groupe.etudiants))
-    vueCI.sommes.heures = somme(vueCI.groupes.map((groupe:any) => groupe.heuresEffectives))
-    vueCI.sommes.preparations = somme(vueCI.groupes.map((groupe:any) => groupe.preparation))
-    vueCI.sommes.prestations = somme(vueCI.groupes.map((groupe:any) => groupe.prestation))
-    vueCI.sommes.PES = somme(vueCI.groupes.map((groupe:any) => groupe.PES))
-    vueCI.sommes.total = somme(vueCI.groupes.map((groupe:any) => groupe.CI))
+    const sommePES = somme(groupesCI.map(g => g.etudiants * g.heuresEffectives))
 
-    const sommePES = somme(vueCI.groupes.map((groupe:any) => groupe.etudiants * groupe.heuresEffectives))
+    const exceptions = {
+        PES415: sommePES > 415 ? (sommePES - 415) * 0.03 : 0,
+        NES160: sommes.etudiants > 160 ? ((sommes.etudiants - 160) ** 2) * 0.1 : 0,
+        NES75: sommes.etudiants >= 75 ? sommes.etudiants * 0.01 : 0,
+        liberations: somme(liberations.map(lib => Number(lib.qte || 0))) * 40,
+        stages: somme(supervisions.map(s => {
+            const nbStagiaires = Number(s.nbStagiaires || 0)
+            const CIparStagiaire = Number(s.CIparStagiaire || 0)
+            const coordination = Number(s.coordination || 0)
+            const pourcentageCoordination = Number(s.pourcentageCoordination || 0)
+            const facteurSupervision = 1 - (pourcentageCoordination / 100)
+            const res = (nbStagiaires * CIparStagiaire * facteurSupervision) + coordination
+            return isNaN(res) ? 0 : res
+        }))
+    }
 
-    vueCI.exceptions = {}
+    const total = 
+        sommes.total + 
+        exceptions.PES415 + 
+        exceptions.NES160 + 
+        exceptions.NES75 +
+        exceptions.liberations +
+        exceptions.stages
 
-    vueCI.exceptions.PES415 = sommePES > 415 ? (sommePES - 415) * 0.03 : 0
-    vueCI.exceptions.NES160 = vueCI.sommes.etudiants > 160 ? ((vueCI.sommes.etudiants - 160) ** 2 ) * 0.1 : 0
-    vueCI.exceptions.NES75 = vueCI.sommes.etudiants >= 75 ? vueCI.sommes.etudiants * 0.01 : 0
-    vueCI.exceptions.liberations = somme(liberations.map((lib) => lib.qte)) * 40
-    
-    // Nouveau calcul de CI pour les stages
-    // La CI de supervision directe est réduite du pourcentage alloué à la coordination
-    vueCI.exceptions.stages = somme(supervisions.map(s => {
-        const facteurSupervision = 1 - (s.pourcentageCoordination / 100)
-        return (s.nbStagiaires * s.CIparStagiaire * facteurSupervision) + s.coordination
-    }))
-
-    vueCI.total = 
-        vueCI.sommes.total + 
-        vueCI.exceptions.PES415 + 
-        vueCI.exceptions.NES160 + 
-        vueCI.exceptions.NES75 +
-        vueCI.exceptions.liberations +
-        vueCI.exceptions.stages
-
-    return vueCI
+    return {
+        groupes: groupesCI,
+        sommes,
+        exceptions,
+        total: isNaN(total) ? 0 : total
+    }
 }
 
-export type {Groupe, Liberation, SupervisionCalcul}
+export type { Groupe, Liberation, SupervisionCalcul, ResultatCI, GroupeCI }

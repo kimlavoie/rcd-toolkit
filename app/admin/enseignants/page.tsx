@@ -7,6 +7,8 @@ import { useAuth } from "@/app/utilities/auth"
 import type { Enseignant } from "@/app/db/db"
 import { toast } from "react-hot-toast"
 
+import { DeletionService } from "@/app/utilities/deletionService"
+
 function EnseignantsPageContent(){
     const { user, loading } = useAuth()
     const router = useRouter()
@@ -32,7 +34,8 @@ function EnseignantsPageContent(){
                 toast.error("Le numéro d'employé et le nom sont requis.")
                 return false
             }
-        }
+        },
+        onDelete: DeletionService.deleteEnseignant
     })
 
     useEffect(() => {

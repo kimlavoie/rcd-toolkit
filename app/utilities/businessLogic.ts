@@ -69,32 +69,61 @@ export function filterEnseignants(
     allocations: Allocation[],
     scenario: string
 ): Enseignant[] {
-    return enseignants
-        .filter(e => !cache.includes(e.id))
-        .filter(e => {
-            if (!search) return true;
-            const searchLower = search.toLowerCase();
-            
-            // 1. Infos enseignant
-            const matchTeacher = (e.nom ?? "").toLowerCase().includes(searchLower) || 
-                                (e.prenom ?? "").toLowerCase().includes(searchLower) ||
-                                (e.numeroEmploye ?? "").toLowerCase().includes(searchLower);
-            if (matchTeacher) return true;
+    const hiddenIds = new Set(cache);
+    const filteredBase = enseignants.filter(e => !hiddenIds.has(e.id));
+    
+    if (!search) {
+        return [...filteredBase].sort((a: any, b: any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""));
+    }
 
-            // 2. Cours (Charges)
-            const teacherCharges = charges.filter(c => c.enseignant === e.id && (c.scenario || "production") === scenario);
+    const searchLower = search.toLowerCase();
+
+    // 1. Indexation pour accès O(1)
+    const groupesMap = new Map(groupes.map(g => [g.id, g]));
+    const coursMap = new Map(cours.map(c => [c.id, c]));
+    const allocationsMap = new Map(allocations.map(a => [a.id, a]));
+
+    // 2. Pré-filtrage des charges et libérations par scénario
+    const currentScenario = scenario || "production";
+    const relevantCharges = charges.filter(c => (c.scenario || "production") === currentScenario);
+    const relevantLiberations = liberations.filter(l => (l.scenario || "production") === currentScenario);
+
+    // 3. Regroupement par enseignant pour éviter les boucles imbriquées
+    const chargesByTeacher = new Map<string, Charge[]>();
+    relevantCharges.forEach(c => {
+        const list = chargesByTeacher.get(c.enseignant) || [];
+        list.push(c);
+        chargesByTeacher.set(c.enseignant, list);
+    });
+
+    const liberationsByTeacher = new Map<string, Liberation[]>();
+    relevantLiberations.forEach(l => {
+        const list = liberationsByTeacher.get(l.enseignant) || [];
+        list.push(l);
+        liberationsByTeacher.set(l.enseignant, list);
+    });
+
+    return filteredBase
+        .filter(e => {
+            // A. Infos enseignant
+            if ((e.nom ?? "").toLowerCase().includes(searchLower) || 
+                (e.prenom ?? "").toLowerCase().includes(searchLower) ||
+                (e.numeroEmploye ?? "").toLowerCase().includes(searchLower)) return true;
+
+            // B. Cours (Charges)
+            const teacherCharges = chargesByTeacher.get(e.id) || [];
             const matchCourse = teacherCharges.some(charge => {
-                const groupe = groupes.find(g => g.id === charge.groupe);
-                const cour = cours.find(c => c.id === groupe?.cours);
+                const groupe = groupesMap.get(charge.groupe);
+                const cour = coursMap.get(groupe?.cours ?? "");
                 return (cour?.sigle ?? "").toLowerCase().includes(searchLower) || 
                        (cour?.nom ?? "").toLowerCase().includes(searchLower);
             });
             if (matchCourse) return true;
 
-            // 3. Libérations (Allocations)
-            const teacherLiberations = liberations.filter(l => l.enseignant === e.id && (l.scenario || "production") === scenario);
+            // C. Libérations (Allocations)
+            const teacherLiberations = liberationsByTeacher.get(e.id) || [];
             const matchLiberation = teacherLiberations.some(lib => {
-                const allocation = allocations.find(a => a.id === lib.allocation);
+                const allocation = allocationsMap.get(lib.allocation);
                 return (allocation?.code ?? "").toLowerCase().includes(searchLower) || 
                        (allocation?.description ?? "").toLowerCase().includes(searchLower);
             });
@@ -102,5 +131,5 @@ export function filterEnseignants(
 
             return false;
         })
-        .toSorted((a: any, b: any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""));
+        .sort((a: any, b: any) => (a[tri] ?? "").localeCompare(b[tri] ?? ""));
 }

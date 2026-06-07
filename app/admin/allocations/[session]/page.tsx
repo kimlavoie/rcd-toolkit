@@ -8,6 +8,8 @@ import { useAuth } from "@/app/utilities/auth"
 import type { Allocation } from "@/app/db/db"
 import { toast } from "react-hot-toast"
 
+import { DeletionService } from "@/app/utilities/deletionService"
+
 function AllocationsPageContent(){
     const { user, loading } = useAuth()
     const params = useParams()
@@ -39,7 +41,8 @@ function AllocationsPageContent(){
                 return false
             }
             data.session = session
-        }
+        },
+        onDelete: DeletionService.deleteAllocation
     })
     
     useEffect(() => {
