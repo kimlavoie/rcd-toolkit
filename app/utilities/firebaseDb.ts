@@ -81,13 +81,27 @@ export const firebaseDb = {
 function createFirebaseTable(collectionName: string) {
     const schema = Schemas[collectionName];
 
+    const getUserId = () => {
+        if (typeof window !== 'undefined') {
+            const mockUser = localStorage.getItem('cypress-user');
+            if (mockUser) return JSON.parse(mockUser).uid;
+        }
+        return auth.currentUser?.uid;
+    };
+
+    const isMock = () => typeof window !== 'undefined' && localStorage.getItem(`cypress-db-${collectionName}`) !== null;
+
     return {
         toArray: () => {
              throw new Error("Use useFirestoreCollection hook for reactive data");
         },
         add: async (data: any) => {
+            if (isMock()) {
+                console.log(`Mock ADD for ${collectionName}`, data);
+                return { id: "mock-" + Math.random().toString(36).substr(2, 9) };
+            }
             try {
-                const userId = auth.currentUser?.uid;
+                const userId = getUserId();
                 if (!userId) throw new Error("User must be logged in to add data");
                 
                 const { id, ...rest } = data;
@@ -113,8 +127,12 @@ function createFirebaseTable(collectionName: string) {
             }
         },
         update: async (id: string, data: any) => {
+            if (isMock()) {
+                console.log(`Mock UPDATE for ${collectionName}/${id}`, data);
+                return;
+            }
             try {
-                const userId = auth.currentUser?.uid;
+                const userId = getUserId();
                 if (!userId) throw new Error("User must be logged in to update data");
 
                 const docRef = doc(firestore, collectionName, id);
@@ -155,8 +173,12 @@ function createFirebaseTable(collectionName: string) {
             }
         },
         delete: async (id: string) => {
+            if (isMock()) {
+                console.log(`Mock DELETE for ${collectionName}/${id}`);
+                return;
+            }
             try {
-                const userId = auth.currentUser?.uid;
+                const userId = getUserId();
                 if (!userId) throw new Error("User must be logged in to delete data");
 
                 const docRef = doc(firestore, collectionName, id);

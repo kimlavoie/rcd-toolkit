@@ -133,6 +133,7 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                     await firebaseDb.charges.update(target.id, { type: "TP" }); await firebaseDb.charges.delete(charge.id)
                 } else if (!target) { await firebaseDb.charges.update(charge.id, { enseignant: idNouveauEnseignant }) }
             }
+            if (courseCharges.length > 0) toast.success("Cours déplacé");
             return
         }
         const idGroupe = ev.dataTransfer.getData("groupeId")

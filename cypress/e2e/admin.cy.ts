@@ -1,9 +1,6 @@
 describe('Admin - Enseignants', () => {
   beforeEach(() => {
-    // Mock authentication if possible, or assume already logged in if dev environment has it.
-    // Since we can't easily mock Firebase JS SDK from outside, 
-    // we'll try to at least test the UI interactions that don't depend on Firebase 
-    // or assume the user has a test account.
+    cy.login();
     cy.visit('/admin/enseignants');
   });
 
