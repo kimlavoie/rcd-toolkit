@@ -83,7 +83,7 @@ function TachesContent() {
         }
 
         const lines = [
-            "Session,NoEmploye,Nom,Prenom,TypeTache,Description,Type/Role,Quantite"
+            "Session;NoEmploye;Nom;Prenom;TypeTache;Description;Type/Role;Quantite"
         ]
 
         sessionsAnnuelle.forEach(sCode => {
@@ -98,8 +98,8 @@ function TachesContent() {
                     const grp = groupes.find((g: any) => g.id === c.groupe && g.session === sCode)
                     if (grp) {
                         const cour = cours.find((crs: any) => crs.id === grp.cours)
-                        const desc = `"${cour?.sigle || 'Inconnu'} - Gr.${grp.id.substring(0,4)}"`
-                        lines.push(`${sCode},${noEmp},${nom},${prenom},Cours,${desc},${c.type},${c.nbSemaines}`)
+                        const desc = `"${cour?.sigle || 'Inconnu'}(${grp.nbEtudiants})"`
+                        lines.push(`${sCode};${noEmp};${nom};${prenom};Cours;${desc};${c.type};${c.nbSemaines}`)
                     }
                 })
 
@@ -109,7 +109,7 @@ function TachesContent() {
                     const alloc = allocations.find((a: any) => a.id === l.allocation && a.session === sCode)
                     if (alloc) {
                         const desc = `"${alloc.code} - ${alloc.description}"`
-                        lines.push(`${sCode},${noEmp},${nom},${prenom},Liberation,${desc},N/A,${l.quantite}`)
+                        lines.push(`${sCode};${noEmp};${nom};${prenom};Liberation;${desc};N/A;${l.quantite}`)
                     }
                 })
 
@@ -120,10 +120,10 @@ function TachesContent() {
                     if (stage) {
                         const desc = `"${stage.nom}"`
                         if (s.nbStagiaires > 0) {
-                            lines.push(`${sCode},${noEmp},${nom},${prenom},Supervision,${desc},Stagiaires,${s.nbStagiaires}`)
+                            lines.push(`${sCode};${noEmp};${nom};${prenom};Supervision;${desc};Stagiaires;${s.nbStagiaires}`)
                         }
                         if (s.coordination > 0) {
-                            lines.push(`${sCode},${noEmp},${nom},${prenom},Supervision,${desc},Coordination,${s.coordination}`)
+                            lines.push(`${sCode};${noEmp};${nom};${prenom};Supervision;${desc};Coordination;${s.coordination}`)
                         }
                     }
                 })
