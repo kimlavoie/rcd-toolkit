@@ -3,12 +3,21 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../utilities/auth";
+import Skeleton from "@/app/utilities/Skeleton";
+
 
 export default function(){
     const { user, loading } = useAuth()
     const router = useRouter()
 
-    if (loading) return <div className="container mt-5 text-center">Chargement...</div>
+    if (loading) return (
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )
     if (!user) {
         router.push("/login")
         return null

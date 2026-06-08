@@ -2,6 +2,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "../utilities/auth";
+import Skeleton from "@/app/utilities/Skeleton";
+
 
 export default function(){
     const { user, loading } = useAuth()
@@ -24,7 +26,14 @@ export default function(){
         };
     }, []);
 
-    if (loading) return <div className="container mt-5">Chargement...</div>
+    if (loading) return (
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )
     if (!user) return null;
 
     return <div className="container mt-5">

@@ -14,6 +14,7 @@ import {
 import { useTacheData } from "./useTacheData"
 import TacheSummaryBadges from "./TacheSummaryBadges"
 import SupervisionInputs from "./SupervisionInputs"
+import { memo } from "react"
 
 interface TacheProps {
     visibleEnseignants: any[]
@@ -27,7 +28,7 @@ interface TacheProps {
     isPrinting?: boolean
 }
 
-export default function Tache({
+const Tache = memo(function Tache({
     visibleEnseignants, 
     session, 
     columnWidths, 
@@ -289,4 +290,6 @@ export default function Tache({
             )}
         </>
     )
-}
+});
+
+export default Tache;

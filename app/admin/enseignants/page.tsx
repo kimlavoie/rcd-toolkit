@@ -8,6 +8,8 @@ import type { Enseignant } from "@/app/db/db"
 import { toast } from "react-hot-toast"
 
 import { DeletionService } from "@/app/utilities/deletionService"
+import Skeleton from "@/app/utilities/Skeleton";
+
 
 function EnseignantsPageContent(){
     const { user, loading } = useAuth()
@@ -47,7 +49,14 @@ function EnseignantsPageContent(){
         }
     }, [highlightId, sortedData])
 
-    if (loading) return <div className="container mt-5">Chargement...</div>
+    if (loading) return (
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )
     if (!user) {
         router.push("/login")
         return null
@@ -125,7 +134,14 @@ function EnseignantsPageContent(){
 
 export default function EnseignantsPage() {
     return (
-        <Suspense fallback={<div className="container mt-5">Chargement...</div>}>
+        <Suspense fallback={(
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )}>
             <EnseignantsPageContent />
         </Suspense>
     )

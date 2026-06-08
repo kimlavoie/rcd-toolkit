@@ -10,6 +10,8 @@ import { toast } from "react-hot-toast"
 import SelectSession from "../components/inputs/SelectSession"
 import { collection, query, where, getDocs } from "firebase/firestore"
 import { firestore } from "@/app/utilities/firebase"
+import Skeleton from "@/app/utilities/Skeleton";
+
 
 function ScenariosPageContent() {
     const { user, loading } = useAuth()
@@ -39,7 +41,14 @@ function ScenariosPageContent() {
 
     const [isCopying, setIsCopying] = useMemo(() => [false, () => {}], []) // Placeholder state for simplicity or I can keep it
 
-    if (loading) return <div className="container mt-5">Chargement...</div>
+    if (loading) return (
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )
     if (!user) {
         router.push("/login")
         return null
@@ -201,5 +210,12 @@ function ScenariosPageContent() {
 }
 
 export default function ScenariosPage() {
-    return <Suspense fallback={<div className="container mt-5">Chargement...</div>}><ScenariosPageContent /></Suspense>
+    return <Suspense fallback={(
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )}><ScenariosPageContent /></Suspense>
 }

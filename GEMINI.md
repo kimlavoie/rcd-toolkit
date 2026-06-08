@@ -11,3 +11,5 @@
 
 ## Workflow
 - **Build Verification:** ALWAYS run `npm run build` after making significant code changes to ensure no TypeScript or Next.js compilation errors were introduced. Validation is incomplete without a successful build.
+- **Test Validation:** ALWAYS ensure that all existing and new tests pass (unit, component, and E2E) before considering a request or a code change as finished. Run `npm run test:unit`, `npx cypress run --component`, and `npx cypress run --e2e` to verify.
+- **Test Generation:** Whenever you add a new feature, component, or significantly modify existing business logic, you MUST generate the corresponding tests (unit, component, or E2E as appropriate) to ensure the behavior is verified and to proactively increase the overall test coverage.

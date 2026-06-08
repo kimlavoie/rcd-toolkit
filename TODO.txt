@@ -1,0 +1,6 @@
+  4. Nouvelles Fonctionnalités "Power User"
+   * Historique des Changements (Undo/Redo) : Implémenter une gestion d'état locale pour annuler la dernière action (très utile après un Drag & Drop accidentel).
+
+  5. Refactorisation Code (Clean Code)
+   * Data Access Layer (DAL) : Sortir la logique firebaseDb.ts vers des services dédiés pour mieux séparer la couche "Transport" (Firebase) de la couche "Domaine" (Logique métier).
+   * Custom Hooks de Domaine : Créer des hooks comme useCICalculation(enseignantId) qui encapsulent toute la complexité du calcul, rendant les composants UI beaucoup plus simples.

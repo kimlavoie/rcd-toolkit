@@ -1,7 +1,7 @@
 'use client'
 
 import { firebaseDb } from "@/app/utilities/firebaseDb"
-import { useState, useEffect } from "react"
+import { useState, useEffect, memo } from "react"
 import { createPortal } from "react-dom"
 import InputModal from "./InputModal"
 import TransferModal from "./TransferModal"
@@ -9,7 +9,7 @@ import { toast } from "react-hot-toast"
 import { getGroupColor } from "@/app/utilities/groupColors"
 import { useContextMenu } from "@/app/utilities/hooks"
 
-export default function Charge({session, charge, groupe, cours, charges, enseignantId, onRemove, scenario = "production", minimal = false}: any){
+const Charge = memo(function Charge({session, charge, groupe, cours, charges, enseignantId, onRemove, scenario = "production", minimal = false}: any){
     const { isVisible, position, menuRef, openMenu, closeMenu } = useContextMenu()
     const [modalOpen, setModalOpen] = useState(false)
     const [transferModalOpen, setTransferModalOpen] = useState(false)
@@ -213,4 +213,6 @@ export default function Charge({session, charge, groupe, cours, charges, enseign
             currentEnseignantId={enseignantId}
         />
     </div>
-}
+});
+
+export default Charge;

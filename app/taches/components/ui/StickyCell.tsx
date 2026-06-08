@@ -1,5 +1,4 @@
-
-import { ReactNode } from "react";
+import { ReactNode, memo } from "react";
 
 interface StickyCellProps {
     children: ReactNode;
@@ -10,7 +9,7 @@ interface StickyCellProps {
     className?: string;
     style?: React.CSSProperties;
 }
-export default function StickyCell({ 
+const StickyCell = memo(function StickyCell({ 
     children, 
     top = "auto", 
     bottom = "auto", 
@@ -34,4 +33,6 @@ export default function StickyCell({
             {children}
         </td>
     );
-}
+});
+
+export default StickyCell;

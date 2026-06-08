@@ -5,6 +5,7 @@ import "bootstrap/dist/css/bootstrap.css"
 import "./globals.css"
 import ToasterWrapper from "./ToasterWrapper";
 import Breadcrumbs from "./Breadcrumbs";
+import { ErrorBoundary } from "./utilities/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,9 +30,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="bg-light">
-        <ToasterWrapper />
-        <Breadcrumbs />
-        {children}
+        <ErrorBoundary>
+            <ToasterWrapper />
+            <Breadcrumbs />
+            {children}
+        </ErrorBoundary>
       </body>
     </html>
   );

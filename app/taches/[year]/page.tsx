@@ -1,17 +1,20 @@
 'use client'
 import { useParams, useRouter } from "next/navigation"
 import { extractSessionInfos } from "@/app/utilities/sessions"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Enseignant from "../components/Enseignant"
 import Tache from "../components/Tache"
 import Summary from "../components/Summary"
 import CIReelle from "../components/CIReelle"
 import TachesToolbar from "../components/TachesToolbar"
+import DashboardModal from "../components/DashboardModal"
 import { DataProvider, useData } from "../components/DataContext"
 import StickyHeader from "../components/ui/StickyHeader"
 import { useAuth } from "@/app/utilities/auth"
 import { toast } from "react-hot-toast"
 import { useFilteredEnseignants } from "@/app/utilities/hooks"
+import Skeleton from "@/app/utilities/Skeleton";
+
 import { 
     getChargesManquantesCount, 
     getLiberationsManquantesCount, 
@@ -43,6 +46,7 @@ function TachesContent() {
     const [selectedScenarioId, setSelectedScenarioId] = useState<string>("production")
     const [isPrinting, setIsPrinting] = useState(false)
     const [teachersPerPage, setTeachersPerPage] = useState(7)
+    const [showDashboard, setShowDashboard] = useState(false)
 
     const getWidth = (id: string) => columnWidths[id] || enseignantWidth
 
@@ -70,6 +74,73 @@ function TachesContent() {
             window.print()
             setIsPrinting(false)
         }, 500)
+    }
+
+    const handleExportCSV = () => {
+        if (!groupes || !charges || !allocations || !liberations || !stages || !supervisions || !cours) {
+            toast.error("Données en cours de chargement...")
+            return
+        }
+
+        const lines = [
+            "Session,NoEmploye,Nom,Prenom,TypeTache,Description,Type/Role,Quantite"
+        ]
+
+        sessionsAnnuelle.forEach(sCode => {
+            visibleEnseignants.forEach(enseignant => {
+                const noEmp = enseignant.numeroEmploye || ""
+                const nom = `"${enseignant.nom || ""}"`
+                const prenom = `"${enseignant.prenom || ""}"`
+                
+                // 1. Charges (Cours)
+                const profCharges = charges.filter((c: any) => c.enseignant === enseignant.id && (c.scenario || "production") === selectedScenarioId)
+                profCharges.forEach((c: any) => {
+                    const grp = groupes.find((g: any) => g.id === c.groupe && g.session === sCode)
+                    if (grp) {
+                        const cour = cours.find((crs: any) => crs.id === grp.cours)
+                        const desc = `"${cour?.sigle || 'Inconnu'} - Gr.${grp.id.substring(0,4)}"`
+                        lines.push(`${sCode},${noEmp},${nom},${prenom},Cours,${desc},${c.type},${c.nbSemaines}`)
+                    }
+                })
+
+                // 2. Libérations
+                const profLibs = liberations.filter((l: any) => l.enseignant === enseignant.id && (l.scenario || "production") === selectedScenarioId)
+                profLibs.forEach((l: any) => {
+                    const alloc = allocations.find((a: any) => a.id === l.allocation && a.session === sCode)
+                    if (alloc) {
+                        const desc = `"${alloc.code} - ${alloc.description}"`
+                        lines.push(`${sCode},${noEmp},${nom},${prenom},Liberation,${desc},N/A,${l.quantite}`)
+                    }
+                })
+
+                // 3. Supervisions
+                const profSups = supervisions.filter((s: any) => s.enseignant === enseignant.id && (s.scenario || "production") === selectedScenarioId)
+                profSups.forEach((s: any) => {
+                    const stage = stages.find((st: any) => st.id === s.stage && st.session === sCode)
+                    if (stage) {
+                        const desc = `"${stage.nom}"`
+                        if (s.nbStagiaires > 0) {
+                            lines.push(`${sCode},${noEmp},${nom},${prenom},Supervision,${desc},Stagiaires,${s.nbStagiaires}`)
+                        }
+                        if (s.coordination > 0) {
+                            lines.push(`${sCode},${noEmp},${nom},${prenom},Supervision,${desc},Coordination,${s.coordination}`)
+                        }
+                    }
+                })
+            })
+        })
+
+        const csvContent = lines.join("\n")
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.href = url
+        link.setAttribute("download", `Export_Taches_${year}_${selectedScenarioId}.csv`)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+        toast.success("Export CSV terminé")
     }
 
     useEffect(() => {
@@ -118,7 +189,14 @@ function TachesContent() {
         }
     }, [user, authLoading, router])
 
-    if (authLoading || isLoading) return <div className="container mt-5 text-center">Chargement...</div>
+    if (authLoading || isLoading) return (
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )
     if (!user) return null;
     if (!isValidYear) return <div className="container mt-5 alert alert-danger">Année scolaire invalide: {year}</div>
 
@@ -257,7 +335,17 @@ function TachesContent() {
                     onValidate={valider}
                     onFitToScreen={fitToScreen}
                     onExportPDF={handleExportPDF}
+                    onExportCSV={handleExportCSV}
                     setShowHelp={setShowHelp}
+                    onShowDashboard={() => setShowDashboard(true)}
+                />
+
+                <DashboardModal 
+                    isOpen={showDashboard}
+                    onClose={() => setShowDashboard(false)}
+                    sessionsAnnuelle={sessionsAnnuelle}
+                    visibleEnseignants={visibleEnseignants}
+                    selectedScenarioId={selectedScenarioId}
                 />
 
                 {cache.length > 0 && (
@@ -375,7 +463,8 @@ export default function() {
     
     const sessionA = isValidYear ? `A${year.substring(2,4)}` : "";
     const sessionH = isValidYear ? `H${(parseInt(year.substring(2,4)) + 1).toString().padStart(2, '0')}` : "";
-    const sessionsAnnuelle = [sessionA, sessionH];
+    
+    const sessionsAnnuelle = useMemo(() => [sessionA, sessionH], [sessionA, sessionH]);
 
     return (
         <DataProvider sessions={sessionsAnnuelle}>

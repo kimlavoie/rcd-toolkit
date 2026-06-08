@@ -8,6 +8,8 @@ import { useAuth } from "../../utilities/auth"
 import { firestore } from "../../utilities/firebase"
 import { collection, getDocs, addDoc, doc, deleteDoc, query, where } from "firebase/firestore"
 import { toast } from "react-hot-toast"
+import Skeleton from "@/app/utilities/Skeleton";
+
 
 export default function(){
     const { user, loading: authLoading } = useAuth()
@@ -18,7 +20,14 @@ export default function(){
     const [copying, setCopying] = useState(false)
     const [progress, setProgress] = useState("")
 
-    if (authLoading) return <div className="container mt-5 text-center">Chargement...</div>
+    if (authLoading) return (
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )
     if (!user) {
         router.push("/login")
         return null

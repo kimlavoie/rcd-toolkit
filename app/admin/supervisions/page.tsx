@@ -10,6 +10,8 @@ import type { Supervision, Enseignant, Stage } from "@/app/db/db"
 import { toast } from "react-hot-toast"
 import { useAdminTable } from "../components/useAdminTable"
 import AdminHeader from "../components/AdminHeader"
+import Skeleton from "@/app/utilities/Skeleton";
+
 
 function SupervisionsPageContent() {
     const { user, loading } = useAuth()
@@ -57,7 +59,14 @@ function SupervisionsPageContent() {
     const [editData, setEditData] = useState<any>({})
     const [newData, setNewData] = useState({ enseignant: "", stage: "", nbStagiaires: 0, coordination: 0 })
 
-    if (loading) return <div className="container mt-5">Chargement...</div>
+    if (loading) return (
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )
     if (!user) { router.push("/login"); return null; }
 
     return <div className="container mt-3">
@@ -113,5 +122,12 @@ function SupervisionsPageContent() {
 }
 
 export default function SupervisionsPage() {
-    return <Suspense fallback={<div className="container mt-5">Chargement...</div>}><SupervisionsPageContent /></Suspense>
+    return <Suspense fallback={(
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )}><SupervisionsPageContent /></Suspense>
 }

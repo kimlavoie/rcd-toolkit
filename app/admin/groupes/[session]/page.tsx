@@ -9,6 +9,8 @@ import { useAuth } from "@/app/utilities/auth"
 import type { Groupe, Cours } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
 import { toast } from "react-hot-toast"
+import Skeleton from "@/app/utilities/Skeleton";
+
 
 function GroupesPageContent(){
     const { user, loading } = useAuth()
@@ -58,7 +60,14 @@ function GroupesPageContent(){
     const [editData, setEditData] = useState<any>({})
     const [newData, setNewData] = useState({ cours: "", nbEtudiants: 0, aTheorie: true, aPratique: true })
 
-    if (loading) return <div className="container mt-5">Chargement...</div>
+    if (loading) return (
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )
     if (!user) {
         router.push("/login")
         return null
@@ -190,7 +199,14 @@ function GroupesPageContent(){
 
 export default function GroupesPage() {
     return (
-        <Suspense fallback={<div className="container mt-5">Chargement...</div>}>
+        <Suspense fallback={(
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )}>
             <GroupesPageContent />
         </Suspense>
     )

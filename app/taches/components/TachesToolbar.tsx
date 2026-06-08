@@ -26,7 +26,9 @@ interface TachesToolbarProps {
     onValidate: () => void
     onFitToScreen: () => void
     onExportPDF: () => void
+    onExportCSV?: () => void
     setShowHelp: (show: boolean) => void
+    onShowDashboard: () => void
 }
 
 export default function TachesToolbar({
@@ -37,8 +39,8 @@ export default function TachesToolbar({
     teachersPerPage, setTeachersPerPage,
     selectedScenarioId, setSelectedScenarioId,
     currentSessionScenarios,
-    onHideAll, onShowAll, onExpandAll, onCollapseAll, onValidate, onFitToScreen, onExportPDF,
-    setShowHelp
+    onHideAll, onShowAll, onExpandAll, onCollapseAll, onValidate, onFitToScreen, onExportPDF, onExportCSV,
+    setShowHelp, onShowDashboard
 }: TachesToolbarProps) {
     return (
         <div className="mb-2 px-2 no-print">
@@ -156,11 +158,31 @@ export default function TachesToolbar({
                     </div>
                 </div>
 
-                {/* Validation & PDF Unified */}
+                {/* Validation & PDF & CSV & Dashboard Unified */}
                 <div className="d-flex gap-2 align-items-center">
+                    <button 
+                        className="btn btn-sm btn-outline-primary rounded-pill shadow-sm px-3 fw-bold" 
+                        style={{height: "31px", fontSize: "0.75rem"}} 
+                        onClick={onShowDashboard}
+                        title="Voir la santé du département"
+                    >
+                        📈 Santé
+                    </button>
+
                     <button className="btn btn-sm btn-success rounded-pill shadow-sm px-3 fw-bold" style={{height: "31px", fontSize: "0.75rem"}} onClick={onValidate}>
                         ✅ Valider
                     </button>
+                    
+                    {onExportCSV && (
+                        <button 
+                            className="btn btn-sm btn-outline-success rounded-pill shadow-sm px-3 fw-bold" 
+                            style={{height: "31px", fontSize: "0.75rem"}} 
+                            onClick={onExportCSV}
+                            title="Exporter en CSV"
+                        >
+                            📊 CSV
+                        </button>
+                    )}
 
                     <div className="d-flex align-items-center bg-white rounded-pill shadow-sm border border-danger overflow-hidden" style={{height: "31px"}}>
                         <button 

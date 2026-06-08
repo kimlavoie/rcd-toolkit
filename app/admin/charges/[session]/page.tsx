@@ -10,6 +10,8 @@ import { useAuth } from "@/app/utilities/auth"
 import type { Charge, Enseignant, Groupe, Cours } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
 import { toast } from "react-hot-toast"
+import Skeleton from "@/app/utilities/Skeleton";
+
 
 export default function(){
     const { user, loading } = useAuth()
@@ -57,7 +59,14 @@ export default function(){
     const [editData, setEditData] = useState<any>({})
     const [newData, setNewData] = useState({ enseignant: "", groupe: "", nbSemaines: 15 })
 
-    if (loading) return <div className="container mt-5">Chargement...</div>
+    if (loading) return (
+        <div className="container mt-5">
+            <Skeleton height="40px" width="300px" className="mb-4" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" className="mb-2" />
+            <Skeleton height="60px" />
+        </div>
+    )
     if (!user) {
         router.push("/login")
         return null
