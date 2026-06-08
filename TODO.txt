@@ -1,6 +1,13 @@
-  4. Nouvelles Fonctionnalités "Power User"
+  Correction de bogues
+   * La santé du département devrait fonctionner pour la CI annuelle
+   * Dans le CSV généré:
+     - Retirer l'identifiant du groupe
+     - Ajouter le nombre d'étudiant du groupe
+     - Faciliter l'import dans Excel en utilisant le format CSV natif de Excel (qui utilise le point-virgule)
+  
+  Nouvelles Fonctionnalités "Power User"
    * Historique des Changements (Undo/Redo) : Implémenter une gestion d'état locale pour annuler la dernière action (très utile après un Drag & Drop accidentel).
 
-  5. Refactorisation Code (Clean Code)
+  Refactorisation Code (Clean Code)
    * Data Access Layer (DAL) : Sortir la logique firebaseDb.ts vers des services dédiés pour mieux séparer la couche "Transport" (Firebase) de la couche "Domaine" (Logique métier).
    * Custom Hooks de Domaine : Créer des hooks comme useCICalculation(enseignantId) qui encapsulent toute la complexité du calcul, rendant les composants UI beaucoup plus simples.

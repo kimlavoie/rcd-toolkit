@@ -44,7 +44,7 @@ export default function AdminPage(){
             group: "Structure & Groupes",
             items: [
                 { title: "Cours", icon: "📚", href: "/admin/cours", desc: "Catalogue des cours et pondérations" },
-                { title: "Groupes", icon: "/admin/groupes", href: "/admin/groupes", desc: "Répartition des groupes par session" },
+                { title: "Groupes", icon: "👥", href: "/admin/groupes", desc: "Répartition des groupes par session" },
                 { title: "Charges", icon: "📝", href: "/admin/charges", desc: "Attributions individuelles" }
             ]
         },
