@@ -54,7 +54,8 @@ describe('Drag & Drop functionality', () => {
     cy.visit('/taches/2026');
 
     // Use global expansion button to see everything
-    cy.contains('button', 'Déplier tout').click();
+    cy.contains('button', 'Affichage').click();
+    cy.contains('button', '➕ Déplier tout').click();
 
     cy.get('.badge').contains('P').first().should('be.visible');
     cy.get('.badge').contains('T').first().should('be.visible');

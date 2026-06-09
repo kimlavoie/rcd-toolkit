@@ -23,7 +23,8 @@ describe('Undo/Redo History Workflow', () => {
     });
 
     cy.visit('/taches/2026');
-    cy.contains('button', 'Déplier tout').click();
+    cy.contains('button', 'Affichage').click();
+    cy.contains('button', '➕ Déplier tout').click();
     cy.wait(1000); // Give some time for sections to expand and charges to render
   });
 

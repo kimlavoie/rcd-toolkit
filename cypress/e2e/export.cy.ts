@@ -36,7 +36,8 @@ describe('CSV Export Workflow', () => {
     cy.contains('John Doe').should('be.visible');
 
     // Click Export CSV button
-    cy.contains('button', '📊 CSV').click();
+    cy.contains('button', 'Exporter').click();
+    cy.contains('button', '📊 Données (CSV)').click();
 
     // Verify it creates an object URL (meaning it created a Blob)
     cy.get('@createObjectURLStub').should('have.been.calledOnce');

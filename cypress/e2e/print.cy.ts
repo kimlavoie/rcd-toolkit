@@ -22,11 +22,13 @@ describe('Print Workflow', () => {
   });
 
   it('triggers the print layout and calls window.print', () => {
+    cy.contains('button', 'Exporter').click();
+    
     // Select "2" teachers per page to test pagination logic
-    cy.get('select').last().select('2');
+    cy.get('input[type="number"]').type('{selectAll}2');
 
     // Click Print PDF button
-    cy.contains('button', '🖨️ PDF').click();
+    cy.contains('button', '🖨️ Imprimer (PDF)').click();
 
     // The print mode should render 'Tâches Enseignants - Page X / Y'
     cy.contains('Page 1 / 2').should('be.visible');

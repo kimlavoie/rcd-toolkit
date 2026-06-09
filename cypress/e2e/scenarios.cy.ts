@@ -13,7 +13,7 @@ describe('Scenarios Management', () => {
     });
   });
 
-  it('allows creating a new scenario by copying production', () => {
+  it('allows creating a new scenario and selecting it', () => {
     cy.visit('/admin/scenarios');
     
     // Add new scenario
@@ -21,23 +21,18 @@ describe('Scenarios Management', () => {
     // Session is already A26 by default
     cy.get('tr.table-info').contains('button', '+').click();
 
-    // Verify it was added (mocking DB add is local, but our mock doesn't persist across visits unless we use the hook directly)
-    // Wait, the `add` mock in firebaseDb.ts generates a new ID but it doesn't push to localStorage.
-    // For a true E2E of this, we might just verify the UI interactions.
-    cy.contains('Plan B').should('not.exist'); // Because our mock `add` doesn't update the local array in `useFirestoreCollection` automatically unless we implement a more complex mock.
+    // Verify it was added. The mock DB now updates the UI!
+    cy.contains('Plan B').should('be.visible'); 
     
-    // Let's at least verify we can select a scenario in the grid
-    cy.window().then((win) => {
-        win.localStorage.setItem('cypress-db-scenarios', JSON.stringify([
-            { id: 'production', nom: 'Production', session: 'A26', isDefault: true },
-            { id: 's2', nom: 'Plan B', session: 'A26', isDefault: false }
-        ]));
-    });
     cy.visit('/taches/2026');
     
+    // Select the newly created scenario from the dropdown
     cy.get('select').first().contains('Plan B').should('exist');
-    cy.get('select').first().select('s2');
+    // We don't know the exact random mock ID, so we select by text using cypress-select extension or just change value.
+    cy.contains('select option', 'Plan B').then(option => {
+       cy.get('select').first().select(option.val() as string);
+    });
     
-    cy.contains('Mode Scénario : Plan B').should('be.visible');
+    cy.contains('Scénario : Plan B').should('be.visible');
   });
 });
