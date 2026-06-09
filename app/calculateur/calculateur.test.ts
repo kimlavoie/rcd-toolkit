@@ -43,4 +43,40 @@ describe('Calculateur de CI', () => {
     const result = calculateur([{ sigle: 'ERR', etudiants: undefined, heures: 0, semaines: 15 }], [], [])
     expect(result.total).toBe(0)
   })
+
+  describe('Cas Limites (TODO)', () => {
+    it('calcule la CI de base pour un cours avec 0 étudiant', () => {
+      const groupes = [
+        { sigle: 'INF000', etudiants: 0, heures: 3, semaines: 15, type: 'TP' as const }
+      ]
+      const result = calculateur(groupes, [], [])
+      
+      // Facteur préparation: 0.9
+      // Prestation: 3 * 1.2 = 3.6
+      // PES: 0 (car 0 étudiant)
+      // Total = (0.9 * 3) + 3.6 + 0 = 2.7 + 3.6 = 6.3
+      expect(result.total).toBeCloseTo(6.3, 1)
+      expect(result.sommes.PES).toBe(0)
+    })
+
+    it('calcule la coordination pour une supervision avec 0 stagiaire', () => {
+      const supervisions = [
+        { nbStagiaires: 0, CIparStagiaire: 0.5, coordination: 2.0, pourcentageCoordination: 0 }
+      ]
+      const result = calculateur([], [], supervisions)
+      
+      expect(result.exceptions.stages).toBe(2.0)
+      expect(result.total).toBe(2.0)
+    })
+
+    it('calcule correctement une libération extrême (> 1.0 ETC)', () => {
+      // Cas théorique extrême (ex: 1.5 ETC)
+      const liberations = [{ qte: 1.5 }] 
+      const result = calculateur([], liberations, [])
+      
+      // 1.5 * 40 = 60
+      expect(result.exceptions.liberations).toBe(60)
+      expect(result.total).toBe(60)
+    })
+  })
 })
