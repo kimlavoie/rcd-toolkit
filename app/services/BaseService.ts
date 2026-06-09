@@ -34,7 +34,13 @@ export class BaseService<T> {
 
     async add(data: any): Promise<{ id: string }> {
         if (this.isMock()) {
-            return { id: "mock-" + Math.random().toString(36).substr(2, 9) };
+            const id = "mock-" + Math.random().toString(36).substr(2, 9);
+            const current = JSON.parse(localStorage.getItem(`cypress-db-${this.collectionName}`) || '[]');
+            const newData = { ...data, id, userId: this.getUserId() };
+            current.push(newData);
+            localStorage.setItem(`cypress-db-${this.collectionName}`, JSON.stringify(current));
+            window.dispatchEvent(new CustomEvent('cypress-db-changed', { detail: { collection: this.collectionName } }));
+            return { id };
         }
         
         const userId = this.getUserId();
@@ -59,7 +65,16 @@ export class BaseService<T> {
     }
 
     async update(id: string, data: any): Promise<void> {
-        if (this.isMock()) return;
+        if (this.isMock()) {
+            const current = JSON.parse(localStorage.getItem(`cypress-db-${this.collectionName}`) || '[]');
+            const index = current.findIndex((item: any) => item.id === id);
+            if (index !== -1) {
+                current[index] = { ...current[index], ...data };
+                localStorage.setItem(`cypress-db-${this.collectionName}`, JSON.stringify(current));
+                window.dispatchEvent(new CustomEvent('cypress-db-changed', { detail: { collection: this.collectionName } }));
+            }
+            return;
+        }
 
         const userId = this.getUserId();
         if (!userId) throw new Error("User must be logged in");
@@ -86,7 +101,13 @@ export class BaseService<T> {
     }
 
     async delete(id: string): Promise<void> {
-        if (this.isMock()) return;
+        if (this.isMock()) {
+            const current = JSON.parse(localStorage.getItem(`cypress-db-${this.collectionName}`) || '[]');
+            const filtered = current.filter((item: any) => item.id !== id);
+            localStorage.setItem(`cypress-db-${this.collectionName}`, JSON.stringify(filtered));
+            window.dispatchEvent(new CustomEvent('cypress-db-changed', { detail: { collection: this.collectionName } }));
+            return;
+        }
 
         const userId = this.getUserId();
         if (!userId) throw new Error("User must be logged in");

@@ -2,3 +2,10 @@
    * Exporter en Excel plutôt qu'en CSV
      - Créer des onglets pour faciliter l'entrée de données dans le système du cégep. Pour chaque session, créer un onglet cours, un onglet libérations et un onglet stage (s'il y a lieu).
      - Mettre les tableaux de données dans un ordre qui facilite le transfert manuel des données
+
+  4. Tests des Hooks de Domaine (useCICalculation)
+   * Réactivité : Vérifier que le hook recalcule instantanément la CI lorsqu'une charge est modifiée dans le DataContext.
+   * Cas limites du calculateur :
+       * Cours avec 0 étudiant (doit donner une CI de base).
+       * Supervision avec coordination mais 0 stagiaire.
+       * Libération dépassant 1.0 ETC (cas d'erreur théorique).

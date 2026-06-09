@@ -38,6 +38,20 @@ function TachesContent() {
     const sessionsAnnuelle = [sessionA, sessionH];
 
     const [mode, setMode] = useState<"Automne" | "Hiver" >("Automne")
+    
+    // Load persisted mode on mount
+    useEffect(() => {
+        const savedMode = localStorage.getItem(`taches-mode-${year}`);
+        if (savedMode === "Hiver" || savedMode === "Automne") {
+            setMode(savedMode);
+        }
+    }, [year]);
+
+    // Save mode when it changes
+    useEffect(() => {
+        localStorage.setItem(`taches-mode-${year}`, mode);
+    }, [mode, year]);
+
     const [cache, setCache] = useState<any[]>([])
     const [search, setSearch] = useState("")
     const [tri, setTri] = useState("nom")

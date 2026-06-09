@@ -13,11 +13,23 @@ export function useFirestoreCollection<T>(collectionName: string, extraConstrain
     const [data, setData] = useState<T[] | undefined>(undefined);
 
     useEffect(() => {
-        // Support for Cypress mock data
-        const mockData = typeof window !== 'undefined' ? localStorage.getItem(`cypress-db-${collectionName}`) : null;
-        if (mockData) {
-            setData(JSON.parse(mockData));
-            return;
+        const loadMock = () => {
+            const mockData = typeof window !== 'undefined' ? localStorage.getItem(`cypress-db-${collectionName}`) : null;
+            if (mockData) {
+                setData(JSON.parse(mockData));
+                return true;
+            }
+            return false;
+        };
+
+        if (loadMock()) {
+            const handleMockChange = (e: any) => {
+                if (e.detail.collection === collectionName) {
+                    loadMock();
+                }
+            };
+            window.addEventListener('cypress-db-changed', handleMockChange);
+            return () => window.removeEventListener('cypress-db-changed', handleMockChange);
         }
 
         let unsubscribeSnapshot: (() => void) | undefined;
