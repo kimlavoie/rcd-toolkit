@@ -1,3 +1,0 @@
-  Correction de bogues
-   * Exporter en Excel plutôt qu'en CSV
-     - Créer des onglets pour faciliter l'entrée de données dans le système du cégep. Pour chaque session, créer un onglet cours, un onglet libérations et un onglet stage (s'il y a lieu).

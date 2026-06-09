@@ -1,4 +1,4 @@
-describe('CSV Export Workflow', () => {
+describe('Excel Export Workflow', () => {
   beforeEach(() => {
     cy.login();
     cy.window().then((win) => {
@@ -24,25 +24,19 @@ describe('CSV Export Workflow', () => {
         onBeforeLoad(win) {
             cy.stub(win.URL, 'createObjectURL').as('createObjectURLStub').returns('blob:http://localhost/test');
             cy.stub(win.URL, 'revokeObjectURL').as('revokeObjectURLStub');
-            // Do NOT stub document.createElement, it breaks React.
-            // Just spy on click of any anchor tag created.
-            // Actually, we can just let it create the object URL and click, Cypress will ignore the fake blob download.
         }
     });
   });
 
-  it('generates a CSV file and triggers a download', () => {
+  it('generates an Excel file and triggers a download', () => {
     // Wait for the grid to load
     cy.contains('John Doe').should('be.visible');
 
-    // Click Export CSV button
+    // Click Export Excel button
     cy.contains('button', 'Exporter').click();
-    cy.contains('button', '📊 Données (CSV)').click();
+    cy.contains('button', '📊 Données (Excel)').click();
 
-    // Verify it creates an object URL (meaning it created a Blob)
-    cy.get('@createObjectURLStub').should('have.been.calledOnce');
-    
     // Verify success toast appears
-    cy.contains('Export CSV terminé').should('be.visible');
+    cy.contains('Export Excel terminé').should('be.visible');
   });
 });

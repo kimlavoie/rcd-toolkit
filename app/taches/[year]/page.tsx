@@ -15,6 +15,7 @@ import { useAuth } from "@/app/utilities/auth"
 import { toast } from "react-hot-toast"
 import { useFilteredEnseignants } from "@/app/utilities/hooks"
 import Skeleton from "@/app/utilities/Skeleton";
+import { exportToExcel } from "@/app/utilities/excelExport"
 
 import { 
     getChargesManquantesCount, 
@@ -91,71 +92,31 @@ function TachesContent() {
         }, 500)
     }
 
-    const handleExportCSV = () => {
+    const handleExportExcel = () => {
         if (!groupes || !charges || !allocations || !liberations || !stages || !supervisions || !cours) {
             toast.error("Données en cours de chargement...")
             return
         }
 
-        const lines = [
-            "Session;NoEmploye;Nom;Prenom;TypeTache;Description;Type/Role;Quantite"
-        ]
-
-        sessionsAnnuelle.forEach(sCode => {
-            visibleEnseignants.forEach(enseignant => {
-                const noEmp = enseignant.numeroEmploye || ""
-                const nom = `"${enseignant.nom || ""}"`
-                const prenom = `"${enseignant.prenom || ""}"`
-                
-                // 1. Charges (Cours)
-                const profCharges = charges.filter((c: any) => c.enseignant === enseignant.id && (c.scenario || "production") === selectedScenarioId)
-                profCharges.forEach((c: any) => {
-                    const grp = groupes.find((g: any) => g.id === c.groupe && g.session === sCode)
-                    if (grp) {
-                        const cour = cours.find((crs: any) => crs.id === grp.cours)
-                        const desc = `"${cour?.sigle || 'Inconnu'}(${grp.nbEtudiants})"`
-                        lines.push(`${sCode};${noEmp};${nom};${prenom};Cours;${desc};${c.type};${c.nbSemaines}`)
-                    }
-                })
-
-                // 2. Libérations
-                const profLibs = liberations.filter((l: any) => l.enseignant === enseignant.id && (l.scenario || "production") === selectedScenarioId)
-                profLibs.forEach((l: any) => {
-                    const alloc = allocations.find((a: any) => a.id === l.allocation && a.session === sCode)
-                    if (alloc) {
-                        const desc = `"${alloc.code} - ${alloc.description}"`
-                        lines.push(`${sCode};${noEmp};${nom};${prenom};Liberation;${desc};N/A;${l.quantite}`)
-                    }
-                })
-
-                // 3. Supervisions
-                const profSups = supervisions.filter((s: any) => s.enseignant === enseignant.id && (s.scenario || "production") === selectedScenarioId)
-                profSups.forEach((s: any) => {
-                    const stage = stages.find((st: any) => st.id === s.stage && st.session === sCode)
-                    if (stage) {
-                        const desc = `"${stage.nom}"`
-                        if (s.nbStagiaires > 0) {
-                            lines.push(`${sCode};${noEmp};${nom};${prenom};Supervision;${desc};Stagiaires;${s.nbStagiaires}`)
-                        }
-                        if (s.coordination > 0) {
-                            lines.push(`${sCode};${noEmp};${nom};${prenom};Supervision;${desc};Coordination;${s.coordination}`)
-                        }
-                    }
-                })
-            })
-        })
-
-        const csvContent = lines.join("\n")
-        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement("a")
-        link.href = url
-        link.setAttribute("download", `Export_Taches_${year}_${selectedScenarioId}.csv`)
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(url)
-        toast.success("Export CSV terminé")
+        try {
+            exportToExcel({
+                enseignants: visibleEnseignants,
+                groupes,
+                charges,
+                allocations,
+                liberations,
+                stages,
+                supervisions,
+                cours,
+                scenarioId: selectedScenarioId,
+                sessions: sessionsAnnuelle,
+                year
+            });
+            toast.success("Export Excel terminé");
+        } catch (error) {
+            console.error("Erreur lors de l'export Excel:", error);
+            toast.error("Échec de l'export Excel");
+        }
     }
 
     useEffect(() => {
@@ -350,7 +311,7 @@ function TachesContent() {
                     onValidate={valider}
                     onFitToScreen={fitToScreen}
                     onExportPDF={handleExportPDF}
-                    onExportCSV={handleExportCSV}
+                    onExportExcel={handleExportExcel}
                     setShowHelp={setShowHelp}
                     onShowDashboard={() => setShowDashboard(true)}
                 />

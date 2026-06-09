@@ -27,7 +27,7 @@ interface TachesToolbarProps {
     onValidate: () => void
     onFitToScreen: () => void
     onExportPDF: () => void
-    onExportCSV?: () => void
+    onExportExcel?: () => void
     setShowHelp: (show: boolean) => void
     onShowDashboard: () => void
 }
@@ -76,7 +76,7 @@ export default function TachesToolbar({
     teachersPerPage, setTeachersPerPage,
     selectedScenarioId, setSelectedScenarioId,
     currentSessionScenarios,
-    onHideAll, onShowAll, onExpandAll, onCollapseAll, onValidate, onFitToScreen, onExportPDF, onExportCSV,
+    onHideAll, onShowAll, onExpandAll, onCollapseAll, onValidate, onFitToScreen, onExportPDF, onExportExcel,
     setShowHelp, onShowDashboard
 }: TachesToolbarProps) {
     const { undo, redo, canUndo, canRedo } = useHistory()
@@ -237,13 +237,13 @@ export default function TachesToolbar({
                     
                     <Dropdown title="Exporter" icon="📥" btnClass="btn-outline-secondary">
                         <div className="d-flex flex-column gap-2">
-                            {onExportCSV && (
+                            {onExportExcel && (
                                 <button 
                                     className="btn btn-sm btn-light border text-start fw-bold" 
                                     style={{fontSize: "0.75rem"}} 
-                                    onClick={onExportCSV}
+                                    onClick={onExportExcel}
                                 >
-                                    📊 Données (CSV)
+                                    📊 Données (Excel)
                                 </button>
                             )}
                             
