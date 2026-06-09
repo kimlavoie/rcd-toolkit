@@ -1,6 +1,6 @@
 
 'use client'
-import React from "react"
+import React, { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import type { Scenario } from "@/app/db/db"
 import { useHistory } from "./HistoryContext"
@@ -30,6 +30,42 @@ interface TachesToolbarProps {
     onExportCSV?: () => void
     setShowHelp: (show: boolean) => void
     onShowDashboard: () => void
+}
+
+function Dropdown({ title, children, icon, btnClass = "btn-outline-secondary" }: any) {
+    const [isOpen, setIsOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (ref.current && !ref.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    return (
+        <div className="position-relative" ref={ref}>
+            <button 
+                className={`btn btn-sm ${btnClass} rounded shadow-sm d-flex align-items-center gap-1`} 
+                style={{height: "31px", fontSize: "0.75rem"}} 
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                {icon && <span>{icon}</span>}
+                <span className="fw-bold">{title}</span>
+            </button>
+            {isOpen && (
+                <div 
+                    className="position-absolute bg-white border rounded shadow-lg p-2 mt-1" 
+                    style={{zIndex: 1050, right: 0, minWidth: "200px"}}
+                >
+                    {children}
+                </div>
+            )}
+        </div>
+    );
 }
 
 export default function TachesToolbar({
@@ -88,102 +124,106 @@ export default function TachesToolbar({
                         </button>
                     </div>
                 </div>
-                {selectedScenarioId !== "production" && (
-                    <span className="badge bg-warning text-dark animate-pulse" style={{fontSize: "0.7rem"}}>
-                        Mode Scénario : {currentSessionScenarios.find(s => s.id === selectedScenarioId)?.nom}
-                    </span>
-                )}
+
+                <div className="d-flex align-items-center gap-2">
+                    {selectedScenarioId !== "production" && (
+                        <span className="badge bg-warning text-dark animate-pulse me-2" style={{fontSize: "0.7rem"}}>
+                            Scénario : {currentSessionScenarios.find(s => s.id === selectedScenarioId)?.nom}
+                        </span>
+                    )}
+
+                    <div className="d-flex align-items-center gap-1 bg-white px-2 rounded shadow-sm border" style={{height: "31px"}}>
+                        <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Scénario 🎭</span>
+                        <select 
+                            className="form-select form-select-sm border-0 fw-bold text-primary p-0 ps-1" 
+                            style={{width: "auto", minWidth: "120px", outline: "none", boxShadow: "none", backgroundColor: "transparent", fontSize: "0.75rem", paddingRight: "25px"}}
+                            value={selectedScenarioId}
+                            onChange={e => setSelectedScenarioId(e.target.value)}
+                        >
+                            <option value="production">🚀 Production</option>
+                            {currentSessionScenarios.map(s => (
+                                <option key={s.id} value={s.id}>📁 {s.nom}</option>
+                            ))}
+                        </select>
+                        <Link href="/admin/scenarios" className="btn btn-sm btn-link text-muted p-0 ms-1" title="Gérer les scénarios" style={{fontSize: "0.75rem", textDecoration: "none"}}>⚙️</Link>
+                    </div>
+                </div>
             </div>
 
-            <div className="d-flex align-items-center gap-3 flex-wrap">
-                {/* Recherche */}
-                <div className="input-group input-group-sm shadow-sm" style={{maxWidth: "180px"}}>
-                    <span className="input-group-text bg-white border-end-0 text-muted py-0">🔍</span>
-                    <input 
-                        type="text" 
-                        className="form-control border-start-0 ps-0 py-0" 
-                        placeholder="Chercher..." 
-                        value={search} 
-                        style={{fontSize: "0.8rem", height: "31px"}}
-                        onChange={e => setSearch(e.target.value)}
-                    />
-                    {search && (
-                        <button className="btn btn-outline-secondary border-start-0 py-0" onClick={() => setSearch("")}>✕</button>
-                    )}
-                </div>
-
-                {/* Scénario */}
-                <div className="d-flex align-items-center gap-1 bg-white px-2 rounded shadow-sm border" style={{height: "31px"}}>
-                    <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Scénario 🎭</span>
-                    <select 
-                        className="form-select form-select-sm border-0 fw-bold text-primary p-0 ps-1" 
-                        style={{width: "auto", minWidth: "120px", outline: "none", boxShadow: "none", backgroundColor: "transparent", fontSize: "0.75rem", paddingRight: "25px"}}
-                        value={selectedScenarioId}
-                        onChange={e => setSelectedScenarioId(e.target.value)}
-                    >
-                        <option value="production">🚀 Production</option>
-                        {currentSessionScenarios.map(s => (
-                            <option key={s.id} value={s.id}>📁 {s.nom}</option>
-                        ))}
-                    </select>
-                    <Link href="/admin/scenarios" className="btn btn-sm btn-link text-muted p-0 ms-1" title="Gérer les scénarios" style={{fontSize: "0.75rem", textDecoration: "none"}}>⚙️</Link>
-                </div>
-
-                {/* Tri */}
-                <div className="d-flex align-items-center gap-1 bg-white px-2 rounded shadow-sm border" style={{height: "31px"}}>
-                    <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Tri ⇅</span>
-                    <div className="btn-group btn-group-sm rounded overflow-hidden" style={{height: "24px"}}>
-                        <button 
-                            className={`btn btn-white py-0 border-0 ${tri === 'nom' ? 'bg-light fw-bold text-primary' : 'text-muted'}`} 
-                            style={{fontSize: "0.7rem", transition: "all 0.2s"}} 
-                            onClick={() => setTri('nom')}
-                        >
-                            Nom
-                        </button>
-                        <button 
-                            className={`btn btn-white py-0 border-0 ${tri === 'numeroEmploye' ? 'bg-light fw-bold text-primary' : 'text-muted'}`} 
-                            style={{fontSize: "0.7rem", transition: "all 0.2s"}} 
-                            onClick={() => setTri('numeroEmploye')}
-                        >
-                            No
-                        </button>
+            <div className="d-flex align-items-center gap-3 flex-wrap justify-content-between">
+                <div className="d-flex gap-3 align-items-center flex-wrap">
+                    {/* Recherche */}
+                    <div className="input-group input-group-sm shadow-sm" style={{maxWidth: "180px"}}>
+                        <span className="input-group-text bg-white border-end-0 text-muted py-0">🔍</span>
+                        <input 
+                            type="text" 
+                            className="form-control border-start-0 ps-0 py-0" 
+                            placeholder="Chercher..." 
+                            value={search} 
+                            style={{fontSize: "0.8rem", height: "31px"}}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                        {search && (
+                            <button className="btn btn-outline-secondary border-start-0 py-0" onClick={() => setSearch("")}>✕</button>
+                        )}
                     </div>
-                </div>
 
-                {/* Largeur */}
-                <div className="btn-group btn-group-sm shadow-sm border rounded overflow-hidden" style={{height: "31px"}}>
-                    <button className={`btn btn-white py-0 border-0 ${enseignantWidth === 100 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.65rem"}} onClick={() => setEnseignantWidth(100)}>Min</button>
-                    <button className={`btn btn-white py-0 border-0 ${enseignantWidth === 200 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.65rem"}} onClick={() => setEnseignantWidth(200)}>Std</button>
-                    <button className={`btn btn-white py-0 border-0 ${enseignantWidth === 300 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.65rem"}} onClick={() => setEnseignantWidth(300)}>Max</button>
-                    <button className="btn btn-outline-primary py-0 border-0 border-start" style={{fontSize: "0.65rem"}} onClick={onFitToScreen} title="Ajuster à l'écran">Ajuster</button>
-                </div>
-
-                {/* Enseignants */}
-                <div className="d-flex align-items-center gap-1 bg-white px-2 rounded shadow-sm border" style={{height: "31px"}}>
-                    <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Enseignants</span>
-                    <div className="btn-group btn-group-sm rounded overflow-hidden" style={{height: "24px"}}>
-                        <button className="btn btn-white py-0 border-0 text-secondary" style={{fontSize: "0.65rem"}} onClick={onHideAll}>Cacher tout</button>
-                        <button className="btn btn-white py-0 border-0 text-primary fw-bold border-start" style={{fontSize: "0.65rem"}} onClick={onShowAll}>Afficher tout</button>
+                    {/* Tri */}
+                    <div className="d-flex align-items-center gap-1 bg-white px-2 rounded shadow-sm border" style={{height: "31px"}}>
+                        <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Tri ⇅</span>
+                        <div className="btn-group btn-group-sm rounded overflow-hidden" style={{height: "24px"}}>
+                            <button 
+                                className={`btn btn-white py-0 border-0 ${tri === 'nom' ? 'bg-light fw-bold text-primary' : 'text-muted'}`} 
+                                style={{fontSize: "0.7rem", transition: "all 0.2s"}} 
+                                onClick={() => setTri('nom')}
+                            >
+                                Nom
+                            </button>
+                            <button 
+                                className={`btn btn-white py-0 border-0 ${tri === 'numeroEmploye' ? 'bg-light fw-bold text-primary' : 'text-muted'}`} 
+                                style={{fontSize: "0.7rem", transition: "all 0.2s"}} 
+                                onClick={() => setTri('numeroEmploye')}
+                            >
+                                No
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                {/* Détails */}
-                <div className="d-flex align-items-center gap-1 bg-white px-2 rounded shadow-sm border" style={{height: "31px"}}>
-                    <span className="text-muted extra-small fw-bold text-uppercase px-1" style={{fontSize: "0.6rem"}}>Détails</span>
-                    <div className="btn-group btn-group-sm rounded overflow-hidden" style={{height: "24px"}}>
-                        <button className="btn btn-white py-0 border-0 text-secondary" style={{fontSize: "0.65rem"}} onClick={onCollapseAll} title="Tout replier (cours, sessions)">
-                            <span style={{fontSize: "0.8rem", marginRight: "3px"}}>➖</span>Replier tout
-                        </button>
-                        <button className="btn btn-white py-0 border-0 text-primary fw-bold border-start" style={{fontSize: "0.65rem"}} onClick={onExpandAll} title="Tout déplier (cours, sessions, sections)">
-                            <span style={{fontSize: "0.8rem", marginRight: "3px"}}>➕</span>Déplier tout
-                        </button>
-                    </div>
+                    <Dropdown title="Affichage" icon="👁️" btnClass="btn-white border">
+                        <div className="d-flex flex-column gap-3">
+                            <div>
+                                <span className="text-muted extra-small fw-bold text-uppercase d-block mb-1" style={{fontSize: "0.65rem"}}>Taille des colonnes</span>
+                                <div className="btn-group btn-group-sm w-100 border rounded overflow-hidden">
+                                    <button className={`btn btn-white py-1 border-0 ${enseignantWidth === 100 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.7rem"}} onClick={() => setEnseignantWidth(100)}>Min</button>
+                                    <button className={`btn btn-white py-1 border-0 ${enseignantWidth === 200 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.7rem"}} onClick={() => setEnseignantWidth(200)}>Std</button>
+                                    <button className={`btn btn-white py-1 border-0 ${enseignantWidth === 300 ? 'bg-light fw-bold' : ''}`} style={{fontSize: "0.7rem"}} onClick={() => setEnseignantWidth(300)}>Max</button>
+                                    <button className="btn btn-outline-primary py-1 border-0 border-start" style={{fontSize: "0.7rem"}} onClick={onFitToScreen} title="Ajuster à l'écran">Ajuster</button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <span className="text-muted extra-small fw-bold text-uppercase d-block mb-1" style={{fontSize: "0.65rem"}}>Enseignants</span>
+                                <div className="btn-group btn-group-sm w-100 border rounded overflow-hidden">
+                                    <button className="btn btn-white py-1 border-0 text-secondary" style={{fontSize: "0.7rem"}} onClick={onHideAll}>Cacher tout</button>
+                                    <button className="btn btn-white py-1 border-0 text-primary fw-bold border-start" style={{fontSize: "0.7rem"}} onClick={onShowAll}>Afficher tout</button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <span className="text-muted extra-small fw-bold text-uppercase d-block mb-1" style={{fontSize: "0.65rem"}}>Sections</span>
+                                <div className="btn-group btn-group-sm w-100 border rounded overflow-hidden">
+                                    <button className="btn btn-white py-1 border-0 text-secondary" style={{fontSize: "0.7rem"}} onClick={onCollapseAll}>➖ Replier tout</button>
+                                    <button className="btn btn-white py-1 border-0 text-primary fw-bold border-start" style={{fontSize: "0.7rem"}} onClick={onExpandAll}>➕ Déplier tout</button>
+                                </div>
+                            </div>
+                        </div>
+                    </Dropdown>
                 </div>
 
                 {/* Validation & PDF & CSV & Dashboard Unified */}
                 <div className="d-flex gap-2 align-items-center">
                     <button 
-                        className="btn btn-sm btn-outline-primary rounded-pill shadow-sm px-3 fw-bold" 
+                        className="btn btn-sm btn-outline-primary rounded shadow-sm px-3 fw-bold" 
                         style={{height: "31px", fontSize: "0.75rem"}} 
                         onClick={onShowDashboard}
                         title="Voir la santé du département"
@@ -191,64 +231,55 @@ export default function TachesToolbar({
                         📈 Santé
                     </button>
 
-                    <button className="btn btn-sm btn-success rounded-pill shadow-sm px-3 fw-bold" style={{height: "31px", fontSize: "0.75rem"}} onClick={onValidate}>
+                    <button className="btn btn-sm btn-success rounded shadow-sm px-3 fw-bold" style={{height: "31px", fontSize: "0.75rem"}} onClick={onValidate}>
                         ✅ Valider
                     </button>
                     
-                    {onExportCSV && (
-                        <button 
-                            className="btn btn-sm btn-outline-success rounded-pill shadow-sm px-3 fw-bold" 
-                            style={{height: "31px", fontSize: "0.75rem"}} 
-                            onClick={onExportCSV}
-                            title="Exporter en CSV"
-                        >
-                            📊 CSV
-                        </button>
-                    )}
-
-                    <div className="d-flex align-items-center bg-white rounded-pill shadow-sm border border-danger overflow-hidden" style={{height: "31px"}}>
-                        <button 
-                            className="btn btn-sm btn-danger border-0 px-3 fw-bold rounded-0 text-white" 
-                            style={{fontSize: "0.75rem", height: "100%"}} 
-                            onClick={onExportPDF}
-                            title="Lancer l'impression PDF"
-                        >
-                            🖨️ PDF
-                        </button>
-                        <div className="border-start border-danger-subtle h-100 d-flex align-items-center px-2 bg-light">
-                            <span className="text-muted extra-small me-2" style={{fontSize: "0.6rem"}}>PAR PAGE:</span>
-                            <select 
-                                className="form-select form-select-sm border-0 fw-bold text-danger p-0 bg-transparent text-center" 
-                                style={{
-                                    width: "40px", 
-                                    outline: "none", 
-                                    boxShadow: "none", 
-                                    fontSize: "0.75rem", 
-                                    cursor: "pointer",
-                                    appearance: "none",
-                                    backgroundImage: "none",
-                                    paddingRight: "0"
-                                }}
-                                value={teachersPerPage}
-                                onChange={e => setTeachersPerPage(Number(e.target.value))}
-                            >
-                                {[2,3,4,5,6,7,8,9,10].map(n => (
-                                    <option key={n} value={n}>{n}</option>
-                                ))}
-                            </select>
+                    <Dropdown title="Exporter" icon="📥" btnClass="btn-outline-secondary">
+                        <div className="d-flex flex-column gap-2">
+                            {onExportCSV && (
+                                <button 
+                                    className="btn btn-sm btn-light border text-start fw-bold" 
+                                    style={{fontSize: "0.75rem"}} 
+                                    onClick={onExportCSV}
+                                >
+                                    📊 Données (CSV)
+                                </button>
+                            )}
+                            
+                            <div className="border-top pt-2 mt-1">
+                                <button 
+                                    className="btn btn-sm btn-danger border text-start fw-bold w-100 mb-2" 
+                                    style={{fontSize: "0.75rem"}} 
+                                    onClick={onExportPDF}
+                                >
+                                    🖨️ Imprimer (PDF)
+                                </button>
+                                <div className="d-flex align-items-center justify-content-between">
+                                    <span className="text-muted" style={{fontSize: "0.7rem"}}>Enseignants par page :</span>
+                                    <input 
+                                        type="number"
+                                        min="1"
+                                        max="10"
+                                        className="form-control form-control-sm border p-1 bg-light text-center" 
+                                        style={{width: "50px", fontSize: "0.8rem"}}
+                                        value={teachersPerPage}
+                                        onChange={e => setTeachersPerPage(Number(e.target.value))}
+                                    />
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </Dropdown>
 
-                {/* Help */}
-                <button 
-                    className="btn btn-sm btn-link text-muted p-0 ms-1" 
-                    onClick={() => setShowHelp(true)}
-                    title="Aide et astuces"
-                    style={{textDecoration: "none", fontSize: "1rem"}}
-                >
-                    ❔
-                </button>
+                    <button 
+                        className="btn btn-sm btn-link text-muted p-0 ms-1" 
+                        onClick={() => setShowHelp(true)}
+                        title="Aide et astuces"
+                        style={{textDecoration: "none", fontSize: "1.2rem"}}
+                    >
+                        ❔
+                    </button>
+                </div>
             </div>
         </div>
     )
