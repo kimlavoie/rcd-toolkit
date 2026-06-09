@@ -1,13 +1,33 @@
-import { calculateSessionCI } from "@/app/utilities/ciHelpers"
 import { getCIColor } from "@/app/constants/ciConfig"
-import { useData } from "./DataContext"
 import StickyHeader from "./ui/StickyHeader"
 import StickyCell from "./ui/StickyCell"
+import { useTotalAnnualCI } from "@/app/hooks/useCICalculation"
+
+function AnnualCICell({ enseignantId, sessions, saison, scenario, columnWidth, globalWidth, isPrinting }: any) {
+    const CI = useTotalAnnualCI(enseignantId, sessions, saison, scenario);
+    const couleur = getCIColor(CI, 'annual')
+    const width = columnWidth || globalWidth || 200
+
+    return <StickyCell
+        bottom={isPrinting ? "auto" : "0"}
+        zIndex={102}
+        style={{
+            color: couleur,
+            fontWeight: "bold",
+            backgroundColor: "#212529",
+            textAlign: "center",
+            minWidth: `${width}px`,
+            width: `${width}px`,
+            maxWidth: `${width}px`,
+            overflow: "hidden",
+            fontSize: "0.9rem"
+        }}
+    >
+        {CI.toFixed(2)}
+    </StickyCell>
+}
 
 export default function({visibleEnseignants, sessions, saison, firstColWidth, columnWidths, globalWidth, scenario = "production", isPrinting}:any){
-    const data = useData()
-    const { CIReelles } = data
-
     // Safety check for sessions array
     if (!sessions || sessions.length < 2) {
         return null;
@@ -32,37 +52,18 @@ export default function({visibleEnseignants, sessions, saison, firstColWidth, co
                     >
                         CI Annuelle (Total)
                     </StickyHeader>
-                    { visibleEnseignants.map((enseignant: any) => {
-                        const enseignantId = String(enseignant.id);
-
-                        const CIReelleExistante = (CIReelles ?? []).find(ci => String(ci.enseignant) === enseignantId && ci.session === sessions[0]);
-
-                        const CIA = saison === "Hiver" ? CIReelleExistante?.CI ?? 0 : calculateSessionCI(enseignantId, sessions[0], data, scenario);
-                        const CIH = calculateSessionCI(enseignantId, sessions[1], data, scenario);
-                        const CI = CIA + CIH;
-                        
-                        const couleur = getCIColor(CI, 'annual')
-                        const width = columnWidths?.[enseignant.id] || globalWidth || 200
-                        
-                        return <StickyCell 
-                            key={enseignant.id} 
-                            bottom={isPrinting ? "auto" : "0"} 
-                            zIndex={102}
-                            style={{
-                                color: couleur, 
-                                fontWeight: "bold", 
-                                backgroundColor: "#212529", 
-                                textAlign: "center", 
-                                minWidth: `${width}px`, 
-                                width: `${width}px`, 
-                                maxWidth: `${width}px`,
-                                overflow: "hidden",
-                                fontSize: "0.9rem"
-                            }}
-                        >
-                            {CI.toFixed(2)}
-                        </StickyCell>
-                    })}
+                    { visibleEnseignants.map((enseignant: any) => (
+                        <AnnualCICell 
+                            key={enseignant.id}
+                            enseignantId={String(enseignant.id)}
+                            sessions={sessions}
+                            saison={saison}
+                            scenario={scenario}
+                            columnWidth={columnWidths?.[enseignant.id]}
+                            globalWidth={globalWidth}
+                            isPrinting={isPrinting}
+                        />
+                    ))}
                 </tr>
     </>
 }

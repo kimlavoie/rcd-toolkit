@@ -9,6 +9,7 @@ import CIReelle from "../components/CIReelle"
 import TachesToolbar from "../components/TachesToolbar"
 import DashboardModal from "../components/DashboardModal"
 import { DataProvider, useData } from "../components/DataContext"
+import { HistoryProvider } from "../components/HistoryContext"
 import StickyHeader from "../components/ui/StickyHeader"
 import { useAuth } from "@/app/utilities/auth"
 import { toast } from "react-hot-toast"
@@ -346,6 +347,7 @@ function TachesContent() {
                     sessionsAnnuelle={sessionsAnnuelle}
                     visibleEnseignants={visibleEnseignants}
                     selectedScenarioId={selectedScenarioId}
+                    saison={mode}
                 />
 
                 {cache.length > 0 && (
@@ -468,7 +470,9 @@ export default function() {
 
     return (
         <DataProvider sessions={sessionsAnnuelle}>
-            <TachesContent />
+            <HistoryProvider>
+                <TachesContent />
+            </HistoryProvider>
         </DataProvider>
     )
 }

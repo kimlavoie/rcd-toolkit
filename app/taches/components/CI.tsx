@@ -1,19 +1,11 @@
 'use client'
-import { firebaseDb } from "@/app/utilities/firebaseDb"
-import { calculateSessionCI } from "@/app/utilities/ciHelpers"
 import { getCIColor } from "@/app/constants/ciConfig"
-import { useData } from "./DataContext"
 import StickyCell from "./ui/StickyCell"
+import { useCICalculation } from "@/app/hooks/useCICalculation"
 
 export default function({enseignant, session, trigger, scenario = "production", style, bottom = "auto", top = "auto"}: any){
-    const data = useData()
-    const { CIReelles, charges: allCharges } = data
-    
     const enseignantId = String(enseignant.id)
-
-    // Si on est en mode Hiver (dans CIReelle), on affiche la CI réelle d'automne + calcul d'hiver
-    // Cependant ce composant est utilisé pour le calcul dynamique d'une session précise
-    const CI = calculateSessionCI(enseignantId, session, data, scenario)
+    const CI = useCICalculation(enseignantId, session, scenario)
     const couleur = getCIColor(CI, 'session')
 
     return <StickyCell 

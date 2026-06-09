@@ -3,6 +3,7 @@
 import React from "react"
 import Link from "next/link"
 import type { Scenario } from "@/app/db/db"
+import { useHistory } from "./HistoryContext"
 
 interface TachesToolbarProps {
     mode: "Automne" | "Hiver"
@@ -42,6 +43,8 @@ export default function TachesToolbar({
     onHideAll, onShowAll, onExpandAll, onCollapseAll, onValidate, onFitToScreen, onExportPDF, onExportCSV,
     setShowHelp, onShowDashboard
 }: TachesToolbarProps) {
+    const { undo, redo, canUndo, canRedo } = useHistory()
+
     return (
         <div className="mb-2 px-2 no-print">
             <div className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
@@ -63,6 +66,25 @@ export default function TachesToolbar({
                             onClick={() => setMode('Hiver')}
                         >
                             ❄️ Mode Hiver
+                        </button>
+                    </div>
+
+                    <div className="btn-group btn-group-sm shadow-sm rounded-pill overflow-hidden border ms-2" style={{height: "28px"}}>
+                        <button 
+                            className="btn btn-white text-muted border-0 px-3" 
+                            disabled={!canUndo}
+                            onClick={undo}
+                            title="Annuler (Ctrl+Z)"
+                        >
+                            ↩️
+                        </button>
+                        <button 
+                            className="btn btn-white text-muted border-0 px-3 border-start" 
+                            disabled={!canRedo}
+                            onClick={redo}
+                            title="Rétablir (Ctrl+Y)"
+                        >
+                            ↪️
                         </button>
                     </div>
                 </div>

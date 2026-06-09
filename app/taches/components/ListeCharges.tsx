@@ -11,9 +11,11 @@ import ContextMenuGroup from "./ContextMenuGroup"
 import { toast } from "react-hot-toast"
 import { useData } from "./DataContext"
 import { useContextMenu } from "@/app/utilities/hooks"
+import { useHistory } from "./HistoryContext"
 
 export default function ListeCharges({enseignant, session, enseignantWidth, scenario = "production", style, isPrinting}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any, isPrinting?: boolean}){
     const { visibilityMap, setVisibility } = useData()
+    const { recordAction } = useHistory()
     const [mounted, setMounted] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [selectedGroupe, setSelectedGroupe] = useState<Groupe | null>(null)
@@ -85,38 +87,96 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
         const totalT = groupCharges.filter(c => c.type === "T" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
         const totalP = groupCharges.filter(c => c.type === "P" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
         const remT = Math.max(0, Number((15 - totalT).toFixed(3))), remP = Math.max(0, Number((15 - totalP).toFixed(3)))
+        
+        const cour = coursData?.find(c => c.id === groupe.cours);
+        const label = `Ajout ${cour?.sigle || 'charge'}`;
 
         if (existingCharge) {
-            if ((existingCharge.type === "T" && type === "P") || (existingCharge.type === "P" && type === "T") || type === "TP") {
-                await firebaseDb.charges.update(existingCharge.id, { type: "TP", nbSemaines: 15 })
-            } else {
-                await firebaseDb.charges.update(existingCharge.id, { type, nbSemaines: type === "T" ? remT : remP })
-            }
+            const newData = (existingCharge.type === "T" && type === "P") || (existingCharge.type === "P" && type === "T") || type === "TP" 
+                ? { type: "TP", nbSemaines: 15 } 
+                : { type, nbSemaines: type === "T" ? remT : remP };
+            
+            recordAction({
+                type: 'UPDATE',
+                collection: 'charges',
+                id: existingCharge.id,
+                oldData: { ...existingCharge },
+                newData: { ...existingCharge, ...newData },
+                label
+            });
+            await firebaseDb.charges.update(existingCharge.id, newData)
         } else {
-            await firebaseDb.charges.add({groupe: groupe.id, enseignant: enseignant.id, nbSemaines: type === "TP" ? 15 : (type === "T" ? remT : remP), scenario, type, session})
+            const data = {groupe: groupe.id, enseignant: enseignant.id, nbSemaines: type === "TP" ? 15 : (type === "T" ? remT : remP), scenario, type, session};
+            const res = await firebaseDb.charges.add(data);
+            recordAction({
+                type: 'ADD',
+                collection: 'charges',
+                id: res.id,
+                newData: { ...data, id: res.id },
+                label
+            });
         }
     }
 
     async function removeAllCourseCharges(courseId: string){
+        const cour = coursData?.find(c => c.id === courseId);
         const courseCharges = teacherChargesInSession.filter(c => sessionGroupes.find(gr => gr.id === c.groupe)?.cours === courseId)
+        
+        recordAction({
+            type: 'BATCH',
+            label: `Retrait ${cour?.sigle || 'cours'}`,
+            actions: courseCharges.map(c => ({
+                type: 'DELETE',
+                collection: 'charges',
+                id: c.id,
+                oldData: { ...c },
+                label: 'Suppression charge'
+            }))
+        });
+
         for (const charge of courseCharges) await firebaseDb.charges.delete(charge.id)
         toast.success("Charges supprimées"); closeGroupMenu()
     }
 
     async function handleGroupTransferConfirm(targetEnseignantId: string){
         if (!transferCourseId) return
+        const cour = coursData?.find(c => c.id === transferCourseId);
         const courseCharges = teacherChargesInSession.filter(c => sessionGroupes.find(gr => gr.id === c.groupe)?.cours === transferCourseId)
+        
+        const batchActions: any[] = [];
         let count = 0
         for (const charge of courseCharges) {
             const exists = scenarioCharges.find(c => c.enseignant == targetEnseignantId && c.groupe == charge.groupe)
             if (exists) {
                 if ((exists.type === "T" && charge.type === "P") || (exists.type === "P" && charge.type === "T")) {
-                    await firebaseDb.charges.update(exists.id, { type: "TP" }); await firebaseDb.charges.delete(charge.id); count++
+                    batchActions.push({
+                        type: 'UPDATE', collection: 'charges', id: exists.id, 
+                        oldData: { ...exists }, newData: { ...exists, type: "TP" }, label: 'Fusion'
+                    });
+                    batchActions.push({
+                        type: 'DELETE', collection: 'charges', id: charge.id, 
+                        oldData: { ...charge }, label: 'Suppression'
+                    });
+                    await firebaseDb.charges.update(exists.id, { type: "TP" }); 
+                    await firebaseDb.charges.delete(charge.id); count++
                 }
             } else {
+                batchActions.push({
+                    type: 'UPDATE', collection: 'charges', id: charge.id, 
+                    oldData: { ...charge }, newData: { ...charge, enseignant: targetEnseignantId }, label: 'Transfert'
+                });
                 await firebaseDb.charges.update(charge.id, { enseignant: targetEnseignantId }); count++
             }
         }
+
+        if (batchActions.length > 0) {
+            recordAction({
+                type: 'BATCH',
+                label: `Transfert ${cour?.sigle || 'cours'}`,
+                actions: batchActions
+            });
+        }
+
         toast.success(`${count} charge(s) transférée(s)`); setGroupTransferOpen(false)
     }
 
@@ -125,22 +185,51 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
         const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
         if (!idNouveauEnseignant) return
         const idCourse = ev.dataTransfer.getData("courseId"), idAncienEnseignant = ev.dataTransfer.getData("enseignantId")
+        
         if (idCourse) {
+            const cour = coursData?.find(c => c.id === idCourse);
             const courseCharges = scenarioCharges.filter(c => sessionGroupes.find(gr => gr.id === c.groupe)?.cours === idCourse && c.enseignant == idAncienEnseignant)
+            const batchActions: any[] = [];
+
             for (const charge of courseCharges) {
                 const target = scenarioCharges.find(c => c.enseignant == idNouveauEnseignant && c.groupe == charge.groupe)
                 if (target && ((target.type === "T" && charge.type === "P") || (target.type === "P" && charge.type === "T"))) {
+                    batchActions.push({ type: 'UPDATE', collection: 'charges', id: target.id, oldData: { ...target }, newData: { ...target, type: "TP" }, label: 'Fusion' });
+                    batchActions.push({ type: 'DELETE', collection: 'charges', id: charge.id, oldData: { ...charge }, label: 'Suppression' });
                     await firebaseDb.charges.update(target.id, { type: "TP" }); await firebaseDb.charges.delete(charge.id)
-                } else if (!target) { await firebaseDb.charges.update(charge.id, { enseignant: idNouveauEnseignant }) }
+                } else if (!target) { 
+                    batchActions.push({ type: 'UPDATE', collection: 'charges', id: charge.id, oldData: { ...charge }, newData: { ...charge, enseignant: idNouveauEnseignant }, label: 'Déplacement' });
+                    await firebaseDb.charges.update(charge.id, { enseignant: idNouveauEnseignant }) 
+                }
             }
-            if (courseCharges.length > 0) toast.success("Cours déplacé");
+            if (batchActions.length > 0) {
+                recordAction({ type: 'BATCH', label: `Déplacement ${cour?.sigle || 'cours'}`, actions: batchActions });
+                toast.success("Cours déplacé");
+            }
             return
         }
         const idGroupe = ev.dataTransfer.getData("groupeId")
         const oldC = scenarioCharges.find(c => c.enseignant == idAncienEnseignant && c.groupe == idGroupe), newC = scenarioCharges.find(c => c.enseignant == idNouveauEnseignant && c.groupe == idGroupe)
+        const cour = oldC ? coursData?.find(c => c.id === sessionGroupes.find(g => g.id === oldC.groupe)?.cours) : null;
+
         if (newC && oldC && ((newC.type === "T" && oldC.type === "P") || (newC.type === "P" && oldC.type === "T"))) {
+            recordAction({
+                type: 'BATCH',
+                label: `Fusion ${cour?.sigle || 'charge'}`,
+                actions: [
+                    { type: 'UPDATE', collection: 'charges', id: newC.id, oldData: { ...newC }, newData: { ...newC, type: "TP" }, label: 'Fusion' },
+                    { type: 'DELETE', collection: 'charges', id: oldC.id, oldData: { ...oldC }, label: 'Suppression' }
+                ]
+            });
             await firebaseDb.charges.update(newC.id, { type: "TP" }); await firebaseDb.charges.delete(oldC.id); toast.success("Fusionnées")
-        } else if (oldC && !newC) { await firebaseDb.charges.update(oldC.id, { enseignant: idNouveauEnseignant }); toast.success("Déplacée") }
+        } else if (oldC && !newC) { 
+            recordAction({
+                type: 'UPDATE', collection: 'charges', id: oldC.id, 
+                oldData: { ...oldC }, newData: { ...oldC, enseignant: idNouveauEnseignant },
+                label: `Déplacement ${cour?.sigle || 'charge'}`
+            });
+            await firebaseDb.charges.update(oldC.id, { enseignant: idNouveauEnseignant }); toast.success("Déplacée") 
+        }
     }
 
     const getCellStyle = () => ({ ...style, borderRight: "1px solid #dee2e6", borderBottom: "1px solid #dee2e6", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, maxWidth: `${enseignantWidth}px`, overflow: "hidden" })
@@ -192,7 +281,20 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
             />, 
             document.body
         )}
-        <InputModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onConfirm={val => { if(selectedGroupe) firebaseDb.charges.add({groupe: selectedGroupe.id, enseignant: enseignant.id, nbSemaines: val, scenario, type: "TP", session}).then(() => setModalOpen(false)) }} title="Ajouter une charge" label={`Semaines pour ${selectedGroupe ? coursData?.find(c => c.id === selectedGroupe.cours)?.sigle : ''} :`} defaultValue={15} max={15} />
+        <InputModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onConfirm={async val => { 
+            if(selectedGroupe) {
+                const data = {groupe: selectedGroupe.id, enseignant: enseignant.id, nbSemaines: val, scenario, type: "TP", session};
+                const res = await firebaseDb.charges.add(data);
+                recordAction({
+                    type: 'ADD',
+                    collection: 'charges',
+                    id: res.id,
+                    newData: { ...data, id: res.id },
+                    label: `Ajout ${coursData?.find(c => c.id === selectedGroupe.cours)?.sigle || 'charge'}`
+                });
+                setModalOpen(false);
+            }
+        }} title="Ajouter une charge" label={`Semaines pour ${selectedGroupe ? coursData?.find(c => c.id === selectedGroupe.cours)?.sigle : ''} :`} defaultValue={15} max={15} />
         {transferCourseId && <TransferModal isOpen={groupTransferOpen} onClose={() => setGroupTransferOpen(false)} onConfirm={handleGroupTransferConfirm} title={`Transférer ${coursData?.find(c => c.id === transferCourseId)?.sigle}`} currentEnseignantId={enseignant.id} />}
     </td>
 }

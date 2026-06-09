@@ -8,9 +8,11 @@ import TransferModal from "./TransferModal"
 import { toast } from "react-hot-toast"
 import { getGroupColor } from "@/app/utilities/groupColors"
 import { useContextMenu } from "@/app/utilities/hooks"
+import { useHistory } from "./HistoryContext"
 
 const Charge = memo(function Charge({session, charge, groupe, cours, charges, enseignantId, onRemove, scenario = "production", minimal = false}: any){
     const { isVisible, position, menuRef, openMenu, closeMenu } = useContextMenu()
+    const { recordAction } = useHistory()
     const [modalOpen, setModalOpen] = useState(false)
     const [transferModalOpen, setTransferModalOpen] = useState(false)
 
@@ -20,6 +22,7 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
     }
 
     function supprimer(){
+        // Recording deletion is handled by onRemove in ListeCharges
         onRemove(groupe.id, enseignantId)
         closeMenu()
     }
@@ -29,10 +32,26 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
     const semainesMax = 15 - (sommeCharges ?? 0) + (charge.nbSemaines ?? 0)
 
     async function handleSemainesConfirm(quantite: number){
+        recordAction({
+            type: 'UPDATE',
+            collection: 'charges',
+            id: charge.id,
+            oldData: { ...charge },
+            newData: { ...charge, nbSemaines: quantite },
+            label: `Semaines de ${cours.sigle} : ${quantite}`
+        })
         await firebaseDb.charges.update(charge.id, {nbSemaines: quantite})
     }
 
     async function handleTypeChange(type: "T" | "P" | "TP"){
+        recordAction({
+            type: 'UPDATE',
+            collection: 'charges',
+            id: charge.id,
+            oldData: { ...charge },
+            newData: { ...charge, type },
+            label: `Type de ${cours.sigle} : ${type}`
+        })
         await firebaseDb.charges.update(charge.id, {type})
         closeMenu()
     }
@@ -43,6 +62,15 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
             toast.error("Cet enseignant a deja cette charge")
             return
         }
+
+        recordAction({
+            type: 'UPDATE',
+            collection: 'charges',
+            id: charge.id,
+            oldData: { ...charge },
+            newData: { ...charge, enseignant: targetEnseignantId },
+            label: `Transfert de ${cours.sigle}`
+        })
 
         await firebaseDb.charges.update(charge.id, {enseignant: targetEnseignantId})
         toast.success("Charge transférée avec succès")

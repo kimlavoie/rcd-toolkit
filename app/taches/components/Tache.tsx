@@ -15,6 +15,7 @@ import { useTacheData } from "./useTacheData"
 import TacheSummaryBadges from "./TacheSummaryBadges"
 import SupervisionInputs from "./SupervisionInputs"
 import { memo } from "react"
+import { useHistory } from "./HistoryContext"
 
 interface TacheProps {
     visibleEnseignants: any[]
@@ -44,6 +45,7 @@ const Tache = memo(function Tache({
         nbChargesManquantes, nbLiberationsManquantes, getVisible, toggle,
         groupes, allocations, stages
     } = useTacheData(session, scenario)
+    const { recordAction } = useHistory()
 
     const showSession = getVisible(`${session}_session`, true)
     const showCharges = getVisible(`${session}_charges`, true)
@@ -65,39 +67,73 @@ const Tache = memo(function Tache({
         }
         
         if (currentSupervision) {
+            recordAction({
+                type: 'UPDATE',
+                collection: 'supervisions',
+                id: currentSupervision.id,
+                oldData: { ...currentSupervision },
+                newData: { ...currentSupervision, [field]: value },
+                label: `Supervision ${stage.nom}`
+            });
             await firebaseDb.supervisions.update(currentSupervision.id, { [field]: value })
         } else {
-            await firebaseDb.supervisions.add({ 
+            const data = { 
                 enseignant: enseignantId, 
                 stage: stageId, 
                 nbStagiaires: field === 'nbStagiaires' ? value : 0, 
                 coordination: field === 'coordination' ? value : 0, 
                 scenario,
                 session
-            })
+            };
+            const res = await firebaseDb.supervisions.add(data)
+            recordAction({
+                type: 'ADD',
+                collection: 'supervisions',
+                id: res.id,
+                newData: { ...data, id: res.id },
+                label: `Supervision ${stage.nom}`
+            });
         }
     }
 
     async function clearAllData() {
         if (confirm(`Voulez-vous vraiment réinitialiser toutes les données pour la session ${saison} ${annee} (Scénario: ${scenario}) ?`)) {
             const deletePromises: Promise<any>[] = []
+            const batchActions: any[] = [];
             
             for (const stage of sessionStages) {
                 const sups = supervisions?.filter(s => s.stage === stage.id)
-                sups?.forEach(s => deletePromises.push(firebaseDb.supervisions.delete(s.id)))
+                sups?.forEach(s => {
+                    batchActions.push({ type: 'DELETE', collection: 'supervisions', id: s.id, oldData: { ...s }, label: 'Reset supervision' });
+                    deletePromises.push(firebaseDb.supervisions.delete(s.id))
+                })
             }
             
             const sessionAllocations = allocations?.filter(a => a.session === session) || []
             sessionAllocations.forEach(alloc => {
                 const libs = liberations?.filter(l => l.allocation === alloc.id)
-                libs?.forEach(l => deletePromises.push(firebaseDb.liberations.delete(l.id)))
+                libs?.forEach(l => {
+                    batchActions.push({ type: 'DELETE', collection: 'liberations', id: l.id, oldData: { ...l }, label: 'Reset libération' });
+                    deletePromises.push(firebaseDb.liberations.delete(l.id))
+                })
             })
             
             const sessionGroupes = groupes?.filter(g => g.session === session) || []
             sessionGroupes.forEach(grp => {
                 const chgs = charges?.filter(c => c.groupe === grp.id)
-                chgs?.forEach(c => deletePromises.push(firebaseDb.charges.delete(c.id)))
+                chgs?.forEach(c => {
+                    batchActions.push({ type: 'DELETE', collection: 'charges', id: c.id, oldData: { ...c }, label: 'Reset charge' });
+                    deletePromises.push(firebaseDb.charges.delete(c.id))
+                })
             })
+
+            if (batchActions.length > 0) {
+                recordAction({
+                    type: 'BATCH',
+                    label: `Réinitialisation ${saison} ${annee}`,
+                    actions: batchActions
+                });
+            }
 
             await Promise.all(deletePromises)
             toast.success("Session réinitialisée")

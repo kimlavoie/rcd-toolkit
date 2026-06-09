@@ -7,9 +7,11 @@ import InputModal from "./InputModal"
 import TransferModal from "./TransferModal"
 import { toast } from "react-hot-toast"
 import { useContextMenu } from "@/app/utilities/hooks"
+import { useHistory } from "./HistoryContext"
 
 export default function Liberation({session, liberation, allocation, liberations, enseignantId, onRemove, scenario = "production"}: any){
     const { isVisible, position, menuRef, openMenu, closeMenu } = useContextMenu()
+    const { recordAction } = useHistory()
     const [modalOpen, setModalOpen] = useState(false)
     const [transferModalOpen, setTransferModalOpen] = useState(false)
 
@@ -19,6 +21,7 @@ export default function Liberation({session, liberation, allocation, liberations
     }
 
     function supprimer(){
+        // Deletion is recorded in ListeLiberations
         onRemove(liberation.id, enseignantId)
         closeMenu()
     }
@@ -28,6 +31,14 @@ export default function Liberation({session, liberation, allocation, liberations
     const qteMax = Number(((allocation?.quantite ?? 0) - (sommeLiberations ?? 0) + (liberation.quantite ?? 0)).toFixed(3))
 
     async function handleQuantiteConfirm(quantite: number){
+        recordAction({
+            type: 'UPDATE',
+            collection: 'liberations',
+            id: liberation.id,
+            oldData: { ...liberation },
+            newData: { ...liberation, quantite },
+            label: `ETC de ${allocation.code} : ${quantite}`
+        })
         await firebaseDb.liberations.update(liberation.id, {quantite})
     }
 
@@ -37,6 +48,15 @@ export default function Liberation({session, liberation, allocation, liberations
             toast.error("Cet enseignant a deja cette liberation")
             return
         }
+
+        recordAction({
+            type: 'UPDATE',
+            collection: 'liberations',
+            id: liberation.id,
+            oldData: { ...liberation },
+            newData: { ...liberation, enseignant: targetEnseignantId },
+            label: `Transfert de ${allocation.code}`
+        })
 
         await firebaseDb.liberations.update(liberation.id, {enseignant: targetEnseignantId})
         toast.success("Libération transférée avec succès")

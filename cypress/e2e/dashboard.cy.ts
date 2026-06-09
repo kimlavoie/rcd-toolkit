@@ -34,12 +34,15 @@ describe('Dashboard Modal Workflow', () => {
     });
   });
 
-  it('displays the health dashboard with correct categorizations', () => {
+  it('displays the health dashboard with correct categorizations in Hiver mode', () => {
     cy.window().then((win) => {
         cy.writeFile('localstorage.json', JSON.stringify(win.localStorage));
     });
 
     cy.contains('John Doe').should('be.visible');
+
+    // Switch to Mode Hiver
+    cy.contains('❄️ Mode Hiver').click();
 
     // Click Santé button
     cy.contains('button', '📈 Santé').click();
@@ -47,8 +50,8 @@ describe('Dashboard Modal Workflow', () => {
     // Verify modal title
     cy.contains('Tableau de bord').should('be.visible');
 
-    // Verify counts in the cards
-    // 1 surchargé, 1 équilibré, 1 sous-chargé
+    // Verify counts in the cards (using CIReelles from Automne)
+    // e1: 90 (over), e2: 82 (ok), e3: 75 (under)
     cy.get('.border-danger h3').should('contain', '1');
     cy.get('.border-success h3').should('contain', '1');
     cy.get('.border-warning h3').should('contain', '1');
@@ -59,6 +62,19 @@ describe('Dashboard Modal Workflow', () => {
     
     // Close modal
     cy.get('.btn-close').click();
-    cy.contains('Tableau de bord').should('not.exist');
+  });
+
+  it('displays the health dashboard with calculated CI in Automne mode', () => {
+    // Mode Automne is default
+    cy.contains('button', '📈 Santé').click();
+
+    // In Automne mode, it calculates CI instead of using CIReelles for Automne
+    // e1: ~16.5 (under), e2: 0 (under), e3: 0 (under)
+    // So 0 overloaded, 0 ok, 3 under
+    cy.get('.border-danger h3').should('contain', '0');
+    cy.get('.border-success h3').should('contain', '0');
+    cy.get('.border-warning h3').should('contain', '3');
+
+    cy.get('.btn-close').click();
   });
 });

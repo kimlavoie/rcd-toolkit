@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
-import { useData } from './DataContext';
-import { calculateSessionCI } from '@/app/utilities/ciHelpers';
+import { CI_THRESHOLDS } from '@/app/constants/ciConfig';
+import { useDepartmentHealth } from '@/app/hooks/useCICalculation';
 
 interface DashboardProps {
     isOpen: boolean;
@@ -9,43 +9,11 @@ interface DashboardProps {
     sessionsAnnuelle: string[];
     visibleEnseignants: any[];
     selectedScenarioId: string;
+    saison: "Automne" | "Hiver";
 }
 
-export default function DashboardModal({ isOpen, onClose, sessionsAnnuelle, visibleEnseignants, selectedScenarioId }: DashboardProps) {
-    const { charges, liberations, groupes, supervisions, CIReelles, cours, stages, allocations } = useData();
-
-    const healthData = useMemo(() => {
-        if (!isOpen || !charges) return [];
-
-        return visibleEnseignants.map(enseignant => {
-            let totalCI = 0;
-            sessionsAnnuelle.forEach(session => {
-                const isAutomne = session.startsWith('A');
-                let sessionCI = 0;
-
-                const ciEntries = { charges, liberations, groupes, supervisions, cours, stages, allocations };
-
-                if (isAutomne) {
-                    const ciReelle = CIReelles?.find(ci => ci.enseignant === enseignant.id && ci.session === session);
-                    if (ciReelle) {
-                        sessionCI = Number(ciReelle.CI);
-                    } else {
-                        sessionCI = calculateSessionCI(enseignant.id, session, ciEntries as any, selectedScenarioId);
-                    }
-                } else {
-                    sessionCI = calculateSessionCI(enseignant.id, session, ciEntries as any, selectedScenarioId);
-                }
-                
-                totalCI += sessionCI;
-            });
-
-            return {
-                enseignant,
-                totalCI,
-                status: totalCI < 80 ? 'under' : (totalCI > 85 ? 'over' : 'ok')
-            };
-        }).sort((a, b) => b.totalCI - a.totalCI);
-    }, [isOpen, charges, liberations, groupes, supervisions, cours, stages, allocations, CIReelles, visibleEnseignants, sessionsAnnuelle, selectedScenarioId]);
+export default function DashboardModal({ isOpen, onClose, sessionsAnnuelle, visibleEnseignants, selectedScenarioId, saison }: DashboardProps) {
+    const healthData = useDepartmentHealth(isOpen, visibleEnseignants, sessionsAnnuelle, saison, selectedScenarioId);
 
     if (!isOpen) return null;
 
@@ -67,19 +35,19 @@ export default function DashboardModal({ isOpen, onClose, sessionsAnnuelle, visi
                             <div className="col-4">
                                 <div className="p-3 bg-white border rounded shadow-sm border-danger border-2 border-top-0 border-end-0 border-bottom-0">
                                     <h3 className="text-danger fw-bold">{overloaded.length}</h3>
-                                    <div className="small text-muted text-uppercase fw-bold">Surchargés (&gt;85)</div>
+                                    <div className="small text-muted text-uppercase fw-bold">Surchargés (&gt;{CI_THRESHOLDS.ANNUAL.GREEN})</div>
                                 </div>
                             </div>
                             <div className="col-4">
                                 <div className="p-3 bg-white border rounded shadow-sm border-success border-2 border-top-0 border-end-0 border-bottom-0">
                                     <h3 className="text-success fw-bold">{okloaded.length}</h3>
-                                    <div className="small text-muted text-uppercase fw-bold">Équilibrés (80-85)</div>
+                                    <div className="small text-muted text-uppercase fw-bold">Équilibrés ({CI_THRESHOLDS.ANNUAL.YELLOW}-{CI_THRESHOLDS.ANNUAL.GREEN})</div>
                                 </div>
                             </div>
                             <div className="col-4">
                                 <div className="p-3 bg-white border rounded shadow-sm border-warning border-2 border-top-0 border-end-0 border-bottom-0">
                                     <h3 className="text-warning fw-bold">{underloaded.length}</h3>
-                                    <div className="small text-muted text-uppercase fw-bold">Sous-chargés (&lt;80)</div>
+                                    <div className="small text-muted text-uppercase fw-bold">Sous-chargés (&lt;{CI_THRESHOLDS.ANNUAL.YELLOW})</div>
                                 </div>
                             </div>
                         </div>

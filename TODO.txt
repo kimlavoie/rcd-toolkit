@@ -1,9 +1,4 @@
   Correction de bogues
-   * La santé du département devrait fonctionner pour la CI annuelle
-  
-  Nouvelles Fonctionnalités "Power User"
-   * Historique des Changements (Undo/Redo) : Implémenter une gestion d'état locale pour annuler la dernière action (très utile après un Drag & Drop accidentel).
-
-  Refactorisation Code (Clean Code)
-   * Data Access Layer (DAL) : Sortir la logique firebaseDb.ts vers des services dédiés pour mieux séparer la couche "Transport" (Firebase) de la couche "Domaine" (Logique métier).
-   * Custom Hooks de Domaine : Créer des hooks comme useCICalculation(enseignantId) qui encapsulent toute la complexité du calcul, rendant les composants UI beaucoup plus simples.
+   * Exporter en Excel plutôt qu'en CSV
+     - Créer des onglets pour faciliter l'entrée de données dans le système du cégep. Pour chaque session, créer un onglet cours, un onglet libérations et un onglet stage (s'il y a lieu).
+     - Mettre les tableaux de données dans un ordre qui facilite le transfert manuel des données

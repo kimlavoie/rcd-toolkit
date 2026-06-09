@@ -7,8 +7,10 @@ import type { Allocation, Liberation as LiberationType, Enseignant } from "@/app
 import InputModal from "./InputModal"
 import { toast } from "react-hot-toast"
 import { useContextMenu } from "@/app/utilities/hooks"
+import { useHistory } from "./HistoryContext"
 
 export default function ListeLiberations({enseignant, session, enseignantWidth, scenario = "production", style}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any}){
+    const { recordAction } = useHistory()
     const [mounted, setMounted] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [selectedAllocation, setSelectedAllocation] = useState<Allocation | null>(null)
@@ -28,12 +30,30 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     }, [])
 
     async function removeHandlerLiberation(liberationId: string, enseignantId: string){
+        const liberation = liberations?.find(l => l.id === liberationId);
+        if (liberation) {
+            recordAction({
+                type: 'DELETE',
+                collection: 'liberations',
+                id: liberation.id,
+                oldData: { ...liberation },
+                label: `Suppression libération`
+            });
+        }
         await firebaseDb.liberations.delete(liberationId)
     }
 
     async function addHandlerLiberation(quantite: number){
         if(selectedAllocation){
-            await firebaseDb.liberations.add({allocation: selectedAllocation.id, enseignant: enseignant.id, quantite, scenario, session})
+            const data = {allocation: selectedAllocation.id, enseignant: enseignant.id, quantite, scenario, session};
+            const res = await firebaseDb.liberations.add(data);
+            recordAction({
+                type: 'ADD',
+                collection: 'liberations',
+                id: res.id,
+                newData: { ...data, id: res.id },
+                label: `Ajout libération ${selectedAllocation.code}`
+            });
             setModalOpen(false)
             closeMenu()
             setMenuSearch("");
@@ -41,7 +61,15 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     }
 
     async function quickAddLiberation(allocation: Allocation, quantite: number){
-        await firebaseDb.liberations.add({allocation: allocation.id, enseignant: enseignant.id, quantite, scenario, session})
+        const data = {allocation: allocation.id, enseignant: enseignant.id, quantite, scenario, session};
+        const res = await firebaseDb.liberations.add(data);
+        recordAction({
+            type: 'ADD',
+            collection: 'liberations',
+            id: res.id,
+            newData: { ...data, id: res.id },
+            label: `Ajout libération ${allocation.code}`
+        });
         closeMenu()
         setMenuSearch("");
     }
@@ -68,6 +96,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
             return
         }
 
+        const allocation = allocations?.find(a => a.id === ancienneLiberation?.allocation);
         const nouvelleLiberation = {
             enseignant: idNouveauEnseignant,
             allocation: ancienneLiberation?.allocation ?? "",
@@ -76,10 +105,23 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
             session
         }
 
-        await firebaseDb.liberations.add(nouvelleLiberation)
+        const res = await firebaseDb.liberations.add(nouvelleLiberation)
+        
+        const actions: any[] = [
+            { type: 'ADD', collection: 'liberations', id: res.id, newData: { ...nouvelleLiberation, id: res.id }, label: 'Ajout' }
+        ];
+
         if (ancienneLiberation) {
+            actions.push({ type: 'DELETE', collection: 'liberations', id: ancienneLiberation.id, oldData: { ...ancienneLiberation }, label: 'Suppression' });
             await firebaseDb.liberations.delete(ancienneLiberation.id)
         }
+
+        recordAction({
+            type: 'BATCH',
+            label: `Déplacement libération ${allocation?.code || ''}`,
+            actions
+        });
+
         toast.success("Libération déplacée")
     }
 
