@@ -81,7 +81,9 @@ export const CIReelleSchema = z.object({
 
 export const PreferenceSchema = z.object({
   enseignant: z.string().min(1),
-  cours: z.string().min(1),
+  cours: z.string().optional(),
+  allocation: z.string().optional(),
+  stage: z.string().optional(),
   type: z.enum(["ABSOLUE", "ORDINAIRE", "INTERET"]),
   anneeObtention: z.coerce.number().optional(),
 });

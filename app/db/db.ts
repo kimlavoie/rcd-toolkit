@@ -87,7 +87,9 @@ export interface CIReelle {
 export interface Preference {
   id: string
   enseignant: string
-  cours: string
+  cours?: string
+  allocation?: string
+  stage?: string
   type: 'ABSOLUE' | 'ORDINAIRE' | 'INTERET'
   anneeObtention?: number
 }

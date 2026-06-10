@@ -9,6 +9,7 @@ import CIReelle from "../components/CIReelle"
 import TachesToolbar from "../components/TachesToolbar"
 import DashboardModal from "../components/DashboardModal"
 import ConfirmModal from "../components/ConfirmModal"
+import DraftGenerationModal from "../components/DraftGenerationModal"
 import { DataProvider, useData } from "../components/DataContext"
 import { HistoryProvider } from "../components/HistoryContext"
 import StickyHeader from "../components/ui/StickyHeader"
@@ -18,6 +19,7 @@ import { useFilteredEnseignants } from "@/app/utilities/hooks"
 import Skeleton from "@/app/utilities/Skeleton";
 import { exportToExcel } from "@/app/utilities/excelExport"
 import { DeletionService } from "@/app/utilities/deletionService"
+import { DraftGenerationService } from "@/app/utilities/generationService"
 
 import { 
     getChargesManquantesCount, 
@@ -31,7 +33,7 @@ function TachesContent() {
     const params = useParams()
     const year = params.year as string
     
-    const { enseignants, groupes, charges, allocations, liberations, stages, supervisions, cours, scenarios, isLoading, triggerExpansion } = useData()
+    const { enseignants, groupes, charges, allocations, liberations, stages, supervisions, cours, scenarios, preferences, parametres, isLoading, triggerExpansion } = useData()
 
     const isValidYear = year && /^\d{4}$/.test(year);
     const anneeScolaireLabel = isValidYear ? `${year}-${parseInt(year)+1}` : "Inconnue";
@@ -66,6 +68,7 @@ function TachesContent() {
     const [teachersPerPage, setTeachersPerPage] = useState(7)
     const [showDashboard, setShowDashboard] = useState(false)
     const [showClearConfirm, setShowClearConfirm] = useState(false)
+    const [showGenerateModal, setShowGenerateModal] = useState(false)
 
     const getWidth = (id: string) => columnWidths[id] || enseignantWidth
 
@@ -265,6 +268,44 @@ function TachesContent() {
         }
     }
 
+    const handleGenerateDraft = () => {
+        setShowGenerateModal(true)
+    }
+
+    const executeGenerateDraft = async (params: any) => {
+        if (!enseignants || !groupes || !allocations || !stages || !cours || !preferences || !parametres || !charges || !liberations || !supervisions) {
+            toast.error("Données incomplètes pour la génération.")
+            return
+        }
+
+        const loadingToast = toast.loading("Génération de l'ébauche en cours...")
+        try {
+            await DraftGenerationService.generate(
+                params,
+                {
+                    enseignants,
+                    groupes,
+                    allocations,
+                    stages,
+                    cours,
+                    preferences,
+                    parametres,
+                    existingCharges: charges,
+                    existingLiberations: liberations,
+                    existingSupervisions: supervisions
+                },
+                selectedScenarioId,
+                parseInt(year)
+            )
+            toast.dismiss(loadingToast)
+            toast.success("Ébauche générée avec succès !")
+        } catch (error) {
+            console.error("Erreur lors de la génération:", error)
+            toast.dismiss(loadingToast)
+            toast.error("Erreur lors de la génération de l'ébauche.")
+        }
+    }
+
     const chunkArray = (arr: any[], size: number) => {
         const chunks = []
         for (let i = 0; i < arr.length; i += size) {
@@ -332,6 +373,7 @@ function TachesContent() {
                     onExportPDF={handleExportPDF}
                     onExportExcel={handleExportExcel}
                     onClearAll={handleClearAll}
+                    onGenerateDraft={handleGenerateDraft}
                     setShowHelp={setShowHelp}
                     onShowDashboard={() => setShowDashboard(true)}
                 />
@@ -353,6 +395,14 @@ function TachesContent() {
                     message={`Attention ! Vous allez effacer TOUTES les attributions (cours, libérations, supervisions, CI Réelles) pour l'année scolaire ${anneeScolaireLabel} et le scénario "${selectedScenarioId === "production" ? "Production" : currentSessionScenarios.find(s => s.id === selectedScenarioId)?.nom}".\n\nCette action est irréversible. Voulez-vous continuer ?`}
                     confirmText="Oui, tout effacer"
                     isDanger={true}
+                />
+
+                <DraftGenerationModal 
+                    isOpen={showGenerateModal}
+                    onClose={() => setShowGenerateModal(false)}
+                    onConfirm={executeGenerateDraft}
+                    sessionsAnnuelle={sessionsAnnuelle}
+                    anneeScolaireLabel={anneeScolaireLabel}
                 />
 
                 {cache.length > 0 && (

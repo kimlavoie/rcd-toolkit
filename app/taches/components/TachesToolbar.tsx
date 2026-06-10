@@ -29,6 +29,7 @@ interface TachesToolbarProps {
     onExportPDF: () => void
     onExportExcel?: () => void
     onClearAll: () => void
+    onGenerateDraft: () => void
     setShowHelp: (show: boolean) => void
     onShowDashboard: () => void
 }
@@ -78,7 +79,7 @@ export default function TachesToolbar({
     selectedScenarioId, setSelectedScenarioId,
     currentSessionScenarios,
     onHideAll, onShowAll, onExpandAll, onCollapseAll, onValidate, onFitToScreen, onExportPDF, onExportExcel,
-    onClearAll,
+    onClearAll, onGenerateDraft,
     setShowHelp, onShowDashboard
 }: TachesToolbarProps) {
     const { undo, redo, canUndo, canRedo } = useHistory()
@@ -223,6 +224,13 @@ export default function TachesToolbar({
 
                     <Dropdown title="Automatisation" icon="🤖" btnClass="btn-white border">
                         <div className="d-flex flex-column gap-2">
+                            <button 
+                                className="btn btn-sm btn-outline-primary border text-start fw-bold" 
+                                style={{fontSize: "0.75rem"}} 
+                                onClick={onGenerateDraft}
+                            >
+                                ✨ Générer une ébauche
+                            </button>
                             <button 
                                 className="btn btn-sm btn-outline-danger border text-start fw-bold" 
                                 style={{fontSize: "0.75rem"}} 
