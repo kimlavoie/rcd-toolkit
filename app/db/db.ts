@@ -83,3 +83,16 @@ export interface CIReelle {
     session: string
     CI: number
 }
+
+export interface Preference {
+  id: string
+  enseignant: string
+  cours: string
+  type: 'ABSOLUE' | 'ORDINAIRE' | 'INTERET'
+  anneeObtention?: number
+}
+
+export interface Parametres {
+  id: string
+  dureePrioriteOrdinaire: number
+}

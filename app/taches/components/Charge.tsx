@@ -9,12 +9,34 @@ import { toast } from "react-hot-toast"
 import { getGroupColor } from "@/app/utilities/groupColors"
 import { useContextMenu } from "@/app/utilities/hooks"
 import { useHistory } from "./HistoryContext"
+import { useData } from "./DataContext"
+import { extractSessionInfos } from "@/app/utilities/sessions"
 
 const Charge = memo(function Charge({session, charge, groupe, cours, charges, enseignantId, onRemove, scenario = "production", minimal = false}: any){
     const { isVisible, position, menuRef, openMenu, closeMenu } = useContextMenu()
     const { recordAction } = useHistory()
+    const { preferences, parametres } = useData()
     const [modalOpen, setModalOpen] = useState(false)
     const [transferModalOpen, setTransferModalOpen] = useState(false)
+
+    const { annee: sessionAnnee } = extractSessionInfos(session)
+    const currentYear = parseInt(sessionAnnee)
+
+    const pref = preferences?.find(p => p.cours === cours.id && p.enseignant === enseignantId)
+    
+    let preferenceBadge = null
+    if (pref) {
+        if (pref.type === 'ABSOLUE') {
+            preferenceBadge = <span className="ms-1" title="Priorité Absolue" style={{cursor: 'help', fontSize: '0.9rem'}}>🌟</span>
+        } else if (pref.type === 'ORDINAIRE') {
+            const duree = parametres?.[0]?.dureePrioriteOrdinaire ?? 4
+            if (pref.anneeObtention && (currentYear - pref.anneeObtention) <= duree) {
+                preferenceBadge = <span className="ms-1" title={`Priorité Ordinaire (obtenue en ${pref.anneeObtention}, valide ${duree} ans)`} style={{cursor: 'help', fontSize: '0.9rem'}}>⭐</span>
+            }
+        } else if (pref.type === 'INTERET') {
+            preferenceBadge = <span className="ms-1" title="Intérêt" style={{cursor: 'help', fontSize: '0.9rem'}}>❤️</span>
+        }
+    }
 
     function dragStartHandler(ev: any){
         ev.dataTransfer.setData("groupeId", groupe.id)
@@ -136,10 +158,11 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
             onDragStart={dragStartHandler}
         >      
             <div className="d-flex justify-content-between align-items-center">
-                <div className="d-flex align-items-center gap-2">
+                <div className="d-flex align-items-center gap-1">
                     <span className="fw-bold text-dark" title={`${groupe.nbEtudiants} étudiants`}>
                         <span style={{fontSize: "0.7rem", opacity: 0.8, marginRight: "2px"}}>👤</span>{groupe.nbEtudiants}
                     </span>
+                    {preferenceBadge}
                     {charge.type !== "TP" && (
                         <span className={`badge ${charge.type === 'T' ? 'bg-primary' : 'bg-success'}`} style={{fontSize: "0.6rem"}}>
                             {charge.type}
@@ -203,6 +226,7 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
         <div className="d-flex justify-content-between align-items-start mb-1">
             <div className="d-flex align-items-center gap-2">
                 <span style={{fontWeight: "bold", color: "#333"}}>{cours.sigle}</span>
+                {preferenceBadge}
                 {charge.type !== "TP" && (
                     <span className={`badge ${charge.type === 'T' ? 'bg-primary' : 'bg-success'}`} style={{fontSize: "0.65rem"}}>
                         {charge.type}

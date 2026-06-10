@@ -20,7 +20,7 @@ Cypress.Commands.add('login', () => {
   const collections = [
     'enseignants', 'cours', 'groupes', 'allocations', 
     'liberations', 'stages', 'supervisions', 'charges', 
-    'CIReelles', 'scenarios'
+    'CIReelles', 'scenarios', 'preferences', 'parametres'
   ];
   
   collections.forEach(col => {

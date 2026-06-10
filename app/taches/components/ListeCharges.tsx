@@ -12,13 +12,17 @@ import { toast } from "react-hot-toast"
 import { useData } from "./DataContext"
 import { useContextMenu } from "@/app/utilities/hooks"
 import { useHistory } from "./HistoryContext"
+import { extractSessionInfos } from "@/app/utilities/sessions"
 
 export default function ListeCharges({enseignant, session, enseignantWidth, scenario = "production", style, isPrinting}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any, isPrinting?: boolean}){
-    const { visibilityMap, setVisibility } = useData()
+    const { visibilityMap, setVisibility, preferences, parametres } = useData()
     const { recordAction } = useHistory()
     const [mounted, setMounted] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [selectedGroupe, setSelectedGroupe] = useState<Groupe | null>(null)
+
+    const { annee: sessionAnnee } = extractSessionInfos(session)
+    const currentYear = parseInt(sessionAnnee)
 
     const { isVisible: addMenuVisible, position: addMenuPos, menuRef: addMenuRef, openMenu: openAddMenu, closeMenu: closeAddMenu } = useContextMenu()
     const { isVisible: groupMenuVisible, position: groupMenuPos, menuRef: groupMenuRef, openMenu: openGroupMenu, closeMenu: closeGroupMenu } = useContextMenu()
@@ -237,11 +241,28 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
     return <td onContextMenu={openAddMenu} style={getCellStyle()} data-dropzone="charge" data-enseignant-id={enseignant.id} onDrop={dropHandlerCharge} onDragOver={e => e.preventDefault()} onDragEnter={e => { e.preventDefault(); e.currentTarget.style.boxShadow = "inset 0 0 0 2px #0d6efd"; e.currentTarget.style.backgroundColor = "rgba(13, 110, 253, 0.05)"; }} onDragLeave={e => { e.currentTarget.style.boxShadow = ""; e.currentTarget.style.backgroundColor = ""; }}>
         {sortedCourseIdsForDisplay.map(courseId => {
             const courseCharges = chargesByCourseForDisplay[courseId], cour = coursData?.find(c => c.id == courseId), expanded = isExpanded(courseId)
+            
+            const pref = preferences?.find(p => p.cours === courseId && p.enseignant === enseignant.id)
+            let preferenceBadge = null
+            if (pref) {
+                if (pref.type === 'ABSOLUE') {
+                    preferenceBadge = <span className="ms-1" title="Priorité Absolue" style={{cursor: 'help', fontSize: '0.9rem'}}>🌟</span>
+                } else if (pref.type === 'ORDINAIRE') {
+                    const duree = parametres?.[0]?.dureePrioriteOrdinaire ?? 4
+                    if (pref.anneeObtention && (currentYear - pref.anneeObtention) <= duree) {
+                        preferenceBadge = <span className="ms-1" title={`Priorité Ordinaire (obtenue en ${pref.anneeObtention}, valide ${duree} ans)`} style={{cursor: 'help', fontSize: '0.9rem'}}>⭐</span>
+                    }
+                } else if (pref.type === 'INTERET') {
+                    preferenceBadge = <span className="ms-1" title="Intérêt" style={{cursor: 'help', fontSize: '0.9rem'}}>❤️</span>
+                }
+            }
+
             return <div key={courseId} className="mb-2 rounded shadow-sm overflow-hidden" style={{ border: "1px solid #ddd", borderLeft: `6px solid ${cour?.couleur || "#0dcaf0"}`, backgroundColor: "white", display: "block", cursor: expanded && isPrinting ? "default" : "grab" }} draggable={!isPrinting} onDragStart={ev => { ev.dataTransfer.setData("courseId", courseId); ev.dataTransfer.setData("enseignantId", enseignant.id); }} onContextMenu={e => { setTransferCourseId(courseId); openGroupMenu(e); }}>
                 <div className="d-flex justify-content-between align-items-center cursor-pointer p-2" onClick={() => setVisibility(`${session}_${enseignant.id}_${courseId}_expanded`, !expanded)} style={{ fontSize: "0.8rem" }}>
                     <div className="flex-grow-1 min-width-0">
                         <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
                             <span className="fw-bold text-dark text-truncate">{cour?.sigle}</span>
+                            {preferenceBadge}
                             <div className="d-flex gap-1 flex-shrink-0">
                                 <span className="badge rounded-pill bg-info text-dark shadow-sm" style={{ fontSize: "0.65rem" }} title="Groupes"><span style={{marginRight: "3px"}}>👥</span>{courseCharges.length}</span>
                                 <span className="badge rounded-pill bg-info text-dark shadow-sm" style={{ fontSize: "0.65rem" }} title="Étudiants"><span style={{marginRight: "3px"}}>👤</span>{courseCharges.reduce((sum, c) => sum + (sessionGroupes.find(gr => gr.id === c.groupe)?.nbEtudiants ?? 0), 0)}</span>

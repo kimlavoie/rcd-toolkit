@@ -9,8 +9,12 @@ import type {
     Supervision, 
     Charge, 
     CIReelle, 
-    Scenario 
+    Scenario,
+    Preference,
+    Parametres
 } from "@/app/db/db";
+import { PreferenceService as PreferenceServiceClass } from "./PreferenceService";
+import { ParametreService as ParametreServiceClass } from "./ParametreService";
 
 export const EnseignantService = new BaseService<Enseignant>("enseignants");
 export const CoursService = new BaseService<Cours>("cours");
@@ -22,6 +26,8 @@ export const SupervisionService = new BaseService<Supervision>("supervisions");
 export const ChargeService = new BaseService<Charge>("charges");
 export const CIReelleService = new BaseService<CIReelle>("CIReelles");
 export const ScenarioService = new BaseService<Scenario>("scenarios");
+export const PreferenceService = new PreferenceServiceClass();
+export const ParametreService = new ParametreServiceClass();
 
 export const Services = {
     enseignants: EnseignantService,
@@ -34,4 +40,6 @@ export const Services = {
     charges: ChargeService,
     CIReelles: CIReelleService,
     scenarios: ScenarioService,
+    preferences: PreferenceService,
+    parametres: ParametreService,
 };

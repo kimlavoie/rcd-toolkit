@@ -65,6 +65,7 @@ export default function AdminPage(){
         {
             group: "Configuration Avancée",
             items: [
+                { title: "Paramètres", icon: "🛠️", href: "/admin/parametres", desc: "Réglages globaux du système" },
                 { title: "Scénarios", icon: "🎭", href: "/admin/scenarios", desc: "Gérer les variantes de planification", highlight: true }
             ]
         }

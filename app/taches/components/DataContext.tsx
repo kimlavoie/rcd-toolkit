@@ -4,7 +4,8 @@ import { useFirestoreCollection } from "@/app/utilities/firebaseDb";
 import { where } from "firebase/firestore";
 import type { 
     Enseignant, Charge, Liberation, Groupe, Cours, 
-    Supervision, Stage, Allocation, CIReelle, Scenario 
+    Supervision, Stage, Allocation, CIReelle, Scenario,
+    Preference, Parametres
 } from "@/app/db/db";
 
 interface DataContextType {
@@ -18,6 +19,8 @@ interface DataContextType {
     allocations: Allocation[] | undefined
     CIReelles: CIReelle[] | undefined
     scenarios: Scenario[] | undefined
+    preferences: Preference[] | undefined
+    parametres: Parametres[] | undefined
     isLoading: boolean
     
     // État de visibilité partagé pour l'impression fidèle
@@ -32,6 +35,8 @@ export function DataProvider({ children, sessions }: { children: ReactNode, sess
     // Basic collections (global to the user)
     const enseignants = useFirestoreCollection<Enseignant>("enseignants")
     const cours = useFirestoreCollection<Cours>("cours")
+    const preferences = useFirestoreCollection<Preference>("preferences")
+    const parametres = useFirestoreCollection<Parametres>("parametres")
     
     // Session-scoped constraints
     const sessionConstraints = useMemo(() => 
@@ -63,11 +68,12 @@ export function DataProvider({ children, sessions }: { children: ReactNode, sess
 
     const isLoading = !enseignants || !charges || !liberations || !groupes || 
                       !cours || !supervisions || !stages || !allocations || 
-                      !CIReelles || !scenarios;
+                      !CIReelles || !scenarios || !preferences || !parametres;
 
     const value = {
         enseignants, charges, liberations, groupes, cours, 
         supervisions, stages, allocations, CIReelles, scenarios,
+        preferences, parametres,
         isLoading, visibilityMap, setVisibility, triggerExpansion
     };
 

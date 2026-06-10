@@ -111,6 +111,7 @@ function EnseignantsPageContent(){
                                 <td>{enseignant.nom}</td>
                                 <td>{enseignant.courriel}</td>
                                 <td>
+                                    <button type="button" className="btn btn-outline-warning btn-sm me-1" onClick={() => router.push(`/admin/enseignants/${enseignant.id}/preferences`)} title="Préférences">⭐</button>
                                     <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(enseignant)}>✏️</button>
                                     <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => deleteItem(enseignant.id)}>🗑️</button>
                                 </td>

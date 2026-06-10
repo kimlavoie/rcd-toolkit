@@ -79,6 +79,17 @@ export const CIReelleSchema = z.object({
   CI: z.coerce.number().min(0),
 });
 
+export const PreferenceSchema = z.object({
+  enseignant: z.string().min(1),
+  cours: z.string().min(1),
+  type: z.enum(["ABSOLUE", "ORDINAIRE", "INTERET"]),
+  anneeObtention: z.coerce.number().optional(),
+});
+
+export const ParametresSchema = z.object({
+  dureePrioriteOrdinaire: z.coerce.number().min(1).default(4),
+});
+
 export const Schemas: Record<string, z.ZodSchema> = {
   enseignants: EnseignantSchema,
   cours: CoursSchema,
@@ -90,4 +101,6 @@ export const Schemas: Record<string, z.ZodSchema> = {
   supervisions: SupervisionSchema,
   scenarios: ScenarioSchema,
   CIReelles: CIReelleSchema,
+  preferences: PreferenceSchema,
+  parametres: ParametresSchema,
 };
