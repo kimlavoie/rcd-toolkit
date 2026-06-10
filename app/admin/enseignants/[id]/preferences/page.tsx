@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/app/utilities/auth"
 import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
@@ -45,6 +45,28 @@ export default function EnseignantPreferencesPage() {
         // Reset selected target when changing type or session
         setSelectedTarget("")
     }, [cibleType, filterSession])
+
+    const filteredPreferences = useMemo(() => {
+        if (!preferences) return [];
+        const { saison } = extractSessionInfos(filterSession);
+
+        return preferences.filter(pref => {
+            if (pref.cours) {
+                const c = courses?.find(c => c.id === pref.cours);
+                if (!c || !c.saison) return true;
+                return c.saison === saison;
+            }
+            if (pref.allocation) {
+                const a = allocations?.find(a => a.id === pref.allocation);
+                return a?.session === filterSession;
+            }
+            if (pref.stage) {
+                const s = stages?.find(s => s.id === pref.stage);
+                return s?.session === filterSession;
+            }
+            return true;
+        });
+    }, [preferences, filterSession, courses, allocations, stages]);
 
     if (authLoading) return <div className="container mt-5 text-center"><div className="spinner-border text-primary"></div></div>
     if (!user) { router.push("/login"); return null }
@@ -219,7 +241,7 @@ export default function EnseignantPreferencesPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {preferences?.map(pref => {
+                            {filteredPreferences.map(pref => {
                                 let badge = null;
                                 let name = "";
                                 let desc = "";
@@ -275,11 +297,11 @@ export default function EnseignantPreferencesPage() {
                                     </tr>
                                 )
                             })}
-                            {(!preferences || preferences.length === 0) && (
+                            {filteredPreferences.length === 0 && (
                                 <tr>
                                     <td colSpan={5} className="text-center text-muted py-5">
                                         <div className="mb-2" style={{fontSize: "2rem"}}>📋</div>
-                                        Aucune préférence définie pour cet enseignant
+                                        Aucune préférence à afficher pour cette session
                                     </td>
                                 </tr>
                             )}
