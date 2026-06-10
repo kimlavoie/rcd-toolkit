@@ -28,6 +28,7 @@ interface TachesToolbarProps {
     onFitToScreen: () => void
     onExportPDF: () => void
     onExportExcel?: () => void
+    onClearAll: () => void
     setShowHelp: (show: boolean) => void
     onShowDashboard: () => void
 }
@@ -77,6 +78,7 @@ export default function TachesToolbar({
     selectedScenarioId, setSelectedScenarioId,
     currentSessionScenarios,
     onHideAll, onShowAll, onExpandAll, onCollapseAll, onValidate, onFitToScreen, onExportPDF, onExportExcel,
+    onClearAll,
     setShowHelp, onShowDashboard
 }: TachesToolbarProps) {
     const { undo, redo, canUndo, canRedo } = useHistory()
@@ -216,6 +218,18 @@ export default function TachesToolbar({
                                     <button className="btn btn-white py-1 border-0 text-primary fw-bold border-start" style={{fontSize: "0.7rem"}} onClick={onExpandAll}>➕ Déplier tout</button>
                                 </div>
                             </div>
+                        </div>
+                    </Dropdown>
+
+                    <Dropdown title="Automatisation" icon="🤖" btnClass="btn-white border">
+                        <div className="d-flex flex-column gap-2">
+                            <button 
+                                className="btn btn-sm btn-outline-danger border text-start fw-bold" 
+                                style={{fontSize: "0.75rem"}} 
+                                onClick={onClearAll}
+                            >
+                                🗑️ Tout effacer
+                            </button>
                         </div>
                     </Dropdown>
                 </div>

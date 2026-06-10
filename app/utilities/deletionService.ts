@@ -84,5 +84,52 @@ export const DeletionService = {
         batch.delete(doc(firestore, "stages", stageId));
 
         await batch.commit();
+    },
+
+    /**
+     * Supprime toutes les données d'une session et d'un scénario donnés.
+     */
+    clearAllSessionData: async (sessions: string[], scenarioId: string) => {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        const batch = writeBatch(firestore);
+        
+        // 1. Charges
+        const chargesSnap = await getDocs(query(
+            collection(firestore, "charges"), 
+            where("session", "in", sessions),
+            where("scenario", "==", scenarioId),
+            where("userId", "==", userId)
+        ));
+        chargesSnap.forEach(d => batch.delete(d.ref));
+
+        // 2. Libérations
+        const liberationsSnap = await getDocs(query(
+            collection(firestore, "liberations"), 
+            where("session", "in", sessions),
+            where("scenario", "==", scenarioId),
+            where("userId", "==", userId)
+        ));
+        liberationsSnap.forEach(d => batch.delete(d.ref));
+
+        // 3. Supervisions
+        const supervisionsSnap = await getDocs(query(
+            collection(firestore, "supervisions"), 
+            where("session", "in", sessions),
+            where("scenario", "==", scenarioId),
+            where("userId", "==", userId)
+        ));
+        supervisionsSnap.forEach(d => batch.delete(d.ref));
+
+        // 4. CI Réelles (Session-wide, no scenario)
+        const ciSnap = await getDocs(query(
+            collection(firestore, "CIReelles"), 
+            where("session", "in", sessions),
+            where("userId", "==", userId)
+        ));
+        ciSnap.forEach(d => batch.delete(d.ref));
+
+        await batch.commit();
     }
 };

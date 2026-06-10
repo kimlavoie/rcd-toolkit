@@ -8,6 +8,7 @@ import Summary from "../components/Summary"
 import CIReelle from "../components/CIReelle"
 import TachesToolbar from "../components/TachesToolbar"
 import DashboardModal from "../components/DashboardModal"
+import ConfirmModal from "../components/ConfirmModal"
 import { DataProvider, useData } from "../components/DataContext"
 import { HistoryProvider } from "../components/HistoryContext"
 import StickyHeader from "../components/ui/StickyHeader"
@@ -16,6 +17,7 @@ import { toast } from "react-hot-toast"
 import { useFilteredEnseignants } from "@/app/utilities/hooks"
 import Skeleton from "@/app/utilities/Skeleton";
 import { exportToExcel } from "@/app/utilities/excelExport"
+import { DeletionService } from "@/app/utilities/deletionService"
 
 import { 
     getChargesManquantesCount, 
@@ -63,6 +65,7 @@ function TachesContent() {
     const [isPrinting, setIsPrinting] = useState(false)
     const [teachersPerPage, setTeachersPerPage] = useState(7)
     const [showDashboard, setShowDashboard] = useState(false)
+    const [showClearConfirm, setShowClearConfirm] = useState(false)
 
     const getWidth = (id: string) => columnWidths[id] || enseignantWidth
 
@@ -246,6 +249,22 @@ function TachesContent() {
         }
     }
 
+    const handleShowDashboard = () => setShowDashboard(true)
+
+    const handleClearAll = () => {
+        setShowClearConfirm(true)
+    }
+
+    const executeClearAll = async () => {
+        try {
+            await DeletionService.clearAllSessionData(sessionsAnnuelle, selectedScenarioId)
+            toast.success("Toutes les données de l'année ont été effacées.")
+        } catch (error) {
+            console.error("Erreur lors de l'effacement des données:", error)
+            toast.error("Erreur lors de l'effacement des données.")
+        }
+    }
+
     const chunkArray = (arr: any[], size: number) => {
         const chunks = []
         for (let i = 0; i < arr.length; i += size) {
@@ -312,6 +331,7 @@ function TachesContent() {
                     onFitToScreen={fitToScreen}
                     onExportPDF={handleExportPDF}
                     onExportExcel={handleExportExcel}
+                    onClearAll={handleClearAll}
                     setShowHelp={setShowHelp}
                     onShowDashboard={() => setShowDashboard(true)}
                 />
@@ -323,6 +343,16 @@ function TachesContent() {
                     visibleEnseignants={visibleEnseignants}
                     selectedScenarioId={selectedScenarioId}
                     saison={mode}
+                />
+
+                <ConfirmModal 
+                    isOpen={showClearConfirm}
+                    onClose={() => setShowClearConfirm(false)}
+                    onConfirm={executeClearAll}
+                    title="Tout effacer"
+                    message={`Attention ! Vous allez effacer TOUTES les attributions (cours, libérations, supervisions, CI Réelles) pour l'année scolaire ${anneeScolaireLabel} et le scénario "${selectedScenarioId === "production" ? "Production" : currentSessionScenarios.find(s => s.id === selectedScenarioId)?.nom}".\n\nCette action est irréversible. Voulez-vous continuer ?`}
+                    confirmText="Oui, tout effacer"
+                    isDanger={true}
                 />
 
                 {cache.length > 0 && (
