@@ -16,6 +16,7 @@ import { auth } from "./firebase";
 
 export interface CustomUser extends User {
     isAdmin?: boolean;
+    isActualAdmin?: boolean; // True if they have the claim, regardless of current UI mode
     departements?: Record<string, string>;
     mustChangePassword?: boolean;
     // Helper fields for current context
@@ -41,6 +42,13 @@ export function useAuth() {
         setActiveDepartementIdState(id);
     };
 
+    const toggleSuperAdminMode = (val: boolean) => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('superAdminMode', val.toString());
+            window.location.reload();
+        }
+    };
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const savedDept = localStorage.getItem('activeDepartementId');
@@ -63,7 +71,8 @@ export function useAuth() {
                     // Force token refresh to get latest custom claims (important after role updates)
                     const idTokenResult = await firebaseUser.getIdTokenResult(true);
                     const customUser = firebaseUser as CustomUser;
-                    customUser.isAdmin = idTokenResult.claims.isAdmin as boolean | undefined;
+                    
+                    const claimIsAdmin = idTokenResult.claims.isAdmin as boolean | undefined;
                     customUser.departements = idTokenResult.claims.departements as Record<string, string> | undefined;
                     customUser.mustChangePassword = idTokenResult.claims.mustChangePassword as boolean | undefined;
 
@@ -74,9 +83,14 @@ export function useAuth() {
                     if (!customUser.departements && oldDeptId && oldRole !== 'ADMIN') {
                         customUser.departements = { [oldDeptId]: oldRole || 'ENSEIGNANT' };
                     }
-                    if (customUser.isAdmin === undefined) {
-                         customUser.isAdmin = oldRole === 'ADMIN';
+                    
+                    customUser.isActualAdmin = claimIsAdmin === true || oldRole === 'ADMIN';
+                    
+                    let superAdminMode = true;
+                    if (typeof window !== 'undefined') {
+                        superAdminMode = localStorage.getItem('superAdminMode') !== 'false';
                     }
+                    customUser.isAdmin = customUser.isActualAdmin && superAdminMode;
 
                     // Determine active department based on saved state or defaults
                     let currentActiveDept = activeDepartementId;
@@ -170,6 +184,7 @@ export function useAuth() {
 
     const refreshUser = async () => {
         if (auth.currentUser) {
+            await auth.currentUser.reload();
             const idTokenResult = await auth.currentUser.getIdTokenResult(true);
             const customUser = auth.currentUser as CustomUser;
             customUser.isAdmin = idTokenResult.claims.isAdmin as boolean | undefined;
@@ -199,5 +214,5 @@ export function useAuth() {
         }
     }
 
-    return { user, loading, signInWithGoogle, registerWithEmail, loginWithEmail, logout, refreshUser, changePassword, activeDepartementId, setActiveDepartementId };
+    return { user, loading, signInWithGoogle, registerWithEmail, loginWithEmail, logout, refreshUser, changePassword, activeDepartementId, setActiveDepartementId, toggleSuperAdminMode };
 }

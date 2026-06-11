@@ -21,6 +21,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return departements.find(d => d.id === currentDeptId)?.nom
     }, [currentDeptId, departements])
 
+    const displayRole = user?.role === 'ADMIN' ? 'Super Admin' : (user?.role === 'COORDONNATEUR' ? 'Coordonnateur' : 'Enseignant');
+
     useEffect(() => {
         if (!loading) {
             if (!user) {
@@ -44,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="bg-dark text-white p-2 d-flex justify-content-between align-items-center mb-3">
                 <div className="fw-bold">
                     <span className="me-2">🛡️</span>
-                    Administration {user.role === 'ADMIN' ? 'Super Admin ' : ''}
+                    Administration {user.role === 'ADMIN' ? 'Super Admin ' : (user.isActualAdmin ? `(${displayRole}) ` : '')}
                     {currentDeptId ? `(Département: ${departementName || currentDeptId})` : (user.role !== 'ADMIN' ? '(Aucun département)' : '')}
                 </div>
                 <div className="d-flex gap-2 align-items-center">

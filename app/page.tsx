@@ -6,18 +6,40 @@ import { useAuth } from "./utilities/auth";
 import { useRouter } from "next/navigation";
 
 import { useFirestoreCollection } from "./utilities/firebaseDb";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { firestore } from "./utilities/firebase";
+import { useState } from "react";
 
 export default function Home() {
-  const { user, loading, logout, activeDepartementId, setActiveDepartementId } = useAuth()
+  const { user, loading, logout, activeDepartementId, setActiveDepartementId, toggleSuperAdminMode } = useAuth()
   const router = useRouter()
 
   const departementsData = useFirestoreCollection<any>("departements")
+  const [realName, setRealName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login")
     }
   }, [user, loading, router])
+
+  useEffect(() => {
+      const fetchRealName = async () => {
+          if (user?.uid) {
+              try {
+                  const q = query(collection(firestore, "enseignants"), where("authUid", "==", user.uid));
+                  const snap = await getDocs(q);
+                  if (!snap.empty) {
+                      const data = snap.docs[0].data();
+                      setRealName(`${data.prenom} ${data.nom}`);
+                  }
+              } catch (e) {
+                  console.error("Failed to fetch real name", e);
+              }
+          }
+      };
+      fetchRealName();
+  }, [user?.uid]);
 
   if (loading) return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
@@ -33,6 +55,9 @@ export default function Home() {
   // Department switching logic
   const availableDepts = user.departements ? Object.keys(user.departements) : [];
   const currentDeptId = activeDepartementId || user.departementId;
+
+  const displayRole = user.role === 'ADMIN' ? 'Super Admin' : (user.role === 'COORDONNATEUR' ? 'Coordonnateur' : 'Enseignant');
+  const displayName = user.isAdmin ? "Super Admin" : (realName || user.displayName);
 
   const handleDeptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       setActiveDepartementId(e.target.value);
@@ -93,7 +118,7 @@ export default function Home() {
             <div className="d-flex justify-content-between align-items-center mb-5 bg-white p-4 rounded-4 shadow-sm border border-primary border-opacity-10 border-start-0 border-top-0 border-end-0 border-5">
               <div>
                 <h1 className="display-6 fw-bold text-dark mb-1">Gestion des <span className="text-primary">tâches</span></h1>
-                <p className="text-muted mb-0">Bienvenue, <span className="fw-bold text-dark">{user.displayName}</span> 👋</p>
+                <p className="text-muted mb-0">Bienvenue, <span className="fw-bold text-dark">{displayName}</span> 👋</p>
                 
                 {(availableDepts.length > 1 || user.isAdmin) && (
                     <div className="mt-3 d-flex align-items-center gap-2">
@@ -120,6 +145,22 @@ export default function Home() {
                     <div className="mt-2 text-muted small">
                         Département: <span className="fw-bold text-dark">{departementsData?.find((d:any) => d.id === currentDeptId)?.nom || currentDeptId}</span>
                         <span className="badge bg-secondary ms-2">{user.role}</span>
+                    </div>
+                )}
+                
+                {user.isActualAdmin && (
+                    <div className="form-check form-switch mt-3 d-inline-block">
+                        <input 
+                            className="form-check-input cursor-pointer" 
+                            type="checkbox" 
+                            role="switch" 
+                            id="superAdminSwitch"
+                            checked={user.isAdmin}
+                            onChange={(e) => toggleSuperAdminMode(e.target.checked)}
+                        />
+                        <label className="form-check-label small fw-bold text-muted cursor-pointer" htmlFor="superAdminSwitch">
+                            Mode Super Admin global
+                        </label>
                     </div>
                 )}
               </div>

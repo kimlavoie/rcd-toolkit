@@ -45,13 +45,15 @@ export function useFirestoreCollection<T>(collectionName: string, extraConstrain
                 const oldDeptId = tokenResult.claims.departementId as string | undefined;
                 
                 const isGlobalAdmin = isAdmin === true || oldRole === 'ADMIN';
+                const isSuperAdminMode = typeof window !== 'undefined' ? localStorage.getItem('superAdminMode') !== 'false' : true;
+                const effectiveGlobalAdmin = isGlobalAdmin && isSuperAdminMode;
 
                 // Get active department from localStorage (since this hook runs outside of the useAuth context directly)
                 const activeDepartementId = typeof window !== 'undefined' ? localStorage.getItem('activeDepartementId') : null;
                 const targetDeptId = activeDepartementId || oldDeptId;
 
                 let dynamicConstraints: QueryConstraint[] = [];
-                if (collectionName !== 'departements' && targetDeptId && !isGlobalAdmin) {
+                if (collectionName !== 'departements' && targetDeptId && !effectiveGlobalAdmin) {
                     if (collectionName === 'enseignants') {
                         dynamicConstraints.push(where(`departements.${targetDeptId}`, "in", ["COORDONNATEUR", "ENSEIGNANT", "ADMIN"]));
                     } else {
