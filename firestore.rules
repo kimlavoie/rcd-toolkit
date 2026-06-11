@@ -8,15 +8,15 @@ service cloud.firestore {
     }
 
     function isSuperAdmin() {
-      return request.auth.token.role == 'ADMIN';
+      return request.auth.token.isAdmin == true || request.auth.token.role == 'ADMIN'; // Fallback during migration
     }
 
-    function isCoordinator() {
-      return request.auth.token.role == 'COORDONNATEUR';
+    function isCoordinator(deptId) {
+      return request.auth.token.departements != null && deptId in request.auth.token.departements && request.auth.token.departements[deptId] == 'COORDONNATEUR';
     }
 
     function isSameDepartment(departementId) {
-      return request.auth.token.departementId == departementId;
+      return request.auth.token.departements != null && (departementId in request.auth.token.departements) || request.auth.token.departementId == departementId; // Fallback
     }
 
     match /departements/{document=**} {
@@ -24,11 +24,19 @@ service cloud.firestore {
       allow write: if isAuthenticated() && isSuperAdmin();
     }
 
+    match /enseignants/{document} {
+      // Les enseignants peuvent être lus par tout utilisateur connecté (le filtrage réel se fait dans la requête frontend)
+      allow read: if isAuthenticated();
+      // Seul un Super Admin peut modifier/supprimer la fiche racine depuis le frontend
+      // (Les coordonnateurs passent par l'API PUT pour modifier le rôle dans leur département)
+      allow write: if isAuthenticated() && isSuperAdmin();
+    }
+
     match /{collection}/{document} {
       // Pour toutes les collections métier (cours, groupes, tâches, etc.)
-      allow read: if collection != 'departements' && isAuthenticated() && (isSameDepartment(resource.data.departementId) || isSuperAdmin());
-      allow create: if collection != 'departements' && isAuthenticated() && (isSameDepartment(request.resource.data.departementId) && isCoordinator() || isSuperAdmin());
-      allow update, delete: if collection != 'departements' && isAuthenticated() && (isSameDepartment(resource.data.departementId) && isCoordinator() || isSuperAdmin());
+      allow read: if collection != 'departements' && collection != 'enseignants' && isAuthenticated() && (isSameDepartment(resource.data.departementId) || isSuperAdmin());
+      allow create: if collection != 'departements' && collection != 'enseignants' && isAuthenticated() && (isCoordinator(request.resource.data.departementId) || isSuperAdmin());
+      allow update, delete: if collection != 'departements' && collection != 'enseignants' && isAuthenticated() && (isCoordinator(resource.data.departementId) || isSuperAdmin());
     }
   }
 }

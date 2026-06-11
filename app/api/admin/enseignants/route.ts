@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/app/utilities/firebaseAdmin';
 
-async function verifyCreatorRights(req: Request, targetRole: string, targetDept: string) {
+async function verifyCreatorRights(req: Request, targetIsAdmin: boolean, targetDepartements: Record<string, string>) {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
         throw new Error('Non autorisé');
@@ -10,116 +10,181 @@ async function verifyCreatorRights(req: Request, targetRole: string, targetDept:
     const token = authHeader.split('Bearer ')[1];
     const decodedToken = await adminAuth.verifyIdToken(token);
 
-    // Un Admin peut tout faire
-    if (decodedToken.role === 'ADMIN') {
+    // Un Admin global peut tout faire (compatibilité avec l'ancien rôle ADMIN pendant la transition)
+    if (decodedToken.isAdmin === true || decodedToken.role === 'ADMIN') {
         return decodedToken;
     }
 
-    // Un Coordonnateur ne peut gérer que son département et ne peut pas créer d'Admin
-    if (decodedToken.role === 'COORDONNATEUR') {
-        if (targetRole === 'ADMIN') {
-            throw new Error('Un coordonnateur ne peut pas créer d\'administrateur');
-        }
-        if (decodedToken.departementId !== targetDept) {
-            throw new Error('Action restreinte à votre propre département');
-        }
-        return decodedToken;
+    const userDepts = decodedToken.departements || {};
+
+    // Si pas admin global, interdiction de créer ou modifier un admin global
+    if (targetIsAdmin) {
+        throw new Error('Un coordonnateur ne peut pas créer ou modifier un administrateur global');
     }
 
-    throw new Error('Accès refusé');
+    // Un coordonnateur ne peut agir que sur les départements où il est coordonnateur
+    for (const [deptId, role] of Object.entries(targetDepartements)) {
+        if (userDepts[deptId] !== 'COORDONNATEUR') {
+            throw new Error(`Action restreinte : vous n'êtes pas coordonnateur du département ${deptId}`);
+        }
+        if (role === 'ADMIN') {
+             throw new Error(`Action restreinte : vous ne pouvez pas assigner le rôle ADMIN dans un département`);
+        }
+    }
+
+    return decodedToken;
 }
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { numeroEmploye, prenom, nom, courriel, role, departementId } = body;
+        // Fallback for old clients sending 'role' and 'departementId'
+        let { numeroEmploye, prenom, nom, courriel, isAdmin, departements, role, departementId } = body;
 
-        if (!prenom || !nom || !courriel || !role || !departementId) {
-            return NextResponse.json({ error: 'Prénom, nom, courriel, rôle et département requis' }, { status: 400 });
+        if (!prenom || !nom || !courriel) {
+            return NextResponse.json({ error: 'Prénom, nom et courriel requis' }, { status: 400 });
         }
 
-        const decodedToken = await verifyCreatorRights(req, role, departementId);
-        
-        // Si c'est un coordonnateur, on force son département
-        const finalDeptId = decodedToken.role === 'COORDONNATEUR' ? decodedToken.departementId : departementId;
+        // Backward compatibility mapping
+        if (isAdmin === undefined) isAdmin = role === 'ADMIN';
+        if (departements === undefined) {
+            departements = {};
+            if (departementId && !isAdmin) {
+                departements[departementId] = role || 'ENSEIGNANT';
+            }
+        }
 
-        // 1. Création de l'utilisateur dans Firebase Auth
-        // Mot de passe temporaire : NomPrenom1234!
-        const tempPassword = `${nom}${prenom}1234!`.replace(/\s+/g, '');
+        const decodedToken = await verifyCreatorRights(req, isAdmin, departements);
+        
         let authUid = "";
-        
-        try {
-            const userRecord = await adminAuth.createUser({
-                email: courriel,
-                password: tempPassword,
-                displayName: `${prenom} ${nom}`,
-            });
-            authUid = userRecord.uid;
+        let existingDocId = null;
+        let isReused = false;
 
-            // 2. Assignation des Custom Claims
-            const claims = {
-                role: role,
-                departementId: finalDeptId || null,
-                mustChangePassword: true
-            };
-
-            await adminAuth.setCustomUserClaims(userRecord.uid, claims);
-
-        } catch (authError: any) {
-            console.error("Erreur creation Auth:", authError);
-            // On continue pour créer le doc Firestore même si l'Auth échoue (ex: user existe déjà)
+        // Check if user already exists in Firestore by email
+        const snapshot = await adminDb.collection('enseignants').where('courriel', '==', courriel).limit(1).get();
+        if (!snapshot.empty) {
+            existingDocId = snapshot.docs[0].id;
+            const existingData = snapshot.docs[0].data();
+            authUid = existingData.authUid || "";
+            isReused = true;
+            
+            // Merge departments (coordinators can only add/update their own departments)
+            departements = { ...(existingData.departements || {}), ...departements };
+            // Preserve isAdmin status
+            isAdmin = existingData.isAdmin || isAdmin;
         }
 
-        // 3. Création de l'enseignant dans Firestore
+        if (!isReused) {
+            // 1. Création de l'utilisateur dans Firebase Auth si nouveau
+            const tempPassword = `${nom}${prenom}1234!`.replace(/\s+/g, '');
+            try {
+                const userRecord = await adminAuth.createUser({
+                    email: courriel,
+                    password: tempPassword,
+                    displayName: `${prenom} ${nom}`,
+                });
+                authUid = userRecord.uid;
+            } catch (authError: any) {
+                console.error("Erreur creation Auth:", authError);
+                // Si l'utilisateur existe déjà dans Auth mais pas dans Firestore (désynchronisation rare)
+                if (authError.code === 'auth/email-already-exists') {
+                    const userRecord = await adminAuth.getUserByEmail(courriel);
+                    authUid = userRecord.uid;
+                } else {
+                    return NextResponse.json({ error: `Erreur création compte d'accès: ${authError.message}` }, { status: 400 });
+                }
+            }
+        }
+
+        // 2. Assignation des Custom Claims
+        if (authUid) {
+            try {
+                const currentClaims = isReused ? (await adminAuth.getUser(authUid)).customClaims || {} : {};
+                const newClaims = {
+                    ...currentClaims,
+                    isAdmin: isAdmin,
+                    departements: departements,
+                    mustChangePassword: isReused ? currentClaims.mustChangePassword : true
+                };
+                
+                // Cleanup standard OIDC claims
+                delete (newClaims as any).aud; delete (newClaims as any).auth_time; delete (newClaims as any).exp; delete (newClaims as any).iat; delete (newClaims as any).iss; delete (newClaims as any).sub; delete (newClaims as any).firebase; delete (newClaims as any).user_id;
+
+                await adminAuth.setCustomUserClaims(authUid, newClaims);
+            } catch (authError: any) {
+                 console.error("Erreur mise à jour Auth claims:", authError);
+            }
+        }
+
+        // 3. Création ou Mise à jour de l'enseignant dans Firestore
         const enseignantData = {
             numeroEmploye: numeroEmploye || "",
             prenom,
             nom,
             courriel,
-            role,
-            departementId: finalDeptId || null,
+            isAdmin,
+            departements,
             authUid: authUid || null,
-            mustChangePassword: true
+            ...( !isReused && { mustChangePassword: true } )
         };
 
-        const docRef = await adminDb.collection('enseignants').add(enseignantData);
+        let docId = existingDocId;
+        if (isReused && existingDocId) {
+            await adminDb.collection('enseignants').doc(existingDocId).update(enseignantData);
+        } else {
+            const docRef = await adminDb.collection('enseignants').add(enseignantData);
+            docId = docRef.id;
+        }
 
         return NextResponse.json({ 
-            id: docRef.id,
+            id: docId,
             uid: authUid, 
-            tempPassword: authUid ? tempPassword : null,
-            error: authUid ? null : "Compte accès non créé (peut-être existe-t-il déjà ?)"
+            tempPassword: (!isReused && authUid) ? `${nom}${prenom}1234!`.replace(/\s+/g, '') : null,
+            isReused: isReused
         }, { status: 201 });
 
     } catch (error: any) {
         console.error("Erreur API enseignants (POST):", error);
-        return NextResponse.json({ error: error.message || 'Erreur serveur' }, { status: error.message === 'Accès refusé' ? 403 : 401 });
+        return NextResponse.json({ error: error.message || 'Erreur serveur' }, { status: error.message.includes('Action restreinte') || error.message.includes('Accès refusé') ? 403 : 401 });
     }
 }
 
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const { id, numeroEmploye, prenom, nom, courriel, role, departementId, authUid } = body;
+        // Fallback for old clients
+        let { id, numeroEmploye, prenom, nom, courriel, isAdmin, departements, role, departementId, authUid } = body;
 
-        if (!id || !prenom || !nom || !courriel || !role || !departementId) {
-            return NextResponse.json({ error: 'ID, prénom, nom, courriel, rôle et département requis' }, { status: 400 });
+        if (!id || !prenom || !nom || !courriel) {
+            return NextResponse.json({ error: 'ID, prénom, nom, courriel requis' }, { status: 400 });
         }
 
-        const decodedToken = await verifyCreatorRights(req, role, departementId);
-
-        // Protection supplémentaire : On ne peut pas modifier un profil qui est DÉJÀ admin si on n'est pas admin soi-même
-        if (decodedToken.role !== 'ADMIN') {
-            const existingDoc = await adminDb.collection('enseignants').doc(id).get();
-            const currentData = existingDoc.data();
-            if (currentData?.role === 'ADMIN') {
-                throw new Error('Vous ne pouvez pas modifier un profil administrateur');
+        // Backward compatibility mapping
+        if (isAdmin === undefined) isAdmin = role === 'ADMIN';
+        if (departements === undefined) {
+            departements = {};
+            if (departementId && !isAdmin) {
+                departements[departementId] = role || 'ENSEIGNANT';
             }
         }
 
-        const finalDeptId = decodedToken.role === 'COORDONNATEUR' ? decodedToken.departementId : departementId;
+        const decodedToken = await verifyCreatorRights(req, isAdmin, departements);
 
-        let effectiveAuthUid = authUid;
+        const existingDoc = await adminDb.collection('enseignants').doc(id).get();
+        const currentData = existingDoc.data() || {};
+
+        // Protection supplémentaire : On ne peut pas modifier un profil qui est DÉJÀ admin si on n'est pas admin soi-même
+        if (decodedToken.isAdmin !== true && decodedToken.role !== 'ADMIN') {
+            if (currentData.isAdmin === true || currentData.role === 'ADMIN') {
+                throw new Error('Vous ne pouvez pas modifier un profil administrateur global');
+            }
+            // A coordinator should only modify their own departments. Preserve other departments.
+            departements = { ...(currentData.departements || {}), ...departements };
+            // Ensure they didn't magically set isAdmin to true
+            isAdmin = false;
+        }
+
+        let effectiveAuthUid = authUid || currentData.authUid;
 
         // Si authUid est manquant, on essaie de le trouver par courriel
         if (!effectiveAuthUid && courriel) {
@@ -137,8 +202,8 @@ export async function PUT(req: Request) {
             prenom,
             nom,
             courriel,
-            role,
-            departementId: finalDeptId || null,
+            isAdmin,
+            departements,
             authUid: effectiveAuthUid || null
         };
 
@@ -147,10 +212,15 @@ export async function PUT(req: Request) {
         // 2. Mise à jour Auth (Claims) si on a un authUid
         if (effectiveAuthUid) {
             try {
+                const currentClaims = (await adminAuth.getUser(effectiveAuthUid)).customClaims || {};
                 const claims = {
-                    role: role,
-                    departementId: finalDeptId || null
+                    ...currentClaims,
+                    isAdmin: isAdmin,
+                    departements: departements
                 };
+                 // Cleanup standard OIDC claims
+                delete (claims as any).aud; delete (claims as any).auth_time; delete (claims as any).exp; delete (claims as any).iat; delete (claims as any).iss; delete (claims as any).sub; delete (claims as any).firebase; delete (claims as any).user_id;
+
                 await adminAuth.setCustomUserClaims(effectiveAuthUid, claims);
             } catch (authError: any) {
                 console.error("Erreur mise à jour Auth claims:", authError);
@@ -162,7 +232,7 @@ export async function PUT(req: Request) {
 
     } catch (error: any) {
         console.error("Erreur API enseignants (PUT):", error);
-        return NextResponse.json({ error: error.message || 'Erreur serveur' }, { status: error.message === 'Accès refusé' ? 403 : 401 });
+        return NextResponse.json({ error: error.message || 'Erreur serveur' }, { status: error.message.includes('Action restreinte') || error.message.includes('refusé') ? 403 : 401 });
     }
 }
 

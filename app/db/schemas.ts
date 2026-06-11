@@ -5,12 +5,12 @@ export const DepartementSchema = z.object({
 });
 
 export const EnseignantSchema = z.object({
-  departementId: z.string().optional(),
   numeroEmploye: z.string().optional(),
   prenom: z.string().min(1, "Le prénom est requis"),
   nom: z.string().min(1, "Le nom est requis"),
   courriel: z.string().email("Format de courriel invalide").optional().or(z.literal("")),
-  role: z.enum(["ADMIN", "COORDONNATEUR", "ENSEIGNANT"]).default("ENSEIGNANT"),
+  isAdmin: z.boolean().default(false),
+  departements: z.record(z.string(), z.enum(["COORDONNATEUR", "ENSEIGNANT"])).default({}),
   authUid: z.string().optional(),
   mustChangePassword: z.boolean().default(false),
 });

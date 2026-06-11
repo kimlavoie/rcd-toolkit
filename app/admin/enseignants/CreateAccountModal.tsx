@@ -48,18 +48,15 @@ export default function CreateAccountModal({
 
         setIsSubmitting(true)
         try {
-            const res = await fetch('/api/admin/users', {
+            const res = await fetch('/api/admin/enseignants/access', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${currentUserToken}`
                 },
                 body: JSON.stringify({ 
-                    email: enseignant.courriel,
-                    password: password,
-                    displayName: `${enseignant.prenom} ${enseignant.nom}`,
-                    role: 'ENSEIGNANT',
-                    departementId: departementId
+                    id: enseignant.id,
+                    password: password
                 })
             })
 

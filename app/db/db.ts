@@ -5,12 +5,12 @@ export interface Departement {
 
 export interface Enseignant {
   id: string
-  departementId?: string
   numeroEmploye: string
   prenom: string
   nom: string
   courriel: string
-  role?: "ADMIN" | "COORDONNATEUR" | "ENSEIGNANT"
+  isAdmin?: boolean
+  departements?: Record<string, "COORDONNATEUR" | "ENSEIGNANT">
   authUid?: string
   mustChangePassword?: boolean
 }

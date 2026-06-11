@@ -24,11 +24,18 @@ export class BaseService<T> {
         if (typeof window !== 'undefined') {
             const mockUser = localStorage.getItem('cypress-user');
             if (mockUser) return JSON.parse(mockUser).departementId || 'mock-dept';
+            
+            const activeDept = localStorage.getItem('activeDepartementId');
+            if (activeDept) return activeDept;
         }
         
         if (auth.currentUser) {
             const tokenResult = await auth.currentUser.getIdTokenResult();
-            return tokenResult.claims.departementId as string;
+            const departements = tokenResult.claims.departements as Record<string, string>;
+            if (departements && Object.keys(departements).length > 0) {
+                return Object.keys(departements)[0];
+            }
+            return tokenResult.claims.departementId as string; // Fallback
         }
         return null;
     }

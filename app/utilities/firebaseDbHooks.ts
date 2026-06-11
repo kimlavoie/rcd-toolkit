@@ -36,18 +36,32 @@ export function useFirestoreCollection<T>(collectionName: string, extraConstrain
 
         const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Fetch claims to get departementId and role
+                // Fetch claims to get custom attributes
                 const tokenResult = await user.getIdTokenResult();
-                const departementId = tokenResult.claims.departementId;
-                const role = tokenResult.claims.role;
+                const isAdmin = tokenResult.claims.isAdmin as boolean | undefined;
+                
+                // Fallback for old claims during migration
+                const oldRole = tokenResult.claims.role as string | undefined;
+                const oldDeptId = tokenResult.claims.departementId as string | undefined;
+                
+                const isGlobalAdmin = isAdmin === true || oldRole === 'ADMIN';
+
+                // Get active department from localStorage (since this hook runs outside of the useAuth context directly)
+                const activeDepartementId = typeof window !== 'undefined' ? localStorage.getItem('activeDepartementId') : null;
+                const targetDeptId = activeDepartementId || oldDeptId;
+
+                let dynamicConstraints: QueryConstraint[] = [];
+                if (collectionName !== 'departements' && targetDeptId && !isGlobalAdmin) {
+                    if (collectionName === 'enseignants') {
+                        dynamicConstraints.push(where(`departements.${targetDeptId}`, "in", ["COORDONNATEUR", "ENSEIGNANT", "ADMIN"]));
+                    } else {
+                        dynamicConstraints.push(where("departementId", "==", targetDeptId));
+                    }
+                }
 
                 const q = query(
                     collection(firestore, collectionName),
-                    // ADMIN can see everything. 
-                    // COORDONNATEUR/ENSEIGNANT only see their department.
-                    ...(collectionName !== 'departements' && departementId && role !== 'ADMIN' 
-                        ? [where("departementId", "==", departementId)] 
-                        : []),
+                    ...dynamicConstraints,
                     ...extraConstraints
                 );
                 

@@ -21,8 +21,6 @@ function SuperEnseignantsPageContent(){
     const highlightId = searchParams.get("highlight")
     
     const [token, setToken] = useState<string>("")
-    const [selectedEnseignant, setSelectedEnseignant] = useState<Enseignant | null>(null)
-    const [isModalOpen, setIsModalOpen] = useState(false)
     
     const departements = useFirestoreCollection<Departement>("departements")
 
@@ -41,19 +39,17 @@ function SuperEnseignantsPageContent(){
         initialSortKey: "nom",
         filterFn: (e, search) => {
             const s = search.toLowerCase()
-            const deptName = departements?.find(d => d.id === e.departementId)?.nom || ""
             return (e.nom ?? "").toLowerCase().includes(s) || 
                    (e.prenom ?? "").toLowerCase().includes(s) ||
-                   (e.numeroEmploye ?? "").toLowerCase().includes(s) ||
-                   deptName.toLowerCase().includes(s)
+                   (e.numeroEmploye ?? "").toLowerCase().includes(s)
         },
         defaultNewData: { 
             numeroEmploye: "", 
             prenom: "", 
             nom: "", 
             courriel: "", 
-            role: "ENSEIGNANT",
-            departementId: "" 
+            isAdmin: false,
+            departements: {} 
         },
         onBeforeAdd: (data) => {
             if (!data.nom || !data.prenom || !data.courriel) {
@@ -75,6 +71,8 @@ function SuperEnseignantsPageContent(){
             
             if (result.tempPassword) {
                 toast.success(`Utilisateur et compte créés ! Mot de passe : ${result.tempPassword}`, { duration: 10000 })
+            } else if (result.isReused) {
+                toast.success("Utilisateur existant mis à jour avec ces nouveaux rôles.")
             } else {
                 toast.success("Utilisateur ajouté")
             }
@@ -125,6 +123,57 @@ function SuperEnseignantsPageContent(){
         return null
     }
 
+    const toggleDepartment = (dataObj: Partial<Enseignant>, deptId: string, setData: Function) => {
+        const newDepts = { ...(dataObj.departements || {}) };
+        if (newDepts[deptId]) {
+            delete newDepts[deptId];
+        } else {
+            newDepts[deptId] = 'ENSEIGNANT';
+        }
+        setData({ ...dataObj, departements: newDepts });
+    };
+
+    const changeDeptRole = (dataObj: Partial<Enseignant>, deptId: string, role: string, setData: Function) => {
+        const newDepts = { ...(dataObj.departements || {}) };
+        if (newDepts[deptId]) {
+             newDepts[deptId] = role as any;
+             setData({ ...dataObj, departements: newDepts });
+        }
+    }
+
+    const renderDeptSelector = (dataObj: Partial<Enseignant>, setData: Function) => {
+        return (
+            <div className="border p-2 rounded bg-white" style={{maxHeight: '150px', overflowY: 'auto', fontSize: '0.8rem'}}>
+                {departements?.map(dept => {
+                    const isSelected = !!dataObj.departements?.[dept.id];
+                    return (
+                        <div key={dept.id} className="d-flex align-items-center justify-content-between mb-1">
+                            <label className="d-flex align-items-center gap-2 mb-0 cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    checked={isSelected} 
+                                    onChange={() => toggleDepartment(dataObj, dept.id, setData)} 
+                                />
+                                <span className={isSelected ? "fw-bold" : ""}>{dept.nom}</span>
+                            </label>
+                            {isSelected && (
+                                <select 
+                                    className="form-select form-select-sm w-auto py-0 px-1" 
+                                    style={{fontSize: '0.75rem', height: '22px'}}
+                                    value={dataObj.departements?.[dept.id]}
+                                    onChange={(e) => changeDeptRole(dataObj, dept.id, e.target.value, setData)}
+                                >
+                                    <option value="ENSEIGNANT">Ens.</option>
+                                    <option value="COORDONNATEUR">Coord.</option>
+                                </select>
+                            )}
+                        </div>
+                    )
+                })}
+            </div>
+        )
+    }
+
     return (
         <div className="container mt-3">
              <nav aria-label="breadcrumb">
@@ -142,7 +191,7 @@ function SuperEnseignantsPageContent(){
                     <input 
                         type="text" 
                         className="form-control border-start-0 ps-0" 
-                        placeholder="Rechercher par nom, département..." 
+                        placeholder="Rechercher par nom, courriel..." 
                         value={search} 
                         onChange={e => setSearch(e.target.value)} 
                     />
@@ -157,13 +206,12 @@ function SuperEnseignantsPageContent(){
                     <table className="table table-striped align-middle mb-0">
                         <thead className="table-light">
                             <tr>
-                                <th onClick={() => toggleSort("numeroEmploye")} style={{cursor: "pointer"}}>No d'employé {getSortIcon("numeroEmploye")}</th>
-                                <th onClick={() => toggleSort("prenom")} style={{cursor: "pointer"}}>Prénom {getSortIcon("prenom")}</th>
-                                <th onClick={() => toggleSort("nom")} style={{cursor: "pointer"}}>Nom {getSortIcon("nom")}</th>
+                                <th onClick={() => toggleSort("numeroEmploye")} style={{cursor: "pointer"}}>No Emp. {getSortIcon("numeroEmploye")}</th>
+                                <th onClick={() => toggleSort("prenom")} style={{cursor: "pointer"}}>Nom complet {getSortIcon("prenom")}</th>
                                 <th onClick={() => toggleSort("courriel")} style={{cursor: "pointer"}}>Courriel {getSortIcon("courriel")}</th>
-                                <th onClick={() => toggleSort("departementId")} style={{cursor: "pointer"}}>Département {getSortIcon("departementId")}</th>
-                                <th onClick={() => toggleSort("role")} style={{cursor: "pointer"}}>Rôle {getSortIcon("role")}</th>
-                                <th style={{width: "120px"}}>Actions</th>
+                                <th style={{width: "250px"}}>Départements & Rôles</th>
+                                <th onClick={() => toggleSort("isAdmin")} style={{cursor: "pointer", width: "100px"}}>Super Admin {getSortIcon("isAdmin")}</th>
+                                <th style={{width: "100px"}}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -173,46 +221,53 @@ function SuperEnseignantsPageContent(){
                                     {editingId === enseignant.id ? (
                                         <>
                                             <td><input className="form-control form-control-sm" value={editData.numeroEmploye} onChange={e => setEditData({...editData, numeroEmploye: e.target.value})} /></td>
-                                            <td><input className="form-control form-control-sm" value={editData.prenom} onChange={e => setEditData({...editData, prenom: e.target.value})} /></td>
-                                            <td><input className="form-control form-control-sm" value={editData.nom} onChange={e => setEditData({...editData, nom: e.target.value})} /></td>
+                                            <td>
+                                                <input className="form-control form-control-sm mb-1" placeholder="Prénom" value={editData.prenom} onChange={e => setEditData({...editData, prenom: e.target.value})} />
+                                                <input className="form-control form-control-sm" placeholder="Nom" value={editData.nom} onChange={e => setEditData({...editData, nom: e.target.value})} />
+                                            </td>
                                             <td><input className="form-control form-control-sm" value={editData.courriel} onChange={e => setEditData({...editData, courriel: e.target.value})} /></td>
                                             <td>
-                                                <SelectDepartement 
-                                                    value={editData.departementId || ""} 
-                                                    onChange={val => setEditData({...editData, departementId: val})} 
-                                                />
+                                                {renderDeptSelector(editData, setEditData)}
+                                            </td>
+                                            <td className="text-center">
+                                                <div className="form-check form-switch d-flex justify-content-center">
+                                                    <input className="form-check-input" type="checkbox" role="switch" checked={editData.isAdmin || false} onChange={e => setEditData({...editData, isAdmin: e.target.checked})} />
+                                                </div>
                                             </td>
                                             <td>
-                                                <select 
-                                                    className="form-select form-select-sm" 
-                                                    value={editData.role || "ENSEIGNANT"} 
-                                                    onChange={e => setEditData({...editData, role: e.target.value as any})}
-                                                >
-                                                    <option value="ENSEIGNANT">Enseignant</option>
-                                                    <option value="COORDONNATEUR">Coordonnateur</option>
-                                                    <option value="ADMIN">Admin</option>
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <button className="btn btn-success btn-sm me-1" onClick={saveEdit}>💾</button>
-                                                <button className="btn btn-secondary btn-sm" onClick={cancelEdit}>❌</button>
+                                                <div className="d-flex flex-column gap-1">
+                                                    <button className="btn btn-success btn-sm" onClick={saveEdit}>💾 Sauver</button>
+                                                    <button className="btn btn-secondary btn-sm" onClick={cancelEdit}>❌ Annuler</button>
+                                                </div>
                                             </td>
                                         </>
                                     ) : (
                                         <>
-                                            <td>{enseignant.numeroEmploye}</td>
-                                            <td>{enseignant.prenom}</td>
-                                            <td>{enseignant.nom}</td>
-                                            <td>{enseignant.courriel}</td>
-                                            <td className="small text-muted">{departements?.find(d => d.id === enseignant.departementId)?.nom || "-"}</td>
+                                            <td className="small">{enseignant.numeroEmploye}</td>
+                                            <td className="fw-bold">{enseignant.prenom} {enseignant.nom}</td>
+                                            <td className="small">{enseignant.courriel}</td>
                                             <td>
-                                                <span className={`badge ${enseignant.role === 'ADMIN' ? 'bg-danger' : enseignant.role === 'COORDONNATEUR' ? 'bg-primary' : 'bg-secondary'}`}>
-                                                    {enseignant.role || "ENSEIGNANT"}
-                                                </span>
+                                                {enseignant.departements && Object.keys(enseignant.departements).length > 0 ? (
+                                                    <ul className="list-unstyled mb-0 small">
+                                                        {Object.entries(enseignant.departements).map(([deptId, role]) => (
+                                                            <li key={deptId}>
+                                                                <span className="fw-bold">{departements?.find(d => d.id === deptId)?.nom || deptId}:</span> 
+                                                                <span className="ms-1 text-muted">{role === 'COORDONNATEUR' ? 'Coord.' : 'Ens.'}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                ) : (
+                                                    <span className="text-muted small italic">Aucun département</span>
+                                                )}
+                                            </td>
+                                            <td className="text-center">
+                                                {enseignant.isAdmin ? <span className="badge bg-danger">ADMIN</span> : <span className="text-muted">-</span>}
                                             </td>
                                             <td>
-                                                <button type="button" className="btn btn-outline-primary btn-sm me-1" onClick={() => startEdit(enseignant)}>✏️</button>
-                                                <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => deleteItem(enseignant.id)}>🗑️</button>
+                                                <div className="d-flex flex-column gap-1">
+                                                    <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => startEdit(enseignant)}>✏️ Éditer</button>
+                                                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => deleteItem(enseignant.id)}>🗑️ Supprimer</button>
+                                                </div>
                                             </td>
                                         </>
                                     )}
@@ -220,28 +275,21 @@ function SuperEnseignantsPageContent(){
                             })}
                             <tr className="table-info">
                                 <td><input className="form-control form-control-sm" placeholder="No..." value={newData.numeroEmploye} onChange={e => setNewData({...newData, numeroEmploye: e.target.value})} /></td>
-                                <td><input className="form-control form-control-sm" placeholder="Prénom" value={newData.prenom} onChange={e => setNewData({...newData, prenom: e.target.value})} /></td>
-                                <td><input className="form-control form-control-sm" placeholder="Nom" value={newData.nom} onChange={e => setNewData({...newData, nom: e.target.value})} /></td>
+                                <td>
+                                    <input className="form-control form-control-sm mb-1" placeholder="Prénom" value={newData.prenom} onChange={e => setNewData({...newData, prenom: e.target.value})} />
+                                    <input className="form-control form-control-sm" placeholder="Nom" value={newData.nom} onChange={e => setNewData({...newData, nom: e.target.value})} />
+                                </td>
                                 <td><input className="form-control form-control-sm" placeholder="Courriel" value={newData.courriel} onChange={e => setNewData({...newData, courriel: e.target.value})} /></td>
                                 <td>
-                                    <SelectDepartement 
-                                        value={newData.departementId || ""} 
-                                        onChange={val => setNewData({...newData, departementId: val})} 
-                                    />
+                                    {renderDeptSelector(newData, setNewData)}
+                                </td>
+                                <td className="text-center">
+                                    <div className="form-check form-switch d-flex justify-content-center">
+                                        <input className="form-check-input" type="checkbox" role="switch" checked={newData.isAdmin || false} onChange={e => setNewData({...newData, isAdmin: e.target.checked})} />
+                                    </div>
                                 </td>
                                 <td>
-                                    <select 
-                                        className="form-select form-select-sm" 
-                                        value={newData.role || "ENSEIGNANT"} 
-                                        onChange={e => setNewData({...newData, role: e.target.value as any})}
-                                    >
-                                        <option value="ENSEIGNANT">Enseignant</option>
-                                        <option value="COORDONNATEUR">Coordonnateur</option>
-                                        <option value="ADMIN">Admin</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <button className="btn btn-primary btn-sm w-100" onClick={addNew}>+</button>
+                                    <button className="btn btn-primary btn-sm w-100 h-100" onClick={addNew}>+</button>
                                 </td>
                             </tr>
                         </tbody>

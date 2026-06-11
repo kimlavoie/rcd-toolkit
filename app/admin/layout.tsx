@@ -8,16 +8,18 @@ import { useFirestoreCollection } from "@/app/utilities/firebaseDb"
 import type { Departement } from "@/app/db/db"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const { user, loading } = useAuth()
+    const { user, loading, activeDepartementId } = useAuth()
     const router = useRouter()
     const pathname = usePathname()
     
     const departements = useFirestoreCollection<Departement>("departements")
     
+    const currentDeptId = activeDepartementId || user?.departementId;
+
     const departementName = useMemo(() => {
-        if (!user?.departementId || !departements) return null
-        return departements.find(d => d.id === user.departementId)?.nom
-    }, [user?.departementId, departements])
+        if (!currentDeptId || !departements) return null
+        return departements.find(d => d.id === currentDeptId)?.nom
+    }, [currentDeptId, departements])
 
     useEffect(() => {
         if (!loading) {
@@ -43,7 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="fw-bold">
                     <span className="me-2">🛡️</span>
                     Administration {user.role === 'ADMIN' ? 'Super Admin ' : ''}
-                    {user.departementId ? `(Département: ${departementName || user.departementId})` : (user.role !== 'ADMIN' ? '(Aucun département)' : '')}
+                    {currentDeptId ? `(Département: ${departementName || currentDeptId})` : (user.role !== 'ADMIN' ? '(Aucun département)' : '')}
                 </div>
                 <div className="d-flex gap-2 align-items-center">
                     <Link href="/profil" className="btn btn-sm btn-outline-info text-white border-white">👤 Mon Profil</Link>

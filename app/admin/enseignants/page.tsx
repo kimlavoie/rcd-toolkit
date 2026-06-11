@@ -52,24 +52,22 @@ function EnseignantsPageContent(){
             numeroEmploye: "", 
             prenom: "", 
             nom: "", 
-            courriel: "", 
-            role: "ENSEIGNANT",
-            departementId: user?.departementId || "" 
+            courriel: "",
+            departements: user?.departementId ? { [user.departementId]: "ENSEIGNANT" } : {}
         },
         onBeforeAdd: (data) => {
             if (!data.nom || !data.prenom || !data.courriel) {
                 toast.error("Le nom, le prénom et le courriel sont requis.")
                 return false
             }
-            if (!user?.departementId) {
-                toast.error("Vous devez être associé à un département pour ajouter un enseignant ici.")
-                return false
-            }
         },
         onAdd: async (data) => {
             const payload = { 
-                ...data, 
-                departementId: user?.departementId 
+                ...data,
+                // Ensure the current active department is included if not explicitly set
+                departements: Object.keys(data.departements || {}).length > 0 
+                    ? data.departements 
+                    : (user?.departementId ? { [user.departementId]: "ENSEIGNANT" } : {})
             };
             
             const res = await fetch('/api/admin/enseignants', {
@@ -85,16 +83,23 @@ function EnseignantsPageContent(){
             
             if (result.tempPassword) {
                 toast.success(`Enseignant et compte créés ! Mot de passe : ${result.tempPassword}`, { duration: 10000 })
+            } else if (result.isReused) {
+                toast.success("Enseignant existant ajouté au département.")
             } else {
                 toast.success("Enseignant ajouté")
             }
             return result
         },
         onSave: async (id, data) => {
+            // Un coordonnateur normal ne devrait sauver que le rôle pour son département actif
+            const currentRoleInDept = data.departements?.[user?.departementId || ""] || "ENSEIGNANT";
             const payload = { 
                 ...data, 
                 id,
-                departementId: user?.departementId 
+                departements: {
+                    ...(data.departements || {}),
+                    ...(user?.departementId ? { [user.departementId]: currentRoleInDept } : {})
+                }
             };
 
             const res = await fetch('/api/admin/enseignants', {
@@ -168,15 +173,17 @@ function EnseignantsPageContent(){
                     <th onClick={() => toggleSort("prenom")} style={{cursor: "pointer"}}>Prénom {getSortIcon("prenom")}</th>
                     <th onClick={() => toggleSort("nom")} style={{cursor: "pointer"}}>Nom {getSortIcon("nom")}</th>
                     <th onClick={() => toggleSort("courriel")} style={{cursor: "pointer"}}>Courriel {getSortIcon("courriel")}</th>
-                    <th onClick={() => toggleSort("role")} style={{cursor: "pointer"}}>Rôle {getSortIcon("role")}</th>
+                    <th>Rôle</th>
                     <th style={{width: "150px"}}>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {sortedData.map((enseignant) => {
                     const isHighlighted = highlightId === enseignant.id
-                    const isEnseignantAdmin = enseignant.role === 'ADMIN'
+                    const isEnseignantAdmin = enseignant.isAdmin
                     const canEditThisEnseignant = isAdmin || !isEnseignantAdmin
+                    
+                    const currentDeptRole = user.departementId && enseignant.departements ? enseignant.departements[user.departementId] : null;
 
                     return <tr key={enseignant.id} id={`row-${enseignant.id}`} className={isHighlighted ? "table-warning border border-warning" : ""}>
                         {editingId === enseignant.id ? (
@@ -188,8 +195,15 @@ function EnseignantsPageContent(){
                                 <td>
                                     <select 
                                         className="form-select" 
-                                        value={editData.role || "ENSEIGNANT"} 
-                                        onChange={e => setEditData({...editData, role: e.target.value as any})}
+                                        value={user.departementId && editData.departements ? editData.departements[user.departementId] : "ENSEIGNANT"} 
+                                        onChange={e => {
+                                            if (user.departementId) {
+                                                setEditData({
+                                                    ...editData, 
+                                                    departements: { ...(editData.departements || {}), [user.departementId]: e.target.value as "COORDONNATEUR" | "ENSEIGNANT" }
+                                                })
+                                            }
+                                        }}
                                     >
                                         <option value="ENSEIGNANT">Enseignant</option>
                                         <option value="COORDONNATEUR">Coordonnateur</option>
@@ -207,9 +221,13 @@ function EnseignantsPageContent(){
                                 <td>{enseignant.nom}</td>
                                 <td>{enseignant.courriel}</td>
                                 <td>
-                                    <span className={`badge ${enseignant.role === 'ADMIN' ? 'bg-danger' : enseignant.role === 'COORDONNATEUR' ? 'bg-primary' : 'bg-secondary'}`}>
-                                        {enseignant.role || "ENSEIGNANT"}
-                                    </span>
+                                    {isEnseignantAdmin ? (
+                                        <span className="badge bg-danger">ADMIN</span>
+                                    ) : (
+                                        <span className={`badge ${currentDeptRole === 'COORDONNATEUR' ? 'bg-primary' : 'bg-secondary'}`}>
+                                            {currentDeptRole || "ENSEIGNANT"}
+                                        </span>
+                                    )}
                                 </td>
                                 <td>
                                     {(!isAdmin && isEnseignantAdmin) ? (
@@ -237,8 +255,15 @@ function EnseignantsPageContent(){
                     <td>
                         <select 
                             className="form-select" 
-                            value={newData.role || "ENSEIGNANT"} 
-                            onChange={e => setNewData({...newData, role: e.target.value as any})}
+                            value={user.departementId && newData.departements ? newData.departements[user.departementId] : "ENSEIGNANT"} 
+                            onChange={e => {
+                                if (user.departementId) {
+                                    setNewData({
+                                        ...newData, 
+                                        departements: { ...(newData.departements || {}), [user.departementId]: e.target.value as "COORDONNATEUR" | "ENSEIGNANT" }
+                                    })
+                                }
+                            }}
                         >
                             <option value="ENSEIGNANT">Enseignant</option>
                             <option value="COORDONNATEUR">Coordonnateur</option>

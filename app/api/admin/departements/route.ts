@@ -11,7 +11,7 @@ async function verifySuperAdmin(req: Request) {
     const token = authHeader.split('Bearer ')[1];
     const decodedToken = await adminAuth.verifyIdToken(token);
 
-    if (decodedToken.role !== 'ADMIN') {
+    if (decodedToken.isAdmin !== true && decodedToken.role !== 'ADMIN') {
         throw new Error('Accès refusé');
     }
 

@@ -5,9 +5,13 @@ import Link from "next/link";
 import { useAuth } from "./utilities/auth";
 import { useRouter } from "next/navigation";
 
+import { useFirestoreCollection } from "./utilities/firebaseDb";
+
 export default function Home() {
-  const { user, loading, logout } = useAuth()
+  const { user, loading, logout, activeDepartementId, setActiveDepartementId } = useAuth()
   const router = useRouter()
+
+  const departementsData = useFirestoreCollection<any>("departements")
 
   useEffect(() => {
     if (!loading && !user) {
@@ -25,6 +29,16 @@ export default function Home() {
   )
   
   if (!user) return null;
+
+  // Department switching logic
+  const availableDepts = user.departements ? Object.keys(user.departements) : [];
+  const currentDeptId = activeDepartementId || user.departementId;
+
+  const handleDeptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setActiveDepartementId(e.target.value);
+      // Force page reload to ensure all data (hooks listening to localStorage) refreshes
+      window.location.reload();
+  };
 
   const allSections = [
     {
@@ -80,6 +94,34 @@ export default function Home() {
               <div>
                 <h1 className="display-6 fw-bold text-dark mb-1">Gestion des <span className="text-primary">tâches</span></h1>
                 <p className="text-muted mb-0">Bienvenue, <span className="fw-bold text-dark">{user.displayName}</span> 👋</p>
+                
+                {(availableDepts.length > 1 || user.isAdmin) && (
+                    <div className="mt-3 d-flex align-items-center gap-2">
+                        <span className="small fw-bold text-muted text-uppercase">Département actif :</span>
+                        <select 
+                            className="form-select form-select-sm w-auto bg-light border-0 fw-bold text-primary" 
+                            value={currentDeptId || ""}
+                            onChange={handleDeptChange}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            {!currentDeptId && <option value="" disabled>Sélectionner...</option>}
+                            {departementsData?.map((dept: any) => {
+                                // Admin voit tout, sinon seulement les dépts assignés
+                                if (user.isAdmin || availableDepts.includes(dept.id)) {
+                                    return <option key={dept.id} value={dept.id}>{dept.nom}</option>
+                                }
+                                return null;
+                            })}
+                        </select>
+                        <span className="badge bg-secondary ms-2">{user.role}</span>
+                    </div>
+                )}
+                {availableDepts.length === 1 && !user.isAdmin && (
+                    <div className="mt-2 text-muted small">
+                        Département: <span className="fw-bold text-dark">{departementsData?.find((d:any) => d.id === currentDeptId)?.nom || currentDeptId}</span>
+                        <span className="badge bg-secondary ms-2">{user.role}</span>
+                    </div>
+                )}
               </div>
               <div className="d-flex gap-2">
                 <Link href="/profil" className="btn btn-outline-primary btn-sm rounded-pill px-3">
