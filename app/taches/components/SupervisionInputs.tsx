@@ -8,6 +8,7 @@ interface SupervisionInputsProps {
     stValue: number
     coValue: number
     onUpdate: (field: 'nbStagiaires' | 'coordination', value: number) => void
+    userRole?: string
 }
 
 export default function SupervisionInputs({
@@ -15,8 +16,11 @@ export default function SupervisionInputs({
     stageId,
     stValue,
     coValue,
-    onUpdate
+    onUpdate,
+    userRole
 }: SupervisionInputsProps) {
+    const canEdit = userRole !== 'ENSEIGNANT';
+
     return (
         <div className="d-flex flex-column gap-1 align-items-center justify-content-center py-1">
             <div className="input-group input-group-sm" style={{maxWidth: "85px"}}>
@@ -30,6 +34,7 @@ export default function SupervisionInputs({
                     onChange={e => onUpdate('nbStagiaires', Number(e.target.value))} 
                     style={{fontSize: "0.75rem"}} 
                     title="Nombre de stagiaires"
+                    disabled={!canEdit}
                 />
             </div>
             <div className="input-group input-group-sm" style={{maxWidth: "85px"}}>
@@ -43,6 +48,7 @@ export default function SupervisionInputs({
                     onChange={e => onUpdate('coordination', Number(e.target.value))} 
                     style={{fontSize: "0.75rem"}} 
                     title="Coordination (CI)"
+                    disabled={!canEdit}
                 />
             </div>
         </div>

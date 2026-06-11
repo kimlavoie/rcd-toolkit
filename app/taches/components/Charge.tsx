@@ -12,7 +12,7 @@ import { useHistory } from "./HistoryContext"
 import { useData } from "./DataContext"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 
-const Charge = memo(function Charge({session, charge, groupe, cours, charges, enseignantId, onRemove, scenario = "production", minimal = false}: any){
+const Charge = memo(function Charge({session, charge, groupe, cours, charges, enseignantId, onRemove, scenario = "production", minimal = false, canEdit = true}: any){
     const { isVisible, position, menuRef, openMenu, closeMenu } = useContextMenu()
     const { recordAction } = useHistory()
     const { preferences, parametres } = useData()
@@ -39,11 +39,13 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
     }
 
     function dragStartHandler(ev: any){
+        if (!canEdit) return;
         ev.dataTransfer.setData("groupeId", groupe.id)
         ev.dataTransfer.setData("enseignantId", enseignantId)
     }
 
     function supprimer(){
+        if (!canEdit) return;
         // Recording deletion is handled by onRemove in ListeCharges
         onRemove(groupe.id, enseignantId)
         closeMenu()
@@ -54,6 +56,7 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
     const semainesMax = 15 - (sommeCharges ?? 0) + (charge.nbSemaines ?? 0)
 
     async function handleSemainesConfirm(quantite: number){
+        if (!canEdit) return;
         recordAction({
             type: 'UPDATE',
             collection: 'charges',
@@ -66,6 +69,7 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
     }
 
     async function handleTypeChange(type: "T" | "P" | "TP"){
+        if (!canEdit) return;
         recordAction({
             type: 'UPDATE',
             collection: 'charges',
@@ -79,6 +83,7 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
     }
 
     async function handleTransferConfirm(targetEnseignantId: string){
+        if (!canEdit) return;
         const chargeExiste = charges?.find((c: any) => c.enseignant === targetEnseignantId && c.groupe === groupe.id)
         if(chargeExiste){
             toast.error("Cet enseignant a deja cette charge")
@@ -98,7 +103,7 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
         toast.success("Charge transférée avec succès")
     }
 
-    const menuContent = isVisible && (
+    const menuContent = isVisible && canEdit && (
         <div 
             ref={menuRef}
             style={{
@@ -141,7 +146,7 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
 
     if (minimal) {
         return <div 
-            onContextMenu={openMenu} 
+            onContextMenu={canEdit ? openMenu : undefined} 
             style={{
                 border: `1px solid #eee`, 
                 borderRight: `4px solid ${getGroupColor(groupe.id)}`,
@@ -149,14 +154,15 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
                 padding: `4px 8px`, 
                 marginBottom: "4px",
                 borderRadius: "3px",
-                cursor: "grab",
+                cursor: canEdit ? "grab" : "default",
                 fontSize: "0.75rem",
                 position: "relative",
                 transition: "all 0.2s"
             }} 
-            draggable="true" 
-            onDragStart={dragStartHandler}
+            draggable={canEdit ? "true" : "false"} 
+            onDragStart={canEdit ? dragStartHandler : undefined}
         >      
+
             <div className="d-flex justify-content-between align-items-center">
                 <div className="d-flex align-items-center gap-1">
                     <span className="fw-bold text-dark" title={`${groupe.nbEtudiants} étudiants`}>
@@ -197,7 +203,7 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
     }
 
     return <div 
-        onContextMenu={openMenu} 
+        onContextMenu={canEdit ? openMenu : undefined} 
         style={{
             border: `1px solid #ddd`, 
             borderRight: `4px solid ${getGroupColor(groupe.id)}`,
@@ -207,21 +213,21 @@ const Charge = memo(function Charge({session, charge, groupe, cours, charges, en
             marginBottom: "6px",
             borderRadius: "4px",
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            cursor: "grab",
+            cursor: canEdit ? "grab" : "default",
             fontSize: "0.9rem",
             position: "relative",
             transition: "all 0.2s"
         }} 
         onMouseEnter={ev => {
-            ev.currentTarget.style.boxShadow = "0 3px 6px rgba(0,0,0,0.15)";
-            ev.currentTarget.style.borderColor = "#bbb";
+            if(canEdit) ev.currentTarget.style.boxShadow = "0 3px 6px rgba(0,0,0,0.15)";
+            if(canEdit) ev.currentTarget.style.borderColor = "#bbb";
         }}
         onMouseLeave={ev => {
-            ev.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-            ev.currentTarget.style.borderColor = "#ddd";
+            if(canEdit) ev.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            if(canEdit) ev.currentTarget.style.borderColor = "#ddd";
         }}
-        draggable="true" 
-        onDragStart={dragStartHandler}
+        draggable={canEdit ? "true" : "false"} 
+        onDragStart={canEdit ? dragStartHandler : undefined}
     >      
         <div className="d-flex justify-content-between align-items-start mb-1">
             <div className="d-flex align-items-center gap-2">

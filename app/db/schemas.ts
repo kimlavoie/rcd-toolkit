@@ -1,13 +1,21 @@
 import { z } from "zod";
 
+export const DepartementSchema = z.object({
+  nom: z.string().min(1, "Le nom est requis"),
+});
+
 export const EnseignantSchema = z.object({
+  departementId: z.string().optional(),
   numeroEmploye: z.string().optional(),
   prenom: z.string().min(1, "Le prénom est requis"),
   nom: z.string().min(1, "Le nom est requis"),
   courriel: z.string().email("Format de courriel invalide").optional().or(z.literal("")),
+  role: z.enum(["ADMIN", "COORDONNATEUR", "ENSEIGNANT"]).default("ENSEIGNANT"),
+  authUid: z.string().optional(),
 });
 
 export const CoursSchema = z.object({
+  departementId: z.string().optional(),
   sigle: z.string().min(1, "Le sigle est requis"),
   nom: z.string().min(1, "Le nom du cours est requis"),
   saison: z.string().optional(),
@@ -18,6 +26,7 @@ export const CoursSchema = z.object({
 });
 
 export const GroupeSchema = z.object({
+  departementId: z.string().optional(),
   session: z.string().min(1),
   cours: z.string().min(1),
   nbEtudiants: z.coerce.number().min(0),
@@ -26,6 +35,7 @@ export const GroupeSchema = z.object({
 });
 
 export const AllocationSchema = z.object({
+  departementId: z.string().optional(),
   code: z.string().min(1),
   description: z.string().optional(),
   quantite: z.coerce.number().min(0),
@@ -33,6 +43,7 @@ export const AllocationSchema = z.object({
 });
 
 export const StageSchema = z.object({
+  departementId: z.string().optional(),
   session: z.string().min(1),
   nom: z.string().min(1, "Le nom du stage est requis"),
   CIparStagiaire: z.coerce.number().min(0),
@@ -41,6 +52,7 @@ export const StageSchema = z.object({
 });
 
 export const ChargeSchema = z.object({
+  departementId: z.string().optional(),
   enseignant: z.string().min(1),
   groupe: z.string().min(1),
   nbSemaines: z.coerce.number().min(0).max(15),
@@ -50,6 +62,7 @@ export const ChargeSchema = z.object({
 });
 
 export const LiberationSchema = z.object({
+  departementId: z.string().optional(),
   enseignant: z.string().min(1),
   allocation: z.string().min(1),
   quantite: z.coerce.number().min(0),
@@ -58,6 +71,7 @@ export const LiberationSchema = z.object({
 });
 
 export const SupervisionSchema = z.object({
+  departementId: z.string().optional(),
   enseignant: z.string().min(1),
   stage: z.string().min(1),
   nbStagiaires: z.coerce.number().min(0),
@@ -67,6 +81,7 @@ export const SupervisionSchema = z.object({
 });
 
 export const ScenarioSchema = z.object({
+  departementId: z.string().optional(),
   nom: z.string().min(1, "Le nom du scénario est requis"),
   session: z.string().min(1),
   notes: z.string().optional(),
@@ -74,12 +89,14 @@ export const ScenarioSchema = z.object({
 });
 
 export const CIReelleSchema = z.object({
+  departementId: z.string().optional(),
   enseignant: z.string().min(1),
   session: z.string().min(1),
   CI: z.coerce.number().min(0),
 });
 
 export const PreferenceSchema = z.object({
+  departementId: z.string().optional(),
   enseignant: z.string().min(1),
   cours: z.string().optional(),
   allocation: z.string().optional(),
@@ -89,6 +106,7 @@ export const PreferenceSchema = z.object({
 });
 
 export const ParametresSchema = z.object({
+  departementId: z.string().optional(),
   dureePrioriteOrdinaire: z.coerce.number().min(1).default(4),
 });
 
@@ -105,4 +123,6 @@ export const Schemas: Record<string, z.ZodSchema> = {
   CIReelles: CIReelleSchema,
   preferences: PreferenceSchema,
   parametres: ParametresSchema,
+  departements: DepartementSchema,
 };
+

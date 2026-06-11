@@ -9,12 +9,18 @@ import {
     User,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    updateProfile
+    updateProfile,
+    updatePassword
 } from "firebase/auth";
 import { auth } from "./firebase";
 
+export interface CustomUser extends User {
+    role?: string;
+    departementId?: string | null;
+}
+
 export function useAuth() {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<CustomUser | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -26,8 +32,22 @@ export function useAuth() {
             return;
         }
 
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUser(user);
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                try {
+                    // Force token refresh to get latest custom claims (important after role updates)
+                    const idTokenResult = await firebaseUser.getIdTokenResult(true);
+                    const customUser = firebaseUser as CustomUser;
+                    customUser.role = idTokenResult.claims.role as string | undefined;
+                    customUser.departementId = idTokenResult.claims.departementId as string | null | undefined;
+                    setUser(customUser);
+                } catch (error) {
+                    console.error("Error fetching custom claims", error);
+                    setUser(firebaseUser); // Fallback without claims
+                }
+            } else {
+                setUser(null);
+            }
             setLoading(false);
         });
         return () => unsubscribe();
@@ -64,6 +84,16 @@ export function useAuth() {
         }
     }
 
+    const changePassword = async (newPassword: string) => {
+        if (!auth.currentUser) throw new Error("Aucun utilisateur connecté");
+        try {
+            await updatePassword(auth.currentUser, newPassword);
+        } catch (error) {
+            console.error("Change Password Error:", error);
+            throw error;
+        }
+    }
+
     const logout = async () => {
         try {
             await signOut(auth);
@@ -72,5 +102,16 @@ export function useAuth() {
         }
     };
 
-    return { user, loading, signInWithGoogle, registerWithEmail, loginWithEmail, logout };
+    const refreshUser = async () => {
+        if (auth.currentUser) {
+            const idTokenResult = await auth.currentUser.getIdTokenResult(true);
+            const customUser = auth.currentUser as CustomUser;
+            customUser.role = idTokenResult.claims.role as string | undefined;
+            customUser.departementId = idTokenResult.claims.departementId as string | null | undefined;
+            setUser(null); // Force a re-render/re-set
+            setTimeout(() => setUser(customUser), 10);
+        }
+    }
+
+    return { user, loading, signInWithGoogle, registerWithEmail, loginWithEmail, logout, refreshUser, changePassword };
 }

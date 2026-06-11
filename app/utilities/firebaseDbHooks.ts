@@ -34,11 +34,20 @@ export function useFirestoreCollection<T>(collectionName: string, extraConstrain
 
         let unsubscribeSnapshot: (() => void) | undefined;
 
-        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // Fetch claims to get departementId and role
+                const tokenResult = await user.getIdTokenResult();
+                const departementId = tokenResult.claims.departementId;
+                const role = tokenResult.claims.role;
+
                 const q = query(
                     collection(firestore, collectionName),
-                    where("userId", "==", user.uid),
+                    // ADMIN can see everything. 
+                    // COORDONNATEUR/ENSEIGNANT only see their department.
+                    ...(collectionName !== 'departements' && departementId && role !== 'ADMIN' 
+                        ? [where("departementId", "==", departementId)] 
+                        : []),
                     ...extraConstraints
                 );
                 

@@ -8,11 +8,12 @@ import ListeLiberations from "./ListeLiberations"
 import CI from "./CI"
 import { toast } from "react-hot-toast"
 
-export default function CIReelle({visibleEnseignants, session, columnWidths, globalWidth, ciBottom, ciTop, forceHideCI = false}: any){
+export default function CIReelle({visibleEnseignants, session, columnWidths, globalWidth, ciBottom, ciTop, forceHideCI = false, userRole}: any){
     const data = useData()
     const { CIReelles, charges, liberations, groupes } = data
 
     const {saison, annee} = extractSessionInfos(session)
+    const canEdit = userRole !== 'ENSEIGNANT';
 
     const getCellStyle = (enseignantId: string) => {
         const width = columnWidths?.[enseignantId] || globalWidth || 200
@@ -27,6 +28,7 @@ export default function CIReelle({visibleEnseignants, session, columnWidths, glo
     }
 
     async function handleCIChange(ev: any){
+        if (!canEdit) return;
         const enseignantId = ev.target.dataset.enseignantId
         const value = Number(ev.target.value)
 
@@ -57,6 +59,7 @@ export default function CIReelle({visibleEnseignants, session, columnWidths, glo
                         value={ci ? ci.CI : 0} 
                         data-enseignant-id={enseignant.id}
                         onChange={handleCIChange}
+                        disabled={!canEdit}
                     />
                 </td>
             })}

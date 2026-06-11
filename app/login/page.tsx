@@ -62,6 +62,32 @@ export default function LoginPage() {
         }
     };
 
+    const handleMigration = async () => {
+        if (!user) return;
+        setIsSubmitting(true);
+        const loadingToast = toast.loading("Migration en cours...");
+        try {
+            const token = await user.getIdToken();
+            const res = await fetch('/api/admin/migrate', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Migration échouée");
+            toast.success(data.message || "Migration réussie");
+            // Force reload to refresh claims
+            window.location.href = "/";
+        } catch (error: any) {
+            console.error("Migration error", error);
+            toast.error(error.message);
+        } finally {
+            toast.dismiss(loadingToast);
+            setIsSubmitting(false);
+        }
+    }
+
     if (loading) return (
         <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
             <div className="text-center">
@@ -70,6 +96,33 @@ export default function LoginPage() {
             </div>
         </div>
     );
+
+    if (user) {
+        return (
+            <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light px-3 py-5">
+                <div className="card shadow-lg border-0 rounded-4 overflow-hidden" style={{ maxWidth: "450px", width: "100%" }}>
+                    <div className="card-body p-4 p-md-5 bg-white text-center">
+                        <h2 className="h4 fw-bold mb-3">Redirection en cours...</h2>
+                        <p className="text-muted mb-4">Vous êtes déjà connecté en tant que {user.email}.</p>
+                        
+                        <hr className="my-4" />
+                        
+                        <div className="alert alert-warning text-start">
+                            <h5 className="alert-heading h6 fw-bold">⚠️ Migration Système</h5>
+                            <p className="small mb-3">Si vous n'avez plus accès à vos données suite à la récente mise à jour du système, veuillez lancer l'assistant de migration.</p>
+                            <button 
+                                className="btn btn-warning w-100 fw-bold shadow-sm"
+                                onClick={handleMigration}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? "Migration..." : "Lancer la migration"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light px-3 py-5">

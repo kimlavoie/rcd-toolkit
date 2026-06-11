@@ -14,7 +14,7 @@ import { useContextMenu } from "@/app/utilities/hooks"
 import { useHistory } from "./HistoryContext"
 import { extractSessionInfos } from "@/app/utilities/sessions"
 
-export default function ListeCharges({enseignant, session, enseignantWidth, scenario = "production", style, isPrinting}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any, isPrinting?: boolean}){
+export default function ListeCharges({enseignant, session, enseignantWidth, scenario = "production", style, isPrinting, userRole}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any, isPrinting?: boolean, userRole?: string}){
     const { visibilityMap, setVisibility, preferences, parametres } = useData()
     const { recordAction } = useHistory()
     const [mounted, setMounted] = useState(false)
@@ -37,7 +37,7 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
 
     useEffect(() => { setMounted(true) }, [])
 
-    // 1. Filtrage et Préparation des données
+    // ... (rest of the logic remains)
     const scenarioCharges = useMemo(() => allChargesData?.filter(c => (c.scenario || "production") === scenario) || [], [allChargesData, scenario])
     const sessionGroupes = useMemo(() => groupesData?.filter(g => g.session === session) || [], [groupesData, session])
 
@@ -64,7 +64,6 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
         Object.keys(groupsByCourseForMenu).sort((a, b) => (coursData?.find(c => c.id == a)?.sigle || "").localeCompare(coursData?.find(c => c.id == b)?.sigle || ""))
     , [groupsByCourseForMenu, coursData])
 
-    // 3. Logique pour l'affichage (charges assignées)
     const teacherChargesInSession = useMemo(() => scenarioCharges.filter(c => c.enseignant === enseignant.id && sessionGroupes.some(g => g.id === c.groupe)), [scenarioCharges, enseignant.id, sessionGroupes])
     const chargesByCourseForDisplay = useMemo(() => {
         const map: Record<string, ChargeType[]> = {}
@@ -76,7 +75,6 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
         Object.keys(chargesByCourseForDisplay).sort((a, b) => (coursData?.find(c => c.id == a)?.sigle || "").localeCompare(coursData?.find(c => c.id == b)?.sigle || ""))
     , [chargesByCourseForDisplay, coursData])
 
-    // 4. Gestion de la visibilité globale
     const isExpanded = (courseId: string) => {
         const key = `${session}_${enseignant.id}_${courseId}_expanded`
         if (visibilityMap[key] !== undefined) return visibilityMap[key]
@@ -84,8 +82,8 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
         return false
     }
 
-    // 5. Handlers
     async function quickAddCharge(groupe: Groupe, type: "T" | "P" | "TP" = "TP"){
+        if (userRole === 'ENSEIGNANT') return;
         const groupCharges = scenarioCharges.filter(c => c.groupe === groupe.id)
         const existingCharge = groupCharges.find(c => c.enseignant === enseignant.id)
         const totalT = groupCharges.filter(c => c.type === "T" || c.type === "TP").reduce((sum, c) => sum + (c.nbSemaines ?? 0), 0)
@@ -123,6 +121,7 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
     }
 
     async function removeAllCourseCharges(courseId: string){
+        if (userRole === 'ENSEIGNANT') return;
         const cour = coursData?.find(c => c.id === courseId);
         const courseCharges = teacherChargesInSession.filter(c => sessionGroupes.find(gr => gr.id === c.groupe)?.cours === courseId)
         
@@ -143,6 +142,7 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
     }
 
     async function handleGroupTransferConfirm(targetEnseignantId: string){
+        if (userRole === 'ENSEIGNANT') return;
         if (!transferCourseId) return
         const cour = coursData?.find(c => c.id === transferCourseId);
         const courseCharges = teacherChargesInSession.filter(c => sessionGroupes.find(gr => gr.id === c.groupe)?.cours === transferCourseId)
@@ -185,6 +185,7 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
     }
 
     async function dropHandlerCharge(ev: any) {
+        if (userRole === 'ENSEIGNANT') return;
         ev.currentTarget.style.boxShadow = ""; ev.currentTarget.style.backgroundColor = ""
         const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
         if (!idNouveauEnseignant) return
@@ -238,7 +239,9 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
 
     const getCellStyle = () => ({ ...style, borderRight: "1px solid #dee2e6", borderBottom: "1px solid #dee2e6", minWidth: `${enseignantWidth}px`, width: `${enseignantWidth}px`, maxWidth: `${enseignantWidth}px`, overflow: "hidden" })
 
-    return <td onContextMenu={openAddMenu} style={getCellStyle()} data-dropzone="charge" data-enseignant-id={enseignant.id} onDrop={dropHandlerCharge} onDragOver={e => e.preventDefault()} onDragEnter={e => { e.preventDefault(); e.currentTarget.style.boxShadow = "inset 0 0 0 2px #0d6efd"; e.currentTarget.style.backgroundColor = "rgba(13, 110, 253, 0.05)"; }} onDragLeave={e => { e.currentTarget.style.boxShadow = ""; e.currentTarget.style.backgroundColor = ""; }}>
+    const canEdit = userRole !== 'ENSEIGNANT';
+
+    return <td onContextMenu={canEdit ? openAddMenu : undefined} style={getCellStyle()} data-dropzone="charge" data-enseignant-id={enseignant.id} onDrop={canEdit ? dropHandlerCharge : undefined} onDragOver={e => e.preventDefault()} onDragEnter={e => { if(canEdit) { e.preventDefault(); e.currentTarget.style.boxShadow = "inset 0 0 0 2px #0d6efd"; e.currentTarget.style.backgroundColor = "rgba(13, 110, 253, 0.05)"; } }} onDragLeave={e => { if(canEdit) { e.currentTarget.style.boxShadow = ""; e.currentTarget.style.backgroundColor = ""; } }}>
         {sortedCourseIdsForDisplay.map(courseId => {
             const courseCharges = chargesByCourseForDisplay[courseId], cour = coursData?.find(c => c.id == courseId), expanded = isExpanded(courseId)
             
@@ -257,7 +260,7 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                 }
             }
 
-            return <div key={courseId} className="mb-2 rounded shadow-sm overflow-hidden" style={{ border: "1px solid #ddd", borderLeft: `6px solid ${cour?.couleur || "#0dcaf0"}`, backgroundColor: "white", display: "block", cursor: expanded && isPrinting ? "default" : "grab" }} draggable={!isPrinting} onDragStart={ev => { ev.dataTransfer.setData("courseId", courseId); ev.dataTransfer.setData("enseignantId", enseignant.id); }} onContextMenu={e => { setTransferCourseId(courseId); openGroupMenu(e); }}>
+            return <div key={courseId} className="mb-2 rounded shadow-sm overflow-hidden" style={{ border: "1px solid #ddd", borderLeft: `6px solid ${cour?.couleur || "#0dcaf0"}`, backgroundColor: "white", display: "block", cursor: (expanded && isPrinting) || !canEdit ? "default" : "grab" }} draggable={!isPrinting && canEdit} onDragStart={ev => { if(canEdit) { ev.dataTransfer.setData("courseId", courseId); ev.dataTransfer.setData("enseignantId", enseignant.id); } }} onContextMenu={e => { if(canEdit) { setTransferCourseId(courseId); openGroupMenu(e); } }}>
                 <div className="d-flex justify-content-between align-items-center cursor-pointer p-2" onClick={() => setVisibility(`${session}_${enseignant.id}_${courseId}_expanded`, !expanded)} style={{ fontSize: "0.8rem" }}>
                     <div className="flex-grow-1 min-width-0">
                         <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
@@ -272,7 +275,7 @@ export default function ListeCharges({enseignant, session, enseignantWidth, scen
                     </div>
                     <div className="d-flex align-items-center ps-2 flex-shrink-0 no-print"><span style={{ fontSize: "0.65rem", color: "#666" }}>{expanded ? "▲" : "▼"}</span></div>
                 </div>
-                {expanded && <div className="p-2 pt-0"><div className="ps-2 border-start" style={{ borderColor: "#eee" }}>{courseCharges.map(charge => { const groupe = sessionGroupes.find(g => g.id == charge.groupe); return (groupe && cour) ? <Charge key={charge.id} session={session} charge={charge} groupe={groupe} cours={cour} charges={scenarioCharges} enseignantId={enseignant.id} onRemove={(gid: string, eid: string) => { const c = scenarioCharges.find(ch => ch.groupe == gid && ch.enseignant == eid); if(c) firebaseDb.charges.delete(c.id) }} scenario={scenario} minimal={true}/> : null })}</div></div>}
+                {expanded && <div className="p-2 pt-0"><div className="ps-2 border-start" style={{ borderColor: "#eee" }}>{courseCharges.map(charge => { const groupe = sessionGroupes.find(g => g.id == charge.groupe); return (groupe && cour) ? <Charge key={charge.id} session={session} charge={charge} groupe={groupe} cours={cour} charges={scenarioCharges} enseignantId={enseignant.id} onRemove={(gid: string, eid: string) => { if(canEdit) { const c = scenarioCharges.find(ch => ch.groupe == gid && ch.enseignant == eid); if(c) firebaseDb.charges.delete(c.id) } }} scenario={scenario} minimal={true} canEdit={canEdit}/> : null })}</div></div>}
             </div>
         })}
         {mounted && addMenuVisible && createPortal(

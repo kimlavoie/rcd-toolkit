@@ -11,6 +11,8 @@ interface UseGenericAdminOptions<T> {
     filterFn: (item: T, search: string) => boolean
     defaultNewData: Partial<T>
     onBeforeAdd?: (data: Partial<T>) => boolean | void
+    onAdd?: (data: Partial<T>) => Promise<any>
+    onSave?: (id: string, data: Partial<T>) => Promise<any>
     onDelete?: (id: string) => Promise<void>
 }
 
@@ -26,6 +28,8 @@ export function useGenericAdmin<T extends { id: string }>({
     filterFn,
     defaultNewData,
     onBeforeAdd,
+    onAdd,
+    onSave,
     onDelete
 }: UseGenericAdminOptions<T>) {
     const data = useFirestoreCollection<T>(collectionName as string)
@@ -57,7 +61,11 @@ export function useGenericAdmin<T extends { id: string }>({
     const saveEdit = async () => {
         if (editingId) {
             try {
-                await table.update(editingId, editData)
+                if (onSave) {
+                    await onSave(editingId, editData)
+                } else {
+                    await table.update(editingId, editData)
+                }
                 setEditingId(null)
                 setEditData({})
                 toast.success("Modifications enregistrées")
@@ -74,7 +82,11 @@ export function useGenericAdmin<T extends { id: string }>({
         }
 
         try {
-            await table.add(newData)
+            if (onAdd) {
+                await onAdd(newData)
+            } else {
+                await table.add(newData)
+            }
             setNewData(defaultNewData)
             toast.success("Élément ajouté")
         } catch (error) {

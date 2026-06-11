@@ -80,6 +80,34 @@ export default function AdminPage(){
                 <p className="text-muted mb-0 ms-3 d-none d-md-block">Gestion des paramètres et données de base du système.</p>
             </div>
 
+            {user?.role === 'ADMIN' && (
+                <div className="mb-5">
+                    <h3 className="h6 text-uppercase fw-bold text-danger mb-3 letter-spacing-1">
+                        Zone Super Admin
+                    </h3>
+                    <div className="row g-3">
+                        <div className="col-md-6 col-lg-4">
+                            <Link href="/admin/super" className="text-decoration-none">
+                                <div className="card h-100 border-0 shadow-sm card-hover transition-all bg-danger bg-opacity-10 border-start border-danger border-4">
+                                    <div className="card-body d-flex align-items-center p-3">
+                                        <div className="bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center me-3" style={{ width: "48px", height: "48px", fontSize: "1.5rem" }}>
+                                            🔧
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <h4 className="h6 fw-bold mb-1 text-danger">Console Super Admin</h4>
+                                            <p className="text-muted small mb-0 text-truncate">Gérer les départements et les rôles système</p>
+                                        </div>
+                                        <div className="ms-auto ps-2 text-danger opacity-50">
+                                            →
+                                        </div>
+                                    </div>
+                                </div>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="row g-4">
                 {adminSections.map((section, sIdx) => (
                     <div key={sIdx} className="col-12">

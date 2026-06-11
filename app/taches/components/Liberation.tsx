@@ -9,18 +9,20 @@ import { toast } from "react-hot-toast"
 import { useContextMenu } from "@/app/utilities/hooks"
 import { useHistory } from "./HistoryContext"
 
-export default function Liberation({session, liberation, allocation, liberations, enseignantId, onRemove, scenario = "production"}: any){
+export default function Liberation({session, liberation, allocation, liberations, enseignantId, onRemove, scenario = "production", canEdit = true}: any){
     const { isVisible, position, menuRef, openMenu, closeMenu } = useContextMenu()
     const { recordAction } = useHistory()
     const [modalOpen, setModalOpen] = useState(false)
     const [transferModalOpen, setTransferModalOpen] = useState(false)
 
     function dragStartHandler(ev: any){
+        if (!canEdit) return;
         ev.dataTransfer.setData("liberationId", liberation.id)
         ev.dataTransfer.setData("enseignantId", enseignantId)
     }
 
     function supprimer(){
+        if (!canEdit) return;
         // Deletion is recorded in ListeLiberations
         onRemove(liberation.id, enseignantId)
         closeMenu()
@@ -31,6 +33,7 @@ export default function Liberation({session, liberation, allocation, liberations
     const qteMax = Number(((allocation?.quantite ?? 0) - (sommeLiberations ?? 0) + (liberation.quantite ?? 0)).toFixed(3))
 
     async function handleQuantiteConfirm(quantite: number){
+        if (!canEdit) return;
         recordAction({
             type: 'UPDATE',
             collection: 'liberations',
@@ -43,6 +46,7 @@ export default function Liberation({session, liberation, allocation, liberations
     }
 
     async function handleTransferConfirm(targetEnseignantId: string){
+        if (!canEdit) return;
         const liberationExiste = liberations?.find((l: any) => l.enseignant === targetEnseignantId && l.allocation === allocation.id)
         if(liberationExiste){
             toast.error("Cet enseignant a deja cette liberation")
@@ -62,7 +66,7 @@ export default function Liberation({session, liberation, allocation, liberations
         toast.success("Libération transférée avec succès")
     }
 
-    const menuContent = isVisible && (
+    const menuContent = isVisible && canEdit && (
         <div 
             ref={menuRef}
             style={{
@@ -89,7 +93,7 @@ export default function Liberation({session, liberation, allocation, liberations
     )
 
     return <div 
-        onContextMenu={openMenu} 
+        onContextMenu={canEdit ? openMenu : undefined} 
         style={{
             border: `1px solid #ddd`, 
             backgroundColor: "#fcf9ff", 
@@ -98,22 +102,23 @@ export default function Liberation({session, liberation, allocation, liberations
             marginBottom: "4px",
             borderRadius: "4px",
             boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-            cursor: "grab",
+            cursor: canEdit ? "grab" : "default",
             fontSize: "0.8rem",
             position: "relative",
             transition: "all 0.2s"
         }} 
         onMouseEnter={ev => {
-            ev.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-            ev.currentTarget.style.borderColor = "#bbb";
+            if(canEdit) ev.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+            if(canEdit) ev.currentTarget.style.borderColor = "#bbb";
         }}
         onMouseLeave={ev => {
-            ev.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
-            ev.currentTarget.style.borderColor = "#ddd";
+            if(canEdit) ev.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
+            if(canEdit) ev.currentTarget.style.borderColor = "#ddd";
         }}
-        draggable="true" 
-        onDragStart={dragStartHandler}
+        draggable={canEdit ? "true" : "false"} 
+        onDragStart={canEdit ? dragStartHandler : undefined}
     >      
+
         <div className="w-100">
             <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
                 <span style={{fontWeight: "bold", color: "#444"}}>{allocation.code}</span>

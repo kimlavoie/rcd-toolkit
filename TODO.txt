@@ -1,0 +1,6 @@
+FirebaseError: Missing or insufficient permissions sur admin/enseignants pour le super admin
+C'est probablement normal, l'admin n'est pas associé à un département (pour l'instant)
+Il faudrait qu'il puisse créer ou modifier des enseignants et les associer à des départements, car il n'y a aucune façon de créer des collaborateurs et des enseignants pour l'instant.
+On peut assigner un mot de passe temporaire aux utilisateurs créés. Quelque chose de simple, mais pas nécessairement le même pour tous (genre, PrenomNom1234!). On pourra même détecter que le mot de passe n'a pas été modifié et notifier que ça serait une bonne idée de le changer.
+Il faudrait également permettre à tous les utilisateurs de modifier leur propre mot de passe.
+Autre fonctionnalité: permettre à l'utilisateur qui a oublié son mot de passe de le réinitialiser (ou au moins le permettre à l'administrateur)

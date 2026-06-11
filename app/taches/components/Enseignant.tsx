@@ -4,11 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { Enseignant as EnseignantType } from "@/app/db/db"
 
-export default function Enseignant({enseignant, onCache, globalWidth, onWidthChange}: {enseignant: EnseignantType, onCache: () => void, globalWidth?: number, onWidthChange?: (width: number) => void}){
+export default function Enseignant({enseignant, onCache, globalWidth, onWidthChange, userRole}: {enseignant: EnseignantType, onCache: () => void, globalWidth?: number, onWidthChange?: (width: number) => void, userRole?: string}){
     const [hideMenu, setHideMenu] = useState(true)
     const [position, setPosition] = useState({left: 0, top: 0})
     const menuRef = useRef<HTMLDivElement>(null)
     const [mounted, setMounted] = useState(false)
+
+    const canEdit = userRole !== 'ENSEIGNANT';
 
     const [width, setWidth] = useState(globalWidth || 200)
     const isResizing = useRef(false)
@@ -63,6 +65,7 @@ export default function Enseignant({enseignant, onCache, globalWidth, onWidthCha
     }, [hideMenu]);
 
     function openMenu(ev: any){
+        if (!canEdit) return;
         ev.preventDefault()
         setHideMenu(false)
         setPosition({left: ev.clientX, top: ev.clientY})
@@ -124,13 +127,13 @@ export default function Enseignant({enseignant, onCache, globalWidth, onWidthCha
             minWidth: `${width}px`,
             width: `${width}px`,
             maxWidth: `${width}px`,
-            cursor: "context-menu",
+            cursor: canEdit ? "context-menu" : "default",
             padding: "8px 12px",
             overflow: "hidden"
         }} 
         key={enseignant.id}
         className="group"
-        title="Clic droit pour plus d'options"
+        title={canEdit ? "Clic droit pour plus d'options" : ""}
     >
         <div className="d-flex justify-content-between align-items-center gap-2">
             <p className="mb-0 overflow-hidden text-nowrap" style={{ fontSize: "0.85rem", textOverflow: "ellipsis" }}>{enseignant.prenom} {enseignant.nom}</p>

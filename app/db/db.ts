@@ -1,13 +1,22 @@
+export interface Departement {
+  id: string
+  nom: string
+}
+
 export interface Enseignant {
   id: string
+  departementId?: string
   numeroEmploye: string
   prenom: string
   nom: string
   courriel: string
+  role?: "ADMIN" | "COORDONNATEUR" | "ENSEIGNANT"
+  authUid?: string
 }
 
 export interface Cours {
     id: string
+    departementId?: string
     sigle: string
     nom: string
     saison: string
@@ -19,6 +28,7 @@ export interface Cours {
 
 export interface Groupe {
     id: string
+    departementId?: string
     session: string
     cours: string
     nbEtudiants: number
@@ -28,6 +38,7 @@ export interface Groupe {
 
 export interface Allocation{
     id: string
+    departementId?: string
     code: string
     description: string
     quantite: number
@@ -36,6 +47,7 @@ export interface Allocation{
 
 export interface Stage{
     id: string
+    departementId?: string
     session: string
     nom: string
     CIparStagiaire: number
@@ -45,6 +57,7 @@ export interface Stage{
 
 export interface Charge{
     id: string
+    departementId?: string
     enseignant: string
     groupe: string
     nbSemaines: number
@@ -54,6 +67,7 @@ export interface Charge{
 
 export interface Liberation {
     id: string
+    departementId?: string
     enseignant: string
     allocation: string
     quantite: number
@@ -62,6 +76,7 @@ export interface Liberation {
 
 export interface Supervision {
     id: string
+    departementId?: string
     enseignant: string
     stage: string
     nbStagiaires: number
@@ -71,6 +86,7 @@ export interface Supervision {
 
 export interface Scenario {
     id: string
+    departementId?: string
     nom: string
     session: string
     notes?: string
@@ -79,6 +95,7 @@ export interface Scenario {
 
 export interface CIReelle {
     id: string
+    departementId?: string
     enseignant: string
     session: string
     CI: number
@@ -86,6 +103,7 @@ export interface CIReelle {
 
 export interface Preference {
   id: string
+  departementId?: string
   enseignant: string
   cours?: string
   allocation?: string
@@ -96,5 +114,6 @@ export interface Preference {
 
 export interface Parametres {
   id: string
+  departementId?: string
   dureePrioriteOrdinaire: number
 }

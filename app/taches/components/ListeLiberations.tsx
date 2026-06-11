@@ -9,7 +9,7 @@ import { toast } from "react-hot-toast"
 import { useContextMenu } from "@/app/utilities/hooks"
 import { useHistory } from "./HistoryContext"
 
-export default function ListeLiberations({enseignant, session, enseignantWidth, scenario = "production", style}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any}){
+export default function ListeLiberations({enseignant, session, enseignantWidth, scenario = "production", style, userRole}: {enseignant: Enseignant, session: string, enseignantWidth: number, scenario?: string, style?: any, userRole?: string}){
     const { recordAction } = useHistory()
     const [mounted, setMounted] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
@@ -29,7 +29,10 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
         setMounted(true)
     }, [])
 
+    const canEdit = userRole !== 'ENSEIGNANT';
+
     async function removeHandlerLiberation(liberationId: string, enseignantId: string){
+        if (!canEdit) return;
         const liberation = liberations?.find(l => l.id === liberationId);
         if (liberation) {
             recordAction({
@@ -44,6 +47,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     }
 
     async function addHandlerLiberation(quantite: number){
+        if (!canEdit) return;
         if(selectedAllocation){
             const data = {allocation: selectedAllocation.id, enseignant: enseignant.id, quantite, scenario, session};
             const res = await firebaseDb.liberations.add(data);
@@ -61,6 +65,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     }
 
     async function quickAddLiberation(allocation: Allocation, quantite: number){
+        if (!canEdit) return;
         const data = {allocation: allocation.id, enseignant: enseignant.id, quantite, scenario, session};
         const res = await firebaseDb.liberations.add(data);
         recordAction({
@@ -75,10 +80,12 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     }
 
     function dragOverHandlerLiberation(ev: any) {
+        if (!canEdit) return;
         ev.preventDefault()
     }
 
     async function dropHandlerLiberation(ev: any) {
+        if (!canEdit) return;
         ev.currentTarget.style.boxShadow = ""
         ev.currentTarget.style.backgroundColor = ""
         const idNouveauEnseignant = ev.currentTarget.dataset.enseignantId
@@ -126,6 +133,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     }
 
     function dragEnter(ev: any) {
+        if (!canEdit) return;
         ev.preventDefault()
         if (ev.currentTarget.dataset.dropzone == "liberation" && ev.dataTransfer.types.includes("liberationid")) {
             ev.currentTarget.style.boxShadow = "inset 0 0 0 2px #6f42c1"
@@ -134,6 +142,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     }
 
     function dragLeave(ev: any) {
+        if (!canEdit) return;
         if (!ev.currentTarget.contains(ev.relatedTarget)) {
             ev.currentTarget.style.boxShadow = ""
             ev.currentTarget.style.backgroundColor = ""
@@ -144,7 +153,7 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
     const currentAllocationSomme = currentAllocationLiberations?.reduce((somme, liberation) => somme + (liberation.quantite ?? 0), 0)
     const currentAllocationMax = Number(((selectedAllocation?.quantite ?? 0) - (currentAllocationSomme ?? 0)).toFixed(3))
 
-    const menuContent = isVisible && (
+    const menuContent = isVisible && canEdit && (
         <div 
             ref={menuRef}
             style={{
@@ -228,19 +237,19 @@ export default function ListeLiberations({enseignant, session, enseignantWidth, 
 
     return <td 
         key={enseignant.id} 
-        onContextMenu={openMenu} 
+        onContextMenu={canEdit ? openMenu : undefined} 
         style={{...style, position: "relative", transition: "background-color 0.2s"}}
         data-dropzone="liberation"
         data-enseignant-id={enseignant.id}
-        onDrop={dropHandlerLiberation}
-        onDragOver={dragOverHandlerLiberation}
-        onDragEnter={dragEnter}
-        onDragLeave={dragLeave}
+        onDrop={canEdit ? dropHandlerLiberation : undefined}
+        onDragOver={canEdit ? dragOverHandlerLiberation : undefined}
+        onDragEnter={canEdit ? dragEnter : undefined}
+        onDragLeave={canEdit ? dragLeave : undefined}
     >
         {liberationsSession?.map(liberation => {
             const allocation = allocations?.find(allocation => allocation.id == liberation.allocation)
             if(!allocation) return null
-            return <Liberation key={liberation.id} session={session} liberation={liberation} allocation={allocation} liberations={liberations} enseignantId={enseignant.id} onRemove={removeHandlerLiberation} scenario={scenario}/>
+            return <Liberation key={liberation.id} session={session} liberation={liberation} allocation={allocation} liberations={liberations} enseignantId={enseignant.id} onRemove={removeHandlerLiberation} scenario={scenario} canEdit={canEdit}/>
         })}
         
         {mounted && createPortal(menuContent, document.body)}

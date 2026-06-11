@@ -20,12 +20,17 @@ export class BaseService<T> {
         this.schema = Schemas[collectionName];
     }
 
-    protected getUserId() {
+    protected async getDepartementId() {
         if (typeof window !== 'undefined') {
             const mockUser = localStorage.getItem('cypress-user');
-            if (mockUser) return JSON.parse(mockUser).uid;
+            if (mockUser) return JSON.parse(mockUser).departementId || 'mock-dept';
         }
-        return auth.currentUser?.uid;
+        
+        if (auth.currentUser) {
+            const tokenResult = await auth.currentUser.getIdTokenResult();
+            return tokenResult.claims.departementId as string;
+        }
+        return null;
     }
 
     protected isMock() {
@@ -36,17 +41,17 @@ export class BaseService<T> {
         if (this.isMock()) {
             const id = "mock-" + Math.random().toString(36).substr(2, 9);
             const current = JSON.parse(localStorage.getItem(`cypress-db-${this.collectionName}`) || '[]');
-            const newData = { ...data, id, userId: this.getUserId() };
+            const newData = { ...data, id, departementId: await this.getDepartementId() };
             current.push(newData);
             localStorage.setItem(`cypress-db-${this.collectionName}`, JSON.stringify(current));
             window.dispatchEvent(new CustomEvent('cypress-db-changed', { detail: { collection: this.collectionName } }));
             return { id };
         }
         
-        const userId = this.getUserId();
-        if (!userId) throw new Error("User must be logged in");
+        const departementId = await this.getDepartementId();
+        if (!departementId && this.collectionName !== 'departements') throw new Error("Un département est requis pour cette opération");
         
-        const { id, ...rest } = data;
+        const { id, userId, ...rest } = data; // Strip old userId if present
 
         if (this.schema) {
             const result = this.schema.safeParse(rest);
@@ -57,10 +62,8 @@ export class BaseService<T> {
             }
         }
 
-        const docRef = await addDoc(collection(firestore, this.collectionName), {
-            ...rest,
-            userId
-        });
+        const payload = this.collectionName === 'departements' ? rest : { ...rest, departementId };
+        const docRef = await addDoc(collection(firestore, this.collectionName), payload);
         return { id: docRef.id };
     }
 
@@ -76,17 +79,15 @@ export class BaseService<T> {
             return;
         }
 
-        const userId = this.getUserId();
-        if (!userId) throw new Error("User must be logged in");
+        const departementId = await this.getDepartementId();
+        if (!departementId && this.collectionName !== 'departements') throw new Error("Un département est requis");
 
         const docRef = doc(firestore, this.collectionName, id);
-        const docSnap = await getDoc(docRef);
         
-        if (docSnap.exists() && docSnap.data().userId !== userId) {
-            throw new Error("Unauthorized");
-        }
+        // Security is now handled mostly by Firestore rules, but we can keep a client-side check if needed
+        // For simplicity and reliance on robust backend rules, we trust the updateDoc call to fail if unauthorized.
 
-        const { id: _, userId: __, ...rest } = data;
+        const { id: _, userId: __, departementId: ___, ...rest } = data; // Strip structural fields
 
         if (this.schema instanceof z.ZodObject) {
             const result = this.schema.partial().safeParse(rest);
@@ -97,7 +98,7 @@ export class BaseService<T> {
             }
         }
 
-        await updateDoc(docRef, { ...rest, userId });
+        await updateDoc(docRef, rest);
     }
 
     async delete(id: string): Promise<void> {
@@ -109,16 +110,7 @@ export class BaseService<T> {
             return;
         }
 
-        const userId = this.getUserId();
-        if (!userId) throw new Error("User must be logged in");
-
         const docRef = doc(firestore, this.collectionName, id);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists() && docSnap.data().userId !== userId) {
-            throw new Error("Unauthorized");
-        }
-
         await deleteDoc(docRef);
     }
 }

@@ -376,6 +376,7 @@ function TachesContent() {
                     onGenerateDraft={handleGenerateDraft}
                     setShowHelp={setShowHelp}
                     onShowDashboard={() => setShowDashboard(true)}
+                    userRole={user?.role}
                 />
 
                 <DashboardModal 
@@ -491,21 +492,22 @@ function TachesContent() {
                                         globalWidth={getWidth(enseignant.id)} 
                                         onCache={() => setCache([...cache, enseignant.id])}
                                         onWidthChange={(newWidth) => handleWidthChange(enseignant.id, newWidth)}
+                                        userRole={user?.role}
                                     />
                                 ))}
                             </tr>
                         </thead>
                         <tbody>{mode === "Automne" ? (
                                 <>
-                                    <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="74px" isPrinting={isPrinting}/>
-                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciBottom="37px" isPrinting={isPrinting}/>
+                                    <Tache session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="74px" isPrinting={isPrinting} userRole={user?.role}/>
+                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciBottom="37px" isPrinting={isPrinting} userRole={user?.role}/>
                                 </>
                                 ) : (
                                 <>
-                                    <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="auto" ciBottom="auto" forceHideCI={true}/>
-                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="37px" showCI={true} isPrinting={isPrinting}/>
+                                    <CIReelle session={sessionsAnnuelle[0]} visibleEnseignants={visibleEnseignants} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="auto" ciBottom="auto" forceHideCI={true} userRole={user?.role}/>
+                                    <Tache session={sessionsAnnuelle[1]} visibleEnseignants={visibleEnseignants} scenario={selectedScenarioId} columnWidths={columnWidths} globalWidth={enseignantWidth} ciTop="37px" ciBottom="37px" showCI={true} isPrinting={isPrinting} userRole={user?.role}/>
                                 </>
-                                )}<Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={mode} columnWidths={columnWidths} globalWidth={enseignantWidth} scenario={selectedScenarioId}/></tbody>
+                                )}<Summary session={sessionA} sessions={sessionsAnnuelle} visibleEnseignants={visibleEnseignants} saison={mode} columnWidths={columnWidths} globalWidth={enseignantWidth} scenario={selectedScenarioId} userRole={user?.role}/></tbody>
                     </table>
                 </div>
             </div>

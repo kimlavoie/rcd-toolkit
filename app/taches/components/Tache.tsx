@@ -27,6 +27,7 @@ interface TacheProps {
     ciTop?: string
     showCI?: boolean
     isPrinting?: boolean
+    userRole?: string
 }
 
 const Tache = memo(function Tache({
@@ -38,7 +39,8 @@ const Tache = memo(function Tache({
     ciBottom, 
     ciTop, 
     showCI = true, 
-    isPrinting
+    isPrinting,
+    userRole
 }: TacheProps) {
     const {
         saison, annee, charges, liberations, supervisions, sessionStages,
@@ -53,6 +55,7 @@ const Tache = memo(function Tache({
     const showStagesList = getVisible(`${session}_stages`, true)
 
     async function supervisionsHandler(enseignantId: string, stageId: string, field: 'nbStagiaires' | 'coordination', value: number) {
+        if (userRole === 'ENSEIGNANT') return;
         const stage = stages?.find(s => s.id === stageId)
         if (!stage) return
         
@@ -97,6 +100,7 @@ const Tache = memo(function Tache({
     }
 
     async function clearAllData() {
+        if (userRole === 'ENSEIGNANT') return;
         if (confirm(`Voulez-vous vraiment réinitialiser toutes les données pour la session ${saison} ${annee} (Scénario: ${scenario}) ?`)) {
             const deletePromises: Promise<any>[] = []
             const batchActions: any[] = [];
@@ -169,15 +173,17 @@ const Tache = memo(function Tache({
                                 {saison} {annee}
                             </span>
                         </div>
-                        <button 
-                            type="button" 
-                            className="btn btn-link btn-sm text-danger p-0 m-0 opacity-75 hover-opacity-100 no-print" 
-                            style={{lineHeight: 1, textDecoration: "none"}} 
-                            onClick={clearAllData} 
-                            title="Réinitialiser la session"
-                        >
-                            ⟲
-                        </button>
+                        {userRole !== 'ENSEIGNANT' && (
+                            <button 
+                                type="button" 
+                                className="btn btn-link btn-sm text-danger p-0 m-0 opacity-75 hover-opacity-100 no-print" 
+                                style={{lineHeight: 1, textDecoration: "none"}} 
+                                onClick={clearAllData} 
+                                title="Réinitialiser la session"
+                            >
+                                ⟲
+                            </button>
+                        )}
                     </div>
                 </StickyHeader>
                 {visibleEnseignants.map((enseignant) => {
@@ -214,83 +220,86 @@ const Tache = memo(function Tache({
                         badge={nbChargesManquantes > 0 && <span className="badge bg-danger p-1 no-print" style={{fontSize: "0.65rem"}} title={`${nbChargesManquantes} restants`}>{nbChargesManquantes}</span>}
                     >
                         {visibleEnseignants.map((enseignant) => (
-                            <ListeCharges 
-                                key={enseignant.id} 
-                                enseignant={enseignant} 
-                                session={session} 
-                                enseignantWidth={columnWidths?.[enseignant.id] || globalWidth || 200} 
-                                scenario={scenario} 
-                                style={getCellStyle(enseignant.id)} 
-                                isPrinting={isPrinting}
-                            />
+                        <ListeCharges 
+                            key={enseignant.id} 
+                            enseignant={enseignant} 
+                            session={session} 
+                            enseignantWidth={columnWidths?.[enseignant.id] || globalWidth || 200} 
+                            scenario={scenario} 
+                            style={getCellStyle(enseignant.id)} 
+                            isPrinting={isPrinting}
+                            userRole={userRole}
+                        />
                         ))}
-                    </CollapsibleSectionRow>
+                        </CollapsibleSectionRow>
 
-                    <CollapsibleSectionRow 
+                        <CollapsibleSectionRow 
                         title="Libérations" 
                         isVisible={showLiberations} 
                         onToggle={() => toggle(`${session}_liberations`)} 
                         colSpan={visibleEnseignants.length} 
                         badge={nbLiberationsManquantes > 0 && <span className="badge bg-warning text-dark p-1 no-print" style={{fontSize: "0.65rem"}} title={`${nbLiberationsManquantes} restantes`}>{nbLiberationsManquantes}</span>}
-                    >
-                        {visibleEnseignants.map((enseignant) => (
-                            <ListeLiberations 
-                                key={enseignant.id} 
-                                enseignant={enseignant} 
-                                session={session} 
-                                enseignantWidth={columnWidths?.[enseignant.id] || globalWidth || 200} 
-                                scenario={scenario} 
-                                style={getCellStyle(enseignant.id)}
-                            />
-                        ))}
-                    </CollapsibleSectionRow>
-
-                    {sessionStages.length > 0 && (
-                        <CollapsibleSectionRow 
-                            title="Stages & Supervisions" 
-                            isVisible={showStagesList} 
-                            onToggle={() => toggle(`${session}_stages`)} 
-                            colSpan={visibleEnseignants.length} 
-                            headerStyle={{backgroundColor: "#f8f9fa"}}
                         >
-                            <td colSpan={visibleEnseignants.length} style={{backgroundColor: "#f8f9fa"}}></td>
+                        {visibleEnseignants.map((enseignant) => (
+                        <ListeLiberations 
+                            key={enseignant.id} 
+                            enseignant={enseignant} 
+                            session={session} 
+                            enseignantWidth={columnWidths?.[enseignant.id] || globalWidth || 200} 
+                            scenario={scenario} 
+                            style={getCellStyle(enseignant.id)}
+                            userRole={userRole}
+                        />
+                        ))}
                         </CollapsibleSectionRow>
-                    )}
 
-                    {showStagesList && sessionStages.map(stage => {
+                        {sessionStages.length > 0 && (
+                        <CollapsibleSectionRow 
+                        title="Stages & Supervisions" 
+                        isVisible={showStagesList} 
+                        onToggle={() => toggle(`${session}_stages`)} 
+                        colSpan={visibleEnseignants.length} 
+                        headerStyle={{backgroundColor: "#f8f9fa"}}
+                        >
+                        <td colSpan={visibleEnseignants.length} style={{backgroundColor: "#f8f9fa"}}></td>
+                        </CollapsibleSectionRow>
+                        )}
+
+                        {showStagesList && sessionStages.map(stage => {
                         const stRem = getStagiairesRestantsCount(stage, supervisions)
                         const coRem = getCoordinationRestante(stage, supervisions)
-                        
+
                         return (
-                            <tr key={stage.id}>
-                                <StickyHeader isFirstCol>
-                                    <div className="d-flex justify-content-between align-items-center gap-2 ps-4">
-                                        <div className="text-truncate" style={{maxWidth: "110px"}}>
-                                            <span className="small text-primary" style={{fontSize: "0.75rem"}}>{stage.nom}</span>
-                                        </div>
-                                        <div className="d-flex gap-1 flex-shrink-0">
-                                            {stRem > 0 && <span className="badge bg-info text-dark p-1" style={{fontSize: "0.55rem", fontWeight: "normal"}} title={`${stRem} stagiaires à placer`}>🎓 {stRem}</span>}
-                                            {coRem > 0.001 && <span className="badge bg-warning text-dark p-1" style={{fontSize: "0.55rem", fontWeight: "normal"}} title={`${coRem.toFixed(2)} CI de coordination à placer`}>📢 {Number(coRem.toFixed(2))}</span>}
-                                        </div>
+                        <tr key={stage.id}>
+                            <StickyHeader isFirstCol>
+                                <div className="d-flex justify-content-between align-items-center gap-2 ps-4">
+                                    <div className="text-truncate" style={{maxWidth: "110px"}}>
+                                        <span className="small text-primary" style={{fontSize: "0.75rem"}}>{stage.nom}</span>
                                     </div>
-                                </StickyHeader>
-                                {visibleEnseignants.map((enseignant) => {
-                                    const sup = supervisions?.find(s => s.enseignant === enseignant.id && s.stage === stage.id)
-                                    return (
-                                        <td key={enseignant.id} style={getCellStyle(enseignant.id)}>
-                                            <SupervisionInputs 
-                                                enseignantId={enseignant.id}
-                                                stageId={stage.id}
-                                                stValue={sup?.nbStagiaires ?? 0}
-                                                coValue={sup?.coordination ?? 0}
-                                                onUpdate={(field, val) => supervisionsHandler(enseignant.id, stage.id, field, val)}
-                                            />
-                                        </td>
-                                    )
-                                })}
-                            </tr>
+                                    <div className="d-flex gap-1 flex-shrink-0">
+                                        {stRem > 0 && <span className="badge bg-info text-dark p-1" style={{fontSize: "0.55rem", fontWeight: "normal"}} title={`${stRem} stagiaires à placer`}>🎓 {stRem}</span>}
+                                        {coRem > 0.001 && <span className="badge bg-warning text-dark p-1" style={{fontSize: "0.55rem", fontWeight: "normal"}} title={`${coRem.toFixed(2)} CI de coordination à placer`}>📢 {Number(coRem.toFixed(2))}</span>}
+                                    </div>
+                                </div>
+                            </StickyHeader>
+                            {visibleEnseignants.map((enseignant) => {
+                                const sup = supervisions?.find(s => s.enseignant === enseignant.id && s.stage === stage.id)
+                                return (
+                                    <td key={enseignant.id} style={getCellStyle(enseignant.id)}>
+                                        <SupervisionInputs 
+                                            enseignantId={enseignant.id}
+                                            stageId={stage.id}
+                                            stValue={sup?.nbStagiaires ?? 0}
+                                            coValue={sup?.coordination ?? 0}
+                                            onUpdate={(field, val) => supervisionsHandler(enseignant.id, stage.id, field, val)}
+                                            userRole={userRole}
+                                        />
+                                    </td>
+                                )
+                            })}
+                        </tr>
                         )
-                    })}
+                        })}
                 </>
             )}
             {showCI && (
