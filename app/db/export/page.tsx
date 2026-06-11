@@ -23,7 +23,7 @@ const COLLECTIONS = [
 ]
 
 export default function(){    
-    const { user, loading: authLoading } = useAuth()
+    const { user, loading: authLoading, activeDepartementId } = useAuth()
     const router = useRouter()
     const [exporting, setExporting] = useState(false)
 
@@ -44,9 +44,20 @@ export default function(){
         try {
             setExporting(true)
             const allData: any = {};
+            const activeDeptId = activeDepartementId || user!.departementId;
+
+            if (!activeDeptId) {
+                toast.error("Aucun département actif sélectionné.");
+                return;
+            }
             
             for (const collectionName of COLLECTIONS) {
-                const q = query(collection(firestore, collectionName), where("userId", "==", user!.uid))
+                let q;
+                if (collectionName === "enseignants") {
+                    q = query(collection(firestore, collectionName), where(`departements.${activeDeptId}`, "in", ["COORDONNATEUR", "ENSEIGNANT", "ADMIN"]));
+                } else {
+                    q = query(collection(firestore, collectionName), where("departementId", "==", activeDeptId));
+                }
                 const snapshot = await getDocs(q)
                 allData[collectionName] = snapshot.docs.map(doc => ({
                     id: doc.id,

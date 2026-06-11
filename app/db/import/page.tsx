@@ -23,7 +23,7 @@ const COLLECTIONS = [
 ]
 
 export default function(){
-    const { user, loading: authLoading } = useAuth()
+    const { user, loading: authLoading, activeDepartementId } = useAuth()
     const router = useRouter()
     const ref = useRef<HTMLInputElement>(null)
     const [importing, setImporting] = useState(false)
@@ -59,6 +59,12 @@ export default function(){
                 return
             }
 
+            const activeDeptId = activeDepartementId || user!.departementId;
+            if (!activeDeptId) {
+                toast.error("Aucun département actif sélectionné.");
+                return;
+            }
+
             setImporting(true)
             setProgress("Lecture du fichier...")
             
@@ -77,17 +83,26 @@ export default function(){
             for (const collectionName of COLLECTIONS) {
                 setProgress(`Traitement de la collection : ${collectionName}...`)
                 
-                // 1. Clear existing data FOR THIS USER ONLY
-                const q = query(collection(firestore, collectionName), where("userId", "==", user!.uid))
-                const snapshot = await getDocs(q)
-                const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref))
-                await Promise.all(deletePromises)
+                // 1. Clear existing data FOR THIS DEPARTMENT ONLY
+                if (collectionName !== "enseignants") {
+                    const q = query(collection(firestore, collectionName), where("departementId", "==", activeDeptId))
+                    const snapshot = await getDocs(q)
+                    const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref))
+                    await Promise.all(deletePromises)
+                }
 
-                // 2. Import new data and tag with current userId
+                // 2. Import new data and tag with current departementId
                 const dataToImport = fileContent[collectionName]
                 if (dataToImport && Array.isArray(dataToImport)) {
+                    // For teachers, we don't import them blindly anymore to avoid overwriting multi-dept logic.
+                    // Instead, we skip importing teachers for now as they should be managed via Super Admin.
+                    if (collectionName === "enseignants") {
+                        console.warn("Skipping enseignants import to protect multi-department roles.");
+                        continue;
+                    }
+
                     const importPromises = dataToImport.map(async (item: any) => {
-                        const { id: oldId, userId, ...data } = item
+                        const { id: oldId, userId, departementId, ...data } = item
                         
                         // Update references based on previous mappings
                         const dataWithReferences = { ...data }
@@ -117,10 +132,10 @@ export default function(){
                             if (data.enseignant) dataWithReferences.enseignant = idMap["enseignants"][data.enseignant] || data.enseignant
                         }
 
-                        const dataWithUser = { ...dataWithReferences, userId: user!.uid }
+                        const dataWithDept = { ...dataWithReferences, departementId: activeDeptId }
                         
                         const newDocRef = doc(collection(firestore, collectionName))
-                        await setDoc(newDocRef, dataWithUser)
+                        await setDoc(newDocRef, dataWithDept)
                         
                         if (oldId) {
                             idMap[collectionName][oldId] = newDocRef.id
