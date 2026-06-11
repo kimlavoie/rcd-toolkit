@@ -1,18 +1,24 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "../utilities/auth"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import Skeleton from "@/app/utilities/Skeleton"
 
 export default function ProfilPage() {
-    const { user, loading, changePassword } = useAuth()
+    const { user, loading, changePassword, refreshUser } = useAuth()
     const router = useRouter()
 
     const [newPassword, setNewPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
+
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push("/login")
+        }
+    }, [user, loading, router])
 
     if (loading) return (
         <div className="container mt-5">
@@ -22,7 +28,6 @@ export default function ProfilPage() {
     )
 
     if (!user) {
-        router.push("/login")
         return null
     }
 
@@ -42,9 +47,20 @@ export default function ProfilPage() {
         setIsSubmitting(true)
         try {
             await changePassword(newPassword)
+            
+            // Signaler au serveur que le mot de passe a été changé pour mettre à jour les flags/claims
+            const token = await user?.getIdToken()
+            await fetch('/api/auth/password-changed', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+
             toast.success("Mot de passe modifié avec succès !")
             setNewPassword("")
             setConfirmPassword("")
+            
+            // Rafraîchir les informations utilisateur locales (claims)
+            await refreshUser();
         } catch (error: any) {
             if (error.code === 'auth/requires-recent-login') {
                 toast.error("Pour changer votre mot de passe, vous devez vous être connecté récemment. Veuillez vous déconnecter et vous reconnecter.")

@@ -12,6 +12,7 @@ export interface Enseignant {
   courriel: string
   role?: "ADMIN" | "COORDONNATEUR" | "ENSEIGNANT"
   authUid?: string
+  mustChangePassword?: boolean
 }
 
 export interface Cours {

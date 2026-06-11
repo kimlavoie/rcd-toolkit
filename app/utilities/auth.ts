@@ -17,6 +17,7 @@ import { auth } from "./firebase";
 export interface CustomUser extends User {
     role?: string;
     departementId?: string | null;
+    mustChangePassword?: boolean;
 }
 
 export function useAuth() {
@@ -40,6 +41,7 @@ export function useAuth() {
                     const customUser = firebaseUser as CustomUser;
                     customUser.role = idTokenResult.claims.role as string | undefined;
                     customUser.departementId = idTokenResult.claims.departementId as string | null | undefined;
+                    customUser.mustChangePassword = idTokenResult.claims.mustChangePassword as boolean | undefined;
                     setUser(customUser);
                 } catch (error) {
                     console.error("Error fetching custom claims", error);

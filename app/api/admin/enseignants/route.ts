@@ -59,7 +59,8 @@ export async function POST(req: Request) {
             // 2. Assignation des Custom Claims
             const claims = {
                 role: role,
-                departementId: finalDeptId || null
+                departementId: finalDeptId || null,
+                mustChangePassword: true
             };
 
             await adminAuth.setCustomUserClaims(userRecord.uid, claims);
@@ -77,7 +78,8 @@ export async function POST(req: Request) {
             courriel,
             role,
             departementId: finalDeptId || null,
-            authUid: authUid || null
+            authUid: authUid || null,
+            mustChangePassword: true
         };
 
         const docRef = await adminDb.collection('enseignants').add(enseignantData);

@@ -61,6 +61,18 @@ export default function Home() {
   return (
     <div className="min-vh-100 bg-light py-5">
       <div className="container">
+        {user.mustChangePassword && (
+          <div className="alert alert-danger shadow-sm border-0 rounded-4 mb-4 d-flex align-items-center gap-3">
+            <span style={{ fontSize: "1.5rem" }}>⚠️</span>
+            <div className="flex-grow-1">
+              <strong>Sécurité du compte :</strong> Vous utilisez actuellement un mot de passe par défaut. Veuillez le modifier immédiatement.
+            </div>
+            <Link href="/profil" className="btn btn-danger btn-sm rounded-pill fw-bold px-3">
+              Changer mon mot de passe
+            </Link>
+          </div>
+        )}
+
         <div className="row justify-content-center">
           <div className="col-lg-10">
             {/* Header section */}

@@ -12,6 +12,7 @@ export const EnseignantSchema = z.object({
   courriel: z.string().email("Format de courriel invalide").optional().or(z.literal("")),
   role: z.enum(["ADMIN", "COORDONNATEUR", "ENSEIGNANT"]).default("ENSEIGNANT"),
   authUid: z.string().optional(),
+  mustChangePassword: z.boolean().default(false),
 });
 
 export const CoursSchema = z.object({
