@@ -236,3 +236,74 @@ export async function PUT(req: Request) {
     }
 }
 
+
+export async function DELETE(req: Request) {
+    try {
+        const { id, departementId } = await req.json();
+
+        if (!id || !departementId) {
+            return NextResponse.json({ error: 'ID et département requis' }, { status: 400 });
+        }
+
+        const decodedToken = await verifyCreatorRights(req, false, { [departementId]: 'ENSEIGNANT' });
+        const callerIsAdmin = decodedToken.isAdmin === true || decodedToken.role === 'ADMIN';
+
+        const docRef = adminDb.collection('enseignants').doc(id);
+        const existingDoc = await docRef.get();
+        if (!existingDoc.exists) {
+            return NextResponse.json({ error: 'Enseignant introuvable' }, { status: 404 });
+        }
+        const currentData = existingDoc.data() || {};
+
+        if (!callerIsAdmin && (currentData.isAdmin === true || currentData.role === 'ADMIN')) {
+            throw new Error('Vous ne pouvez pas supprimer un profil administrateur global');
+        }
+
+        // 1. Supprimer les données associées dans ce département
+        const refs: FirebaseFirestore.DocumentReference[] = [];
+        for (const col of ['charges', 'liberations', 'supervisions']) {
+            const snap = await adminDb.collection(col)
+                .where('enseignant', '==', id)
+                .where('departementId', '==', departementId)
+                .get();
+            snap.forEach(d => refs.push(d.ref));
+        }
+        for (let i = 0; i < refs.length; i += 450) {
+            const batch = adminDb.batch();
+            refs.slice(i, i + 450).forEach(r => batch.delete(r));
+            await batch.commit();
+        }
+
+        // 2. Retirer le département de l'enseignant
+        const { [departementId]: _removed, ...remainingDepts } = currentData.departements || {};
+        const authUid: string | null = currentData.authUid || null;
+        const isLastDept = Object.keys(remainingDepts).length === 0 && currentData.isAdmin !== true;
+
+        if (isLastDept) {
+            await docRef.delete();
+            if (authUid) {
+                try {
+                    await adminAuth.deleteUser(authUid);
+                } catch (authError: any) {
+                    console.error("Erreur suppression compte Auth:", authError);
+                }
+            }
+        } else {
+            await docRef.update({ departements: remainingDepts });
+            if (authUid) {
+                try {
+                    const currentClaims = (await adminAuth.getUser(authUid)).customClaims || {};
+                    await adminAuth.setCustomUserClaims(authUid, { ...currentClaims, departements: remainingDepts });
+                } catch (authError: any) {
+                    console.error("Erreur mise à jour Auth claims:", authError);
+                }
+            }
+        }
+
+        return NextResponse.json({ success: true, deleted: isLastDept }, { status: 200 });
+
+    } catch (error: any) {
+        console.error("Erreur API enseignants (DELETE):", error);
+        return NextResponse.json({ error: error.message || 'Erreur serveur' }, { status: error.message.includes('Action restreinte') || error.message.includes('refusé') || error.message.includes('ne peut pas') || error.message.includes('Vous ne pouvez pas') ? 403 : 401 });
+    }
+}

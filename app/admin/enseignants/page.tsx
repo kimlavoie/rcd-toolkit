@@ -8,7 +8,6 @@ import Link from "next/link"
 import type { Enseignant } from "@/app/db/db"
 import { toast } from "react-hot-toast"
 
-import { DeletionService } from "@/app/utilities/deletionService"
 import Skeleton from "@/app/utilities/Skeleton";
 import CreateAccountModal from "./CreateAccountModal"
 import SelectDepartement from "@/app/admin/components/inputs/SelectDepartement"
@@ -114,7 +113,20 @@ function EnseignantsPageContent(){
             if (!res.ok) throw new Error(result.error)
             return result
         },
-        onDelete: DeletionService.deleteEnseignant
+        onDelete: async (id) => {
+            // Les règles Firestore interdisent la suppression directe de la fiche racine :
+            // on passe par l'API (retire du département, supprime la fiche si dernier département).
+            const res = await fetch('/api/admin/enseignants', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ id, departementId: user?.departementId })
+            })
+            const result = await res.json()
+            if (!res.ok) throw new Error(result.error)
+        }
     })
 
     useEffect(() => {
