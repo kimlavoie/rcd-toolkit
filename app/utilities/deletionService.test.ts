@@ -8,7 +8,10 @@ const mockBatch = {
 
 vi.mock('./firebase', () => ({
     auth: {
-        currentUser: { uid: 'test-user-id' }
+        currentUser: {
+            uid: 'test-user-id',
+            getIdTokenResult: () => Promise.resolve({ claims: { departements: { dept1: 'COORDONNATEUR' } } })
+        }
     },
     firestore: {}
 }));

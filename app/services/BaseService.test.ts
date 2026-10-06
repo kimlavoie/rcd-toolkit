@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BaseService } from './BaseService';
-import { addDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { toast } from 'react-hot-toast';
 
 // Mock dependencies
@@ -16,7 +16,10 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/app/utilities/firebase', () => ({
     firestore: {},
     auth: {
-        currentUser: { uid: 'user123' }
+        currentUser: {
+            uid: 'user123',
+            getIdTokenResult: () => Promise.resolve({ claims: { departements: { dept1: 'COORDONNATEUR' } } })
+        }
     }
 }));
 
@@ -88,37 +91,31 @@ describe('BaseService', () => {
         });
     });
 
-    describe('Isolation Utilisateur (Sécurité)', () => {
-        it('devrait permettre la modification d\'un document appartenant à l\'utilisateur', async () => {
-            // Simule que le document appartient à user123
-            (getDoc as any).mockResolvedValueOnce({
-                exists: () => true,
-                data: () => ({ userId: 'user123' })
-            });
+    describe('Isolation par département', () => {
+        it('devrait ajouter le departementId du département actif au document créé', async () => {
+            (addDoc as any).mockResolvedValueOnce({ id: 'new-id' });
 
-            await expect(service.update('doc-id', { nbSemaines: 10 })).resolves.not.toThrow();
-            expect(updateDoc).toHaveBeenCalled();
+            await service.add({ enseignant: 'e1', groupe: 'g1', nbSemaines: 10, type: 'TP' });
+
+            expect(addDoc).toHaveBeenCalledWith(undefined, expect.objectContaining({ departementId: 'dept1' }));
         });
 
-        it('devrait bloquer la modification d\'un document n\'appartenant pas à l\'utilisateur', async () => {
-            // Simule que le document appartient à un autre utilisateur
-            (getDoc as any).mockResolvedValueOnce({
-                exists: () => true,
-                data: () => ({ userId: 'otherUser' })
-            });
+        it('devrait retirer les champs structurels (id, userId, departementId) lors de la modification', async () => {
+            await service.update('doc-id', { nbSemaines: 10, departementId: 'autre', userId: 'x', id: 'y' });
 
-            await expect(service.update('doc-id', { nbSemaines: 10 })).rejects.toThrow('Unauthorized');
-            expect(updateDoc).not.toHaveBeenCalled();
+            expect(updateDoc).toHaveBeenCalledWith(undefined, { nbSemaines: 10 });
         });
 
-        it('devrait bloquer la suppression d\'un document n\'appartenant pas à l\'utilisateur', async () => {
-            (getDoc as any).mockResolvedValueOnce({
-                exists: () => true,
-                data: () => ({ userId: 'otherUser' })
-            });
+        it('devrait déléguer la suppression à Firestore (les règles gèrent les permissions)', async () => {
+            await service.delete('doc-id');
 
-            await expect(service.delete('doc-id')).rejects.toThrow('Unauthorized');
-            expect(deleteDoc).not.toHaveBeenCalled();
+            expect(deleteDoc).toHaveBeenCalled();
+        });
+
+        it('devrait propager le refus de Firestore si la suppression est refusée', async () => {
+            (deleteDoc as any).mockRejectedValueOnce(new Error('permission-denied'));
+
+            await expect(service.delete('doc-id')).rejects.toThrow('permission-denied');
         });
     });
 });
