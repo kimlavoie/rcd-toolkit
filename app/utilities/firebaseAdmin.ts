@@ -16,6 +16,11 @@ if (!getApps().length) {
                     privateKey: privateKey,
                 }),
             });
+        } else if (process.env.NEXT_PHASE !== 'phase-production-build' && process.env.NODE_ENV === 'production') {
+            // À l'exécution en production, un projet démo produirait des erreurs "aud" trompeuses
+            const missing = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY']
+                .filter((name) => !process.env[name]);
+            throw new Error(`Firebase Admin: variables d'environnement manquantes en production: ${missing.join(', ')}`);
         } else {
             console.warn('Firebase Admin: Variables d\'environnement manquantes. Initialisation avec un projet démo (build phase).');
             initializeApp({ projectId: "demo-project" }); 
