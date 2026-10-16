@@ -84,10 +84,20 @@ describe('Admin - Allocations', () => {
     cy.url().should('include', '/admin/allocations/A26');
     cy.contains('h1', 'Automne 2026').should('be.visible');
 
-    // Click "Autre session" should go back to session selector
-    cy.contains('a', 'Autre session').click();
-    cy.url().should('eq', Cypress.config().baseUrl + '/admin/allocations');
-    cy.contains('Sélection de session').should('be.visible');
+    // Click "Autre session" should open the modal
+    cy.contains('button', 'Autre session').click();
+    cy.contains('Sélectionner une autre session').should('be.visible');
+
+    // Change season to Hiver in the modal and click Accéder
+    cy.get('.modal, .card').within(() => {
+      cy.get('select[name="saison"]').select('Hiver');
+      cy.contains('button', 'Accéder').click();
+    });
+
+    // Should navigate to H26
+    cy.url().should('include', '/admin/allocations/H26');
+    cy.contains('h1', 'Hiver 2026').should('be.visible');
+    cy.contains('Sélectionner une autre session').should('not.exist');
   });
 });
 

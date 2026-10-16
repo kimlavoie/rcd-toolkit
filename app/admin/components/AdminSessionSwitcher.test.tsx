@@ -17,19 +17,21 @@ vi.mock('next/navigation', () => ({
 describe('AdminSessionSwitcher', () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        document.body.innerHTML = ''
     })
 
     it('renders Autumn and Winter corresponding buttons for A26 and highlights Autumn', () => {
         const container = document.createElement('div')
+        document.body.appendChild(container)
         const root = createRoot(container)
 
         act(() => {
             root.render(<AdminSessionSwitcher currentSession="A26" basePath="/admin/allocations" />)
         })
 
-        const autumnBtn = container.querySelector('button:nth-of-type(1)') as HTMLButtonElement
-        const winterBtn = container.querySelector('button:nth-of-type(2)') as HTMLButtonElement
-        const link = container.querySelector('a') as HTMLAnchorElement
+        const autumnBtn = container.querySelectorAll('button')[0] as HTMLButtonElement
+        const winterBtn = container.querySelectorAll('button')[1] as HTMLButtonElement
+        const otherBtn = container.querySelectorAll('button')[2] as HTMLButtonElement
 
         expect(autumnBtn.textContent).toContain('Automne 2026')
         expect(autumnBtn.className).toContain('btn-primary')
@@ -37,7 +39,7 @@ describe('AdminSessionSwitcher', () => {
         expect(winterBtn.textContent).toContain('Hiver 2027')
         expect(winterBtn.className).not.toContain('btn-primary')
 
-        expect(link.getAttribute('href')).toBe('/admin/allocations')
+        expect(otherBtn.textContent).toContain('Autre session')
 
         // Clicking winter button navigates to /admin/allocations/H27
         act(() => {
@@ -53,26 +55,80 @@ describe('AdminSessionSwitcher', () => {
         expect(mockPush).not.toHaveBeenCalled()
     })
 
-    it('highlights Winter and navigates to Autumn when on H27', () => {
+    it('opens modal on "Autre session" and allows navigating to a custom session', () => {
         const container = document.createElement('div')
+        document.body.appendChild(container)
         const root = createRoot(container)
 
         act(() => {
-            root.render(<AdminSessionSwitcher currentSession="H27" basePath="/admin/groupes" />)
+            root.render(<AdminSessionSwitcher currentSession="A26" basePath="/admin/allocations" />)
         })
 
-        const autumnBtn = container.querySelector('button:nth-of-type(1)') as HTMLButtonElement
-        const winterBtn = container.querySelector('button:nth-of-type(2)') as HTMLButtonElement
+        const otherBtn = container.querySelectorAll('button')[2] as HTMLButtonElement
 
-        expect(autumnBtn.textContent).toContain('Automne 2026')
-        expect(autumnBtn.className).not.toContain('btn-primary')
+        // Modal shouldn't be open initially
+        expect(document.body.textContent).not.toContain('Sélectionner une autre session')
 
-        expect(winterBtn.textContent).toContain('Hiver 2027')
-        expect(winterBtn.className).toContain('btn-primary')
+        // Open modal
+        act(() => {
+            otherBtn.click()
+        })
+
+        expect(document.body.textContent).toContain('Sélectionner une autre session')
+
+        // Select year input inside modal
+        const yearInput = document.querySelector('input[type="number"]') as HTMLInputElement
+        expect(yearInput).not.toBeNull()
+
+        // Change season using select dropdown
+        const select = document.querySelector('select[name="saison"]') as HTMLSelectElement
+        expect(select).not.toBeNull()
+        act(() => {
+            select.value = 'Hiver'
+            select.dispatchEvent(new Event('change', { bubbles: true }))
+        })
+
+        // Click "Accéder" button
+        const submitBtn = Array.from(document.querySelectorAll('button')).find(
+            b => b.textContent?.trim() === 'Accéder'
+        ) as HTMLButtonElement
 
         act(() => {
-            autumnBtn.click()
+            submitBtn.click()
         })
-        expect(mockPush).toHaveBeenCalledWith('/admin/groupes/A26')
+
+        // Should navigate to /admin/allocations/H26
+        expect(mockPush).toHaveBeenCalledWith('/admin/allocations/H26')
+
+        // Modal should be closed
+        expect(document.body.textContent).not.toContain('Sélectionner une autre session')
+    })
+
+    it('closes modal when clicking Annuler', () => {
+        const container = document.createElement('div')
+        document.body.appendChild(container)
+        const root = createRoot(container)
+
+        act(() => {
+            root.render(<AdminSessionSwitcher currentSession="A26" basePath="/admin/allocations" />)
+        })
+
+        const otherBtn = container.querySelectorAll('button')[2] as HTMLButtonElement
+
+        act(() => {
+            otherBtn.click()
+        })
+        expect(document.body.textContent).toContain('Sélectionner une autre session')
+
+        const cancelBtn = Array.from(document.querySelectorAll('button')).find(
+            b => b.textContent?.trim() === 'Annuler'
+        ) as HTMLButtonElement
+
+        act(() => {
+            cancelBtn.click()
+        })
+
+        expect(document.body.textContent).not.toContain('Sélectionner une autre session')
+        expect(mockPush).not.toHaveBeenCalled()
     })
 })
