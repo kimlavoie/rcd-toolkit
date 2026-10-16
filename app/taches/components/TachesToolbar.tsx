@@ -8,6 +8,7 @@ import { useHistory } from "./HistoryContext"
 interface TachesToolbarProps {
     mode: "Automne" | "Hiver"
     setMode: (mode: "Automne" | "Hiver") => void
+    currentSession?: string
     anneeScolaireLabel: string
     search: string
     setSearch: (search: string) => void
@@ -72,7 +73,7 @@ function Dropdown({ title, children, icon, btnClass = "btn-outline-secondary" }:
 }
 
 export default function TachesToolbar({
-    mode, setMode, anneeScolaireLabel,
+    mode, setMode, currentSession, anneeScolaireLabel,
     search, setSearch,
     tri, setTri,
     enseignantWidth, setEnseignantWidth,
@@ -152,6 +153,117 @@ export default function TachesToolbar({
                         </select>
                         <Link href="/admin/scenarios" className="btn btn-sm btn-link text-muted p-0 ms-1" title="Gérer les scénarios" style={{fontSize: "0.75rem", textDecoration: "none"}}>⚙️</Link>
                     </div>
+
+                    {currentSession && (
+                        <Dropdown 
+                            title={`Admin (${currentSession})`} 
+                            icon="⚙️" 
+                            btnClass="btn-white border text-primary"
+                        >
+                            <div className="d-flex flex-column gap-1" style={{minWidth: "220px"}}>
+                                <div className="px-2 py-1 text-muted fw-bold border-bottom" style={{fontSize: "0.7rem"}}>
+                                    Session {currentSession} ({mode})
+                                </div>
+                                <Link 
+                                    href={`/admin/allocations/${currentSession}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="dropdown-item py-1 px-2 rounded d-flex align-items-center justify-content-between text-decoration-none text-dark small"
+                                >
+                                    <span>💰 Allocations</span>
+                                    <span className="text-muted" style={{fontSize: "0.65rem"}}>↗</span>
+                                </Link>
+                                <Link 
+                                    href={`/admin/groupes/${currentSession}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="dropdown-item py-1 px-2 rounded d-flex align-items-center justify-content-between text-decoration-none text-dark small"
+                                >
+                                    <span>👥 Groupes</span>
+                                    <span className="text-muted" style={{fontSize: "0.65rem"}}>↗</span>
+                                </Link>
+                                <Link 
+                                    href={`/admin/charges/${currentSession}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="dropdown-item py-1 px-2 rounded d-flex align-items-center justify-content-between text-decoration-none text-dark small"
+                                >
+                                    <span>📝 Charges</span>
+                                    <span className="text-muted" style={{fontSize: "0.65rem"}}>↗</span>
+                                </Link>
+                                <Link 
+                                    href={`/admin/liberations/${currentSession}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="dropdown-item py-1 px-2 rounded d-flex align-items-center justify-content-between text-decoration-none text-dark small"
+                                >
+                                    <span>🔓 Libérations</span>
+                                    <span className="text-muted" style={{fontSize: "0.65rem"}}>↗</span>
+                                </Link>
+                                <Link 
+                                    href={`/admin/CIReelles/${currentSession}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="dropdown-item py-1 px-2 rounded d-flex align-items-center justify-content-between text-decoration-none text-dark small"
+                                >
+                                    <span>📊 CI Réelles</span>
+                                    <span className="text-muted" style={{fontSize: "0.65rem"}}>↗</span>
+                                </Link>
+
+                                <div className="dropdown-divider my-1 border-top"></div>
+                                <div className="px-2 py-1 text-muted fw-bold" style={{fontSize: "0.7rem"}}>
+                                    Données générales
+                                </div>
+                                <Link 
+                                    href="/admin/enseignants"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="dropdown-item py-1 px-2 rounded d-flex align-items-center justify-content-between text-decoration-none text-dark small"
+                                >
+                                    <span>👨‍🏫 Enseignants</span>
+                                    <span className="text-muted" style={{fontSize: "0.65rem"}}>↗</span>
+                                </Link>
+                                <Link 
+                                    href="/admin/cours"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="dropdown-item py-1 px-2 rounded d-flex align-items-center justify-content-between text-decoration-none text-dark small"
+                                >
+                                    <span>📚 Cours</span>
+                                    <span className="text-muted" style={{fontSize: "0.65rem"}}>↗</span>
+                                </Link>
+                                <Link 
+                                    href="/admin/stages"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="dropdown-item py-1 px-2 rounded d-flex align-items-center justify-content-between text-decoration-none text-dark small"
+                                >
+                                    <span>🏗️ Stages</span>
+                                    <span className="text-muted" style={{fontSize: "0.65rem"}}>↗</span>
+                                </Link>
+                                <Link 
+                                    href="/admin/supervisions"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="dropdown-item py-1 px-2 rounded d-flex align-items-center justify-content-between text-decoration-none text-dark small"
+                                >
+                                    <span>👁️ Supervisions</span>
+                                    <span className="text-muted" style={{fontSize: "0.65rem"}}>↗</span>
+                                </Link>
+
+                                <div className="dropdown-divider my-1 border-top"></div>
+                                <Link 
+                                    href="/admin"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="dropdown-item py-1 px-2 rounded d-flex align-items-center justify-content-between text-decoration-none text-primary fw-bold small"
+                                >
+                                    <span>⚙️ Tous les menus admin</span>
+                                    <span style={{fontSize: "0.65rem"}}>↗</span>
+                                </Link>
+                            </div>
+                        </Dropdown>
+                    )}
                 </div>
             </div>
 

@@ -131,4 +131,25 @@ describe('AdminSessionSwitcher', () => {
         expect(document.body.textContent).not.toContain('Sélectionner une autre session')
         expect(mockPush).not.toHaveBeenCalled()
     })
+
+    it('renders link to corresponding task grid with session mode query parameter', () => {
+        const container = document.createElement('div')
+        document.body.appendChild(container)
+        const root = createRoot(container)
+
+        act(() => {
+            root.render(<AdminSessionSwitcher currentSession="A26" basePath="/admin/allocations" />)
+        })
+
+        const link = container.querySelector('a[href="/taches/2026?mode=Automne"]') as HTMLAnchorElement
+        expect(link).not.toBeNull()
+        expect(link.textContent).toContain('Grille des tâches')
+
+        // Test with winter session H27
+        act(() => {
+            root.render(<AdminSessionSwitcher currentSession="H27" basePath="/admin/allocations" />)
+        })
+        const winterLink = container.querySelector('a[href="/taches/2026?mode=Hiver"]') as HTMLAnchorElement
+        expect(winterLink).not.toBeNull()
+    })
 })

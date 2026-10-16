@@ -99,6 +99,14 @@ describe('Admin - Allocations', () => {
     cy.contains('h1', 'Hiver 2026').should('be.visible');
     cy.contains('Sélectionner une autre session').should('not.exist');
   });
+
+  it('should navigate to task grid with correct mode query param from allocations', () => {
+    cy.visit('/admin/allocations/A26');
+    cy.contains('a', 'Grille des tâches').should('have.attr', 'href', '/taches/2026?mode=Automne');
+    cy.contains('a', 'Grille des tâches').click();
+    cy.url().should('include', '/taches/2026?mode=Automne');
+    cy.contains('Mode Automne').should('have.class', 'btn-primary');
+  });
 });
 
 describe('Admin - Groupes', () => {
@@ -113,6 +121,56 @@ describe('Admin - Groupes', () => {
     cy.contains('button', '❄️ Hiver 2027').click();
     cy.url().should('include', '/admin/groupes/H27');
     cy.contains('h1', 'Hiver 2027').should('be.visible');
+  });
+});
+
+describe('Taches - Navigation vers Admin', () => {
+  beforeEach(() => {
+    cy.login();
+  });
+
+  it('should show Admin dropdown with links targeting current session in new tabs', () => {
+    cy.visit('/taches/2026?mode=Automne');
+    cy.contains('Admin (A26)').should('be.visible').click();
+
+    // Verify session links targeting A26 and opening in a new tab
+    cy.contains('a', 'Allocations')
+      .should('have.attr', 'href', '/admin/allocations/A26')
+      .should('have.attr', 'target', '_blank')
+      .should('have.attr', 'rel', 'noopener noreferrer');
+
+    cy.contains('a', 'Groupes')
+      .should('have.attr', 'href', '/admin/groupes/A26')
+      .should('have.attr', 'target', '_blank');
+
+    cy.contains('a', 'Charges')
+      .should('have.attr', 'href', '/admin/charges/A26')
+      .should('have.attr', 'target', '_blank');
+
+    cy.contains('a', 'Libérations')
+      .should('have.attr', 'href', '/admin/liberations/A26')
+      .should('have.attr', 'target', '_blank');
+
+    cy.contains('a', 'CI Réelles')
+      .should('have.attr', 'href', '/admin/CIReelles/A26')
+      .should('have.attr', 'target', '_blank');
+
+    // Verify general links
+    cy.contains('a', 'Enseignants')
+      .should('have.attr', 'href', '/admin/enseignants')
+      .should('have.attr', 'target', '_blank');
+
+    cy.contains('a', 'Tous les menus admin')
+      .should('have.attr', 'href', '/admin')
+      .should('have.attr', 'target', '_blank');
+
+    // Switch to Hiver mode
+    cy.contains('button', '❄️ Mode Hiver').click();
+    cy.contains('Admin (H27)').should('be.visible').click();
+
+    cy.contains('a', 'Allocations')
+      .should('have.attr', 'href', '/admin/allocations/H27')
+      .should('have.attr', 'target', '_blank');
   });
 });
 

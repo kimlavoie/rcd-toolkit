@@ -1,7 +1,7 @@
 'use client'
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { extractSessionInfos } from "@/app/utilities/sessions"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, Suspense } from "react"
 import Enseignant from "../components/Enseignant"
 import Tache from "../components/Tache"
 import Summary from "../components/Summary"
@@ -31,7 +31,9 @@ function TachesContent() {
     const { user, loading: authLoading } = useAuth()
     const router = useRouter()
     const params = useParams()
+    const searchParams = useSearchParams()
     const year = params.year as string
+    const queryMode = searchParams.get("mode")
     
     const { enseignants, groupes, charges, allocations, liberations, stages, supervisions, cours, scenarios, preferences, parametres, isLoading, triggerExpansion } = useData()
 
@@ -42,15 +44,24 @@ function TachesContent() {
     const sessionH = isValidYear ? `H${(parseInt(year.substring(2,4)) + 1).toString().padStart(2, '0')}` : "";
     const sessionsAnnuelle = [sessionA, sessionH];
 
-    const [mode, setMode] = useState<"Automne" | "Hiver" >("Automne")
+    const [mode, setMode] = useState<"Automne" | "Hiver">(() => {
+        if (queryMode === "Hiver" || queryMode === "Automne") {
+            return queryMode
+        }
+        return "Automne"
+    })
     
-    // Load persisted mode on mount
+    // Load persisted mode or query param on mount / change
     useEffect(() => {
+        if (queryMode === "Hiver" || queryMode === "Automne") {
+            setMode(queryMode)
+            return
+        }
         const savedMode = localStorage.getItem(`taches-mode-${year}`);
         if (savedMode === "Hiver" || savedMode === "Automne") {
             setMode(savedMode);
         }
-    }, [year]);
+    }, [year, queryMode]);
 
     // Save mode when it changes
     useEffect(() => {
@@ -358,7 +369,7 @@ function TachesContent() {
         <div className="d-flex flex-column bg-light overflow-hidden" style={{ height: "calc(100vh - 60px)", padding: "0.5rem" }}>
             <div className="card shadow-sm p-2 flex-grow-1 d-flex flex-column overflow-hidden">
                 <TachesToolbar 
-                    mode={mode} setMode={setMode} anneeScolaireLabel={anneeScolaireLabel}
+                    mode={mode} setMode={setMode} currentSession={currentSession} anneeScolaireLabel={anneeScolaireLabel}
                     search={search} setSearch={setSearch} tri={tri} setTri={setTri}
                     enseignantWidth={enseignantWidth} setEnseignantWidth={(w) => { setEnseignantWidth(w); setColumnWidths({}); }}
                     teachersPerPage={teachersPerPage} setTeachersPerPage={setTeachersPerPage}
@@ -528,7 +539,13 @@ export default function() {
     return (
         <DataProvider sessions={sessionsAnnuelle}>
             <HistoryProvider>
-                <TachesContent />
+                <Suspense fallback={
+                    <div className="container mt-5 text-center p-5">
+                        <div className="spinner-border text-primary" role="status"></div>
+                    </div>
+                }>
+                    <TachesContent />
+                </Suspense>
             </HistoryProvider>
         </DataProvider>
     )

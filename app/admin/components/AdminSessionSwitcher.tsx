@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { getCorrespondingSessions } from "@/app/utilities/sessions"
 import SelectSession from "./inputs/SelectSession"
@@ -148,6 +149,16 @@ export default function AdminSessionSwitcher({
                 <span>📅</span>
                 <span className="d-none d-sm-inline">Autre session</span>
             </button>
+
+            <Link
+                href={`/taches/${autumnYear}?mode=${currentSaison}`}
+                className="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 d-flex align-items-center gap-1 shadow-sm text-decoration-none"
+                style={{ height: "30px", fontSize: "0.75rem" }}
+                title={`Accéder à la grille de gestion des tâches (${currentSaison} ${currentSaison === 'Automne' ? autumnYear : winterYear})`}
+            >
+                <span>📊</span>
+                <span className="d-none d-sm-inline">Grille des tâches</span>
+            </Link>
 
             {mounted && modalContent && createPortal(modalContent, document.body)}
         </div>
