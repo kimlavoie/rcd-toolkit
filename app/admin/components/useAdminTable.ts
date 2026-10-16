@@ -12,7 +12,6 @@ export function useAdminTable<T>({ data, initialSortKey, filterFn }: UseAdminTab
 
     const filteredData = useMemo(() => {
         if (!data) return []
-        if (!search) return data
         return data.filter(item => filterFn(item, search))
     }, [data, search, filterFn])
 

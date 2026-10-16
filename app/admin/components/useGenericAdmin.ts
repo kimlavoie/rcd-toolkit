@@ -36,13 +36,12 @@ export function useGenericAdmin<T extends { id: string }>({
     const [search, setSearch] = useState("")
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editData, setEditData] = useState<Partial<T>>({})
-    const [newData, setNewData] = useState<Partial<T>>(defaultNewData)
+    const [newData, setNewData] = useState<Partial<T>>({ ...defaultNewData })
 
     const table = firebaseDb[collectionName] as unknown as FirebaseTable
 
     const filteredData = useMemo(() => {
         if (!data) return []
-        if (!search) return data
         return data.filter(item => filterFn(item, search))
     }, [data, search, filterFn])
 
@@ -87,7 +86,7 @@ export function useGenericAdmin<T extends { id: string }>({
             } else {
                 await table.add(newData)
             }
-            setNewData(defaultNewData)
+            setNewData({ ...defaultNewData })
             toast.success("Élément ajouté")
         } catch (error) {
             console.error("Error adding:", error)

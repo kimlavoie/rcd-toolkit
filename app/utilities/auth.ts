@@ -60,7 +60,14 @@ export function useAuth() {
         // Support for Cypress mock user
         const mockUser = typeof window !== 'undefined' ? localStorage.getItem('cypress-user') : null;
         if (mockUser) {
-            setUser(JSON.parse(mockUser));
+            const parsed = JSON.parse(mockUser);
+            if (!parsed.getIdToken) {
+                parsed.getIdToken = () => Promise.resolve("mock-token");
+            }
+            if (!parsed.getIdTokenResult) {
+                parsed.getIdTokenResult = () => Promise.resolve({ claims: {} });
+            }
+            setUser(parsed);
             setLoading(false);
             return;
         }
