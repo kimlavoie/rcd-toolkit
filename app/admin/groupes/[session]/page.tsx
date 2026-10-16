@@ -10,6 +10,7 @@ import type { Groupe, Cours } from "@/app/db/db"
 import { useTableSort } from "@/app/utilities/sorting"
 import { toast } from "react-hot-toast"
 import Skeleton from "@/app/utilities/Skeleton";
+import AdminSessionSwitcher from "@/app/admin/components/AdminSessionSwitcher"
 
 
 function GroupesPageContent(){
@@ -95,8 +96,11 @@ function GroupesPageContent(){
     }
 
     return <div className="container mt-3">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-            <h1 className="mb-0">{saison} {annee}</h1>
+        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div className="d-flex align-items-center gap-3 flex-wrap">
+                <h1 className="mb-0">{saison} {annee}</h1>
+                <AdminSessionSwitcher currentSession={session} basePath="/admin/groupes" />
+            </div>
             <div className="input-group input-group-sm w-auto shadow-sm" style={{maxWidth: "300px"}}>
                 <span className="input-group-text bg-white border-end-0 text-muted">🔍</span>
                 <input 

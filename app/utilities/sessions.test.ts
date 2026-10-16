@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { extractSessionInfos, makeSessionCode } from './sessions'
+import { extractSessionInfos, makeSessionCode, getCorrespondingSessions } from './sessions'
 
 describe('Utilities - Sessions', () => {
   describe('extractSessionInfos', () => {
@@ -31,6 +31,38 @@ describe('Utilities - Sessions', () => {
 
     it('génère le bon code pour Hiver', () => {
       expect(makeSessionCode('Hiver', '2026')).toBe('H26')
+    })
+  })
+
+  describe('getCorrespondingSessions', () => {
+    it('calcule la session d hiver correspondante pour une session d automne (ex: A26 -> H27)', () => {
+      const res = getCorrespondingSessions('A26')
+      expect(res.currentSaison).toBe('Automne')
+      expect(res.autumnSession).toBe('A26')
+      expect(res.winterSession).toBe('H27')
+      expect(res.autumnYear).toBe('2026')
+      expect(res.winterYear).toBe('2027')
+      expect(res.academicYear).toBe('2026-2027')
+      expect(res.oppositeSession).toBe('H27')
+    })
+
+    it('calcule la session d automne correspondante pour une session d hiver (ex: H27 -> A26)', () => {
+      const res = getCorrespondingSessions('H27')
+      expect(res.currentSaison).toBe('Hiver')
+      expect(res.autumnSession).toBe('A26')
+      expect(res.winterSession).toBe('H27')
+      expect(res.autumnYear).toBe('2026')
+      expect(res.winterYear).toBe('2027')
+      expect(res.academicYear).toBe('2026-2027')
+      expect(res.oppositeSession).toBe('A26')
+    })
+
+    it('fonctionne pour A25 et H26', () => {
+      const fromA = getCorrespondingSessions('A25')
+      expect(fromA.winterSession).toBe('H26')
+
+      const fromH = getCorrespondingSessions('H26')
+      expect(fromH.autumnSession).toBe('A25')
     })
   })
 })

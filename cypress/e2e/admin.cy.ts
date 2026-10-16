@@ -64,5 +64,46 @@ describe('Admin - Allocations', () => {
     cy.contains('ALLOC_A26').should('not.exist');
     cy.contains('Coordination Automne').should('not.exist');
   });
+
+  it('should easily switch between Automne 2026 and Hiver 2027 without going back to selector', () => {
+    cy.visit('/admin/allocations/A26');
+    cy.contains('h1', 'Automne 2026').should('be.visible');
+    
+    // Switcher should show both corresponding sessions
+    cy.contains('button', '🍂 Automne 2026').should('have.class', 'btn-primary');
+    cy.contains('button', '❄️ Hiver 2027').should('not.have.class', 'btn-primary');
+
+    // Click to switch to Winter 2027
+    cy.contains('button', '❄️ Hiver 2027').click();
+    cy.url().should('include', '/admin/allocations/H27');
+    cy.contains('h1', 'Hiver 2027').should('be.visible');
+    cy.contains('button', '❄️ Hiver 2027').should('have.class', 'btn-primary');
+
+    // Click to switch back to Autumn 2026
+    cy.contains('button', '🍂 Automne 2026').click();
+    cy.url().should('include', '/admin/allocations/A26');
+    cy.contains('h1', 'Automne 2026').should('be.visible');
+
+    // Click "Autre session" should go back to session selector
+    cy.contains('a', 'Autre session').click();
+    cy.url().should('eq', Cypress.config().baseUrl + '/admin/allocations');
+    cy.contains('Sélection de session').should('be.visible');
+  });
 });
+
+describe('Admin - Groupes', () => {
+  beforeEach(() => {
+    cy.login();
+  });
+
+  it('should allow switching sessions in groupes view', () => {
+    cy.visit('/admin/groupes/A26');
+    cy.contains('h1', 'Automne 2026').should('be.visible');
+
+    cy.contains('button', '❄️ Hiver 2027').click();
+    cy.url().should('include', '/admin/groupes/H27');
+    cy.contains('h1', 'Hiver 2027').should('be.visible');
+  });
+});
+
 
